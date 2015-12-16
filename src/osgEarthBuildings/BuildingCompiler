@@ -24,6 +24,10 @@
 #include <osgEarth/Progress>
 #include <osgEarthFeatures/FeatureCursor>
 
+namespace osg {
+    class Geometry;
+}
+
 namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Features;
@@ -51,7 +55,7 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~BuildingCompiler() { }
 
-        osg::Node* createSimpleFootprint(Building*) const;
+        osg::Geometry* createSimpleFootprint(Building*) const;
     };
 
 } } // namespace

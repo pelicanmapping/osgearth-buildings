@@ -39,21 +39,25 @@ BuildingCompiler::compile(const BuildingVector& input,
 {
     osg::ref_ptr<osg::Group> root = new osg::Group();
 
+    // TODO: run through buildings and establish a global reference frame
+    osg::Geode* geode = new osg::Geode();
+    root->addChild( geode );
+
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
         Building* building = i->get();
 
-        osg::Node* node = createSimpleFootprint(building);
-        if ( node )
+        osg::Geometry* geom = createSimpleFootprint(building);
+        if ( geom )
         {
-            root->addChild( node );
+            geode->addDrawable( geom );
         }
     }
 
     return root.release();
 }
 
-osg::Node*
+osg::Geometry*
 BuildingCompiler::createSimpleFootprint(Building* building) const
 {
     Polygon* fp = building->getFootprint();
@@ -72,13 +76,10 @@ BuildingCompiler::createSimpleFootprint(Building* building) const
         Geometry* poly = iter.next();
         for(Geometry::iterator p = poly->begin(); p != poly->end(); ++p)
         {
-            v->push_back( *p );
+            v->push_back( (*p) * building->getReferenceFrame() );
         }
         geom->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, ptr, poly->size()) );
     }
 
-    osg::Geode* geode = new osg::Geode();
-    geode->addDrawable( geom );
-
-    return geode;
+    return geom;
 }

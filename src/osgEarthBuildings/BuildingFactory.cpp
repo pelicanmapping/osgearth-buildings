@@ -45,34 +45,79 @@ BuildingFactory::create(FeatureCursor*    input,
     {
         // for each feature, check that it's a polygon
         Feature* feature = input->nextFeature();
-        Geometry* geometry = feature->getGeometry();
-        if ( geometry )
+        if ( feature )
         {
-            // use an iterator since it might be a multi-polygon. The second
-            // argument keeps the polygon holes intact for now:
-            GeometryIterator iter( geometry, false );
-            while(iter.hasMore())
+            Building* building = createBuilding(feature);
+            if ( building )
             {
-                Polygon* footprint = dynamic_cast<Polygon*>(iter.next());
-                if ( footprint && footprint->isValid() )
-                {
-                    // A footprint is the minumum info required to make a building.
-                    Building* building = new Building();
-                    output.push_back(building);
-
-                    // make sure the polygon is all cleaned up
-                    cleanPolygon( footprint );
-                    building->setFootprint( footprint );
-                }
-                else
-                {
-                    OE_WARN << LC << "Not a polygon. Skipping.\n";
-                }
+                output.push_back( building );
             }
         }
     }
 
     return true;
+}
+
+Building*
+BuildingFactory::createBuilding(Feature* feature)
+{
+    if ( feature == 0L )
+        return 0L;
+
+    osg::ref_ptr<Building> building;
+
+    Geometry* geometry = feature->getGeometry();
+
+    if ( geometry && geometry->getComponentType() == Geometry::TYPE_POLYGON && geometry->isValid() )
+    {
+        // TODO: validate the 
+        // Calculate a local reference frame for this building:
+        osg::Vec2d center2d = geometry->getBounds().center2d();
+        GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), 0.0, ALTMODE_ABSOLUTE );
+
+        osg::Matrix local2world, world2local;
+        centerPoint.createLocalToWorld( local2world );
+        world2local.invert( local2world );
+
+        // Transform feature geometry into the local frame. This way we can do all our
+        // building creation in cartesian space.
+        GeometryIterator iter(geometry, true);
+        while(iter.hasMore())
+        {
+            Geometry* part = iter.next();
+            for(Geometry::iterator i = part->begin(); i != part->end(); ++i)
+            {
+                osg::Vec3d world;
+                feature->getSRS()->transformToWorld( *i, world );
+                (*i) = world * world2local;
+            }
+        }
+
+        // Next, iterate over the polygons and set up the Building object.
+        GeometryIterator iter2( geometry, false );
+        while(iter2.hasMore())
+        {
+            Polygon* footprint = dynamic_cast<Polygon*>(iter2.next());
+            if ( footprint && footprint->isValid() )
+            {
+                // A footprint is the minumum info required to make a building.
+                building = new Building();
+
+                // Install the reference frame of the footprint geometry:
+                building->setReferenceFrame( local2world );
+
+                // Do initial cleaning of the footprint and install is:
+                cleanPolygon( footprint );
+                building->setFootprint( footprint );
+            }
+            else
+            {
+                OE_WARN << LC << "Feature " << feature->getFID() << " is not a polygon. Skipping..\n";
+            }
+        }
+    }
+
+    return building.release();
 }
 
 void

@@ -41,7 +41,14 @@ namespace osgEarth { namespace Buildings
         Building() { }
 
         /**
-         * The polygon footprint of the building
+         * Reference frame for all coordinates used to define the building.
+         */
+        void setReferenceFrame(const osg::Matrix& local2world) { _local2world = local2world; }
+        const osg::Matrix& getReferenceFrame() const { return _local2world; }
+
+        /**
+         * The polygon footprint of the building. Footprint coordinates expressed
+         * relative to the reference frame set for this object.
          */
         void setFootprint(Polygon* footprint) { _footprint = footprint; }
         Polygon* getFootprint() { return _footprint.get(); }
@@ -71,6 +78,7 @@ namespace osgEarth { namespace Buildings
         ElevationVector        _elevations;
         Roof                   _roof;
         Zoning                 _zoning;
+        osg::Matrix            _local2world;
     };
 
     typedef std::vector< osg::ref_ptr<Building> > BuildingVector;

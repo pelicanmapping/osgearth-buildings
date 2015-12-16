@@ -44,13 +44,16 @@ namespace osgEarth { namespace Buildings
         void setStyle(const Style& style) { _style = style; }
         const Style& getStyle() const { return _style; }
 
-        /** Symbol that controls various aspects of building creation */
-        //void setSymbol(BuildingSymbol* symbol) { _symbol = symbol; }
-        //BuildingSymbol* getSymbol() const { return _symbol.get(); }
+        /**
+         * Location to use as a relative local origin for all building geometry.
+         * The factory will reproject incoming feature geometry to a local reference
+         * frame relative to this point.
+         */
+        void setLocalOrigin(const GeoPoint& refpoint) { _refpoint = refpoint; }
+        const GeoPoint& getLocalOrigin() const { return _refpoint; }
 
         /**
          * Given one or more Features, produce a correspond set of Building objects.
-         *
          * @param[in ] input    Cursor iterating over input feautures
          * @param[out] output   Resulting building data models
          * @param[in ] progress Progress/error tracking token
@@ -60,6 +63,11 @@ namespace osgEarth { namespace Buildings
             BuildingVector&   output,
             ProgressCallback* progress =0L);
 
+        /**
+         * Create a building object form a feature.
+         */
+        virtual Building* createBuilding(Feature* feature);
+
     protected:
         virtual ~BuildingFactory() { }
 
@@ -68,8 +76,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
         Style _style;
-
-        
+        GeoPoint _refpoint;        
     };
 
 } } // namespace

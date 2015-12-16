@@ -60,8 +60,9 @@ namespace osgEarth { namespace Buildings
             if ( !acceptsExtension(osgDB::getFileExtension(filename)) )
                 return ReadResult::FILE_NOT_HANDLED;
 
-            std::string inputFile = osgDB::getNameLessExtension(filename);
+            OE_START_TIMER(start);
 
+            std::string inputFile = osgDB::getNameLessExtension(filename);
             OE_INFO << LC << "Input = " << inputFile << "\n";
 
             // Try to open as a feature source:
@@ -94,13 +95,15 @@ namespace osgEarth { namespace Buildings
                 OE_WARN << LC << "Failed to create building data model\n";
                 return ReadResult::ERROR_IN_READING_FILE;
             }
-
-            OE_INFO << LC << "Factory created " << buildings.size() << " buildings\n";
+            OE_INFO << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(start) << "s" << std::endl;
 
             // Create OSG model from buildings.
+            OE_START_TIMER(compile);
             osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler();
-            osg::Node* node = compiler->compile(buildings);
-            
+            osg::Node* node = compiler->compile(buildings);            
+            OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
+            OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
+
             if ( node )
                 return node;
             else

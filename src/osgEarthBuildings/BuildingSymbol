@@ -28,7 +28,7 @@ namespace osgEarth { namespace Buildings
     using namespace osgEarth::Symbology;
 
     /**
-     * Styling information for the building factory.
+     * Styling information for constructing buildings.
      */
     class OSGEARTHBUILDINGS_EXPORT BuildingSymbol : public Symbol
     {

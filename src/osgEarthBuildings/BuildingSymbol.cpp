@@ -35,6 +35,7 @@ BuildingSymbol::BuildingSymbol(const BuildingSymbol& rhs,const osg::CopyOp& copy
 Symbol         (rhs, copyop),
 _metersPerStory( rhs._metersPerStory )
 {
+    //nop
 }
 
 Config 
