@@ -1,0 +1,60 @@
+/* -*-c++-*- */
+/* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
+ * Copyright 2008-2016 Pelican Mapping
+ * http://osgearth.org
+ *
+ * osgEarth is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+#ifndef OSGEARTH_BUILDINGS_BUILDING_COMPILER_H
+#define OSGEARTH_BUILDINGS_BUILDING_COMPILER_H
+
+#include "Common"
+#include "Building"
+#include <osgEarth/Progress>
+#include <osgEarthFeatures/FeatureCursor>
+
+namespace osgEarth { namespace Buildings
+{
+    using namespace osgEarth::Features;
+
+    /** 
+     * Created an OSG graph from one or more Building objects.
+     */
+    class OSGEARTHBUILDINGS_EXPORT BuildingCompiler : public osg::Referenced
+    {
+    public:
+        /** Constructor */
+        BuildingCompiler();
+
+        /**
+         * Given one or more Features, produce a correspond set of Building objects.
+         *
+         * @param[in ] input    Building data
+         * @param[in ] progress Progress/error tracking token
+         * @return              OSG scene graph with building geometry.
+         */
+        virtual osg::Node* compile(
+            const BuildingVector& input,
+            ProgressCallback*     progress =0L);
+
+    protected:
+        virtual ~BuildingCompiler() { }
+
+        osg::Node* createSimpleFootprint(Building*) const;
+    };
+
+} } // namespace
+
+
+#endif // OSGEARTH_BUILDINGS_BUILDING_COMPILER_H

@@ -1,0 +1,78 @@
+/* -*-c++-*- */
+/* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
+ * Copyright 2008-2016 Pelican Mapping
+ * http://osgearth.org
+ *
+ * osgEarth is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+#ifndef OSGEARTH_BUILDINGS_BUILDING_FACTORY_H
+#define OSGEARTH_BUILDINGS_BUILDING_FACTORY_H
+
+#include "Common"
+#include "Building"
+#include "BuildingSymbol"
+#include <osgEarth/Progress>
+#include <osgEarthFeatures/FeatureCursor>
+
+namespace osgEarth { namespace Buildings
+{
+    class BuildingSymbol;
+
+    using namespace osgEarth::Features;
+
+    /** 
+     * Creates one or more Building instances based on Feature input.
+     */
+    class OSGEARTHBUILDINGS_EXPORT BuildingFactory : public osg::Referenced
+    {
+    public:
+        /** Constructor */
+        BuildingFactory();
+
+        /** Style that governs various aspects of building creation */
+        void setStyle(const Style& style) { _style = style; }
+        const Style& getStyle() const { return _style; }
+
+        /** Symbol that controls various aspects of building creation */
+        //void setSymbol(BuildingSymbol* symbol) { _symbol = symbol; }
+        //BuildingSymbol* getSymbol() const { return _symbol.get(); }
+
+        /**
+         * Given one or more Features, produce a correspond set of Building objects.
+         *
+         * @param[in ] input    Cursor iterating over input feautures
+         * @param[out] output   Resulting building data models
+         * @param[in ] progress Progress/error tracking token
+         */
+        virtual bool create(
+            FeatureCursor*    input,
+            BuildingVector&   output,
+            ProgressCallback* progress =0L);
+
+    protected:
+        virtual ~BuildingFactory() { }
+
+        /** Cleans up a polygon geometry so it's suitable for use */
+        virtual void cleanPolygon(Polygon* polygon);
+
+    protected:
+        Style _style;
+
+        
+    };
+
+} } // namespace
+
+
+#endif // OSGEARTH_BUILDINGS_BUILDING_FACTORY_H
