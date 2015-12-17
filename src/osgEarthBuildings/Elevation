@@ -20,30 +20,95 @@
 #define OSGEARTH_BUILDINGS_ELEVATION_H
 
 #include "Common"
+#include "Footprint"
+#include <osg/Vec3d>
+#include <osgEarthSymbology/Skins>
 #include <vector>
+#include <list>
 
 namespace osgEarth { namespace Buildings
 {
+    using namespace osgEarth::Symbology;
+
     /**
      * A vertical section of a building.
      */
-    class Elevation
+    class OSGEARTHBUILDINGS_EXPORT Elevation : public osg::Referenced
     {
     public:
         /** Constructor */
-        Elevation() : _stories(1u) { }
+        Elevation();
 
         /**
-         * Height of the elevation in stories
+         * Sets the height (in meters) of this elevation.
          */
-        void setNumStories(unsigned value) { _stories = value; }
-        unsigned getNumStories() const { return _stories; }
+        void setHeight(float height) { _height = height; }
+        float getHeight() const      { return _height; }
+
+        /**
+         * Skin to use to texture this elevation. (optional)
+         */
+        void setSkin(SkinResource* skin) { _skin = skin; }
+        SkinResource* getSkin() const    { return _skin.get(); }
+
+        /**
+         * Builds an internal structure for this elevation. If this returns
+         * true, you can then call getWalls() to access the structure.
+         */
+        bool build(const Footprint* footprint);
+
+
+    public: // structural data model elements
+
+        // A Corner is one vertex in the footprint extruded from bottom to top
+        struct Corner
+        {
+            osg::Vec3d lower, upper;
+            float      roofTexU, roofTexV;
+            double     offsetX;
+            float      wallTexHeightAdjusted;
+            bool       isFromSource;
+            float      cosAngle;
+            float      height;
+        };
+        typedef std::list<Corner> Corners; // use a list to prevent iterator invalidation
+
+        // A Face joins two Corners.
+        struct Face
+        {
+            Corner left;
+            Corner right;
+            double widthM;
+        };
+        typedef std::vector<Face> Faces;
+
+        // A wall is a closed collection of Faces.
+        struct Wall
+        {
+            Faces  faces;
+            double texHeightAdjustedM;
+
+            unsigned getNumPoints() const {
+                return faces.size() * 6;
+            }
+        };
+        typedef std::vector<Wall> Walls;
+
+        /**
+         * The structure of the elevation that was created by buildStructure.
+         */
+        const Walls& getWalls() const { return _walls; }
 
     protected:
-        unsigned _stories;
+        float _height;
+        osg::ref_ptr<SkinResource> _skin;
+        Walls _walls;
+
+    protected:
+        virtual ~Elevation() { }
     };
 
-    typedef std::vector<Elevation> ElevationVector;
+    typedef std::vector< osg::ref_ptr<Elevation> > ElevationVector;
 
 } }
 

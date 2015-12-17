@@ -23,6 +23,7 @@
 #include "Building"
 #include "BuildingSymbol"
 #include <osgEarth/Progress>
+#include <osgEarthFeatures/Session>
 #include <osgEarthFeatures/FeatureCursor>
 
 namespace osgEarth { namespace Buildings
@@ -37,20 +38,27 @@ namespace osgEarth { namespace Buildings
     class OSGEARTHBUILDINGS_EXPORT BuildingFactory : public osg::Referenced
     {
     public:
-        /** Constructor */
+        /**
+         * Constructs a building factory.
+         * The factory will have to geospatial context or access to scripting. 
+         * For that, please use the constructor that accepts a Session.
+         */
         BuildingFactory();
 
-        /** Style that governs various aspects of building creation */
-        void setStyle(const Style& style) { _style = style; }
-        const Style& getStyle() const { return _style; }
+        /**
+         * Constructs a building factory
+         * @param[in ] session Session presiding over this factory.
+         */
+        BuildingFactory(Session* session);
 
         /**
          * Location to use as a relative local origin for all building geometry.
          * The factory will reproject incoming feature geometry to a local reference
          * frame relative to this point.
+         * @param[in ] location Local origin point
          */
-        void setLocalOrigin(const GeoPoint& refpoint) { _refpoint = refpoint; }
-        const GeoPoint& getLocalOrigin() const { return _refpoint; }
+        void setLocalOrigin(const GeoPoint& location) { _localOrigin = location; }
+        const GeoPoint& getLocalOrigin() const { return _localOrigin; }
 
         /**
          * Given one or more Features, produce a correspond set of Building objects.
@@ -65,8 +73,11 @@ namespace osgEarth { namespace Buildings
 
         /**
          * Create a building object form a feature.
+         * @param[in ] feature Feature from which to create a Building.
          */
-        virtual Building* createBuilding(Feature* feature);
+        virtual Building* createBuilding(
+            Feature*          feature,
+            ProgressCallback* progress =0L);
 
     protected:
         virtual ~BuildingFactory() { }
@@ -74,9 +85,15 @@ namespace osgEarth { namespace Buildings
         /** Cleans up a polygon geometry so it's suitable for use */
         virtual void cleanPolygon(Polygon* polygon);
 
-    protected:
-        Style _style;
-        GeoPoint _refpoint;        
+        /** Add Elevation objects to a Building */
+        virtual void addElevations(Building* building, const Feature* feature);
+
+        /** Add a roof to the Building */
+        virtual void addRoof(Building* building, const Feature* feature);
+
+    protected: 
+        osg::ref_ptr<Session> _session;
+        GeoPoint              _localOrigin;
     };
 
 } } // namespace

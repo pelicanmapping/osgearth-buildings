@@ -42,8 +42,17 @@ namespace osgEarth { namespace Buildings
         BuildingCompiler();
 
         /**
-         * Given one or more Features, produce a correspond set of Building objects.
-         *
+         * Compile a single Building into an OSG graph.
+         * @param[in ] input    Building object to compile
+         * @param[in ] progress Progress/error tracking token
+         * @return              OSG scene graph with building geometry
+         */
+        virtual osg::Node* compile(
+            Building*         input,
+            ProgressCallback* progress =0L);
+
+        /**
+         * Compile a collection of Buildings into an OSG graph.
          * @param[in ] input    Building data
          * @param[in ] progress Progress/error tracking token
          * @return              OSG scene graph with building geometry.
@@ -55,7 +64,19 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~BuildingCompiler() { }
 
-        osg::Geometry* createSimpleFootprint(Building*) const;
+        /**
+         * Create a geometry for a single building.
+         * @param[in ] building    Building for while to create geometry
+         * @param[in ] world2local Reference frame into which to re-localize coordinates (optional)
+         * @return     OSG geometry
+         */
+        virtual bool addBuilding(osg::Geode*, Building*, const osg::Matrix&) const;
+
+        virtual bool addSimpleFootprint(osg::Geode*, Building*, const osg::Matrix&) const;
+
+        virtual bool addElevations(osg::Geode*, Building*, const osg::Matrix&) const;
+
+        virtual bool addRoof(osg::Geode*, Building*, const osg::Matrix&) const;
     };
 
 } } // namespace

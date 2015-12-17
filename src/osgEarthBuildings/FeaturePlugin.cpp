@@ -87,8 +87,17 @@ namespace osgEarth { namespace Buildings
             
             OE_INFO << LC << "Loaded feature data from " << inputFile << "\n";
 
+
+            StyleSheet* sheet = new StyleSheet();
+            BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
+            sym->height() = NumericExpression("max(3.5*[story_ht_],1.0)");
+
+            Session* session = new Session(0L);
+            session->setStyles( sheet );
+
             // Create building data model from features:
-            osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+            osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
+
             BuildingVector buildings;
             if ( !factory->create(cursor.get(), buildings) )
             {

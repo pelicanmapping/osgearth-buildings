@@ -29,6 +29,12 @@ using namespace osgEarth::Symbology;
 
 BuildingFactory::BuildingFactory()
 {
+    _session = new Session(0L);
+}
+
+BuildingFactory::BuildingFactory(Session* session) :
+_session( session )
+{
     //nop
 }
 
@@ -59,7 +65,7 @@ BuildingFactory::create(FeatureCursor*    input,
 }
 
 Building*
-BuildingFactory::createBuilding(Feature* feature)
+BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
 {
     if ( feature == 0L )
         return 0L;
@@ -109,6 +115,15 @@ BuildingFactory::createBuilding(Feature* feature)
                 // Do initial cleaning of the footprint and install is:
                 cleanPolygon( footprint );
                 building->setFootprint( footprint );
+
+                // Add the elevations for the buildings:
+                addElevations(building, feature);
+
+                // Add the roof:
+                addRoof(building, feature);
+
+                // Finally, build the internal structure from the footprint.
+                building->build();
             }
             else
             {
@@ -129,5 +144,40 @@ BuildingFactory::cleanPolygon(Polygon* polygon)
 
     polygon->rewind( Polygon::ORIENTATION_CCW );
 
-    // TODO: remove colinear points
+    // TODO: remove colinear points? for skeleton?
+}
+
+void
+BuildingFactory::addElevations(Building* building, const Feature* feature)
+{
+    if ( !building ) return;
+
+    // figure out the building's height:
+    float height = 15.0f;
+
+    if ( _session.valid() && feature )
+    {
+        const BuildingSymbol* sym = _session->styles()->getDefaultStyle()->get<BuildingSymbol>();
+        if ( sym )
+        {
+            NumericExpression heightExpr = sym->height().get();
+            height = feature->eval( heightExpr, _session.get() );
+        }
+    }
+
+    // Add a single elevation.
+    Elevation* elevation = new Elevation();
+    building->getElevations().push_back(elevation);
+
+    elevation->setHeight( height );
+    elevation->build( building->getFootprint() );
+}
+
+void
+BuildingFactory::addRoof(Building* building, const Feature* feature)
+{
+    if ( !building ) return;
+   
+    Roof* roof = new Roof();
+    building->setRoof( roof );
 }

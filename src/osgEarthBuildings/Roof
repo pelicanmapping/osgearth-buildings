@@ -27,13 +27,18 @@ namespace osgEarth { namespace Buildings
     /**
      * Top of a building.
      */
-    class OSGEARTHBUILDINGS_EXPORT Roof
+    class OSGEARTHBUILDINGS_EXPORT Roof : public osg::Referenced
     {
     public:
         /** Constructor */
         Roof() { }
-    };
 
+        /** Assemble the internal structure of the roof. */
+        virtual bool build() { return false; }
+
+    protected:
+        virtual ~Roof() { }
+    };
 } }
 
 #endif // OSGEARTH_BUILDINGS_ROOF_H

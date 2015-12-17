@@ -62,8 +62,8 @@ namespace osgEarth { namespace Buildings
         /**
          * Roof of the building.
          */
-        void setRoof(const Roof& roof) { _roof = roof; }
-        const Roof& getRoof() const { return _roof; }
+        void setRoof(Roof* roof) { _roof = roof; }
+        Roof* getRoof() const { return _roof.get(); }
 
         /**
          * Zoning for this building 
@@ -71,12 +71,18 @@ namespace osgEarth { namespace Buildings
         void setZoning(const Zoning& zoning) { _zoning = zoning; }
         const Zoning& getZoning() const { return _zoning; }
 
+        /**
+         * Build the internal structure of the building and its components.
+         */
+        bool build();
+
+
     protected:
         virtual ~Building() { }
 
         osg::ref_ptr<Polygon>  _footprint;
         ElevationVector        _elevations;
-        Roof                   _roof;
+        osg::ref_ptr<Roof>     _roof;
         Zoning                 _zoning;
         osg::Matrix            _local2world;
     };

@@ -17,14 +17,17 @@ set(LIB_PUBLIC_HEADERS
     Common
     Elevation
     Export
+    Footprint
     Roof
     Zoning
 )
 
 set(LIB_COMMON_FILES
+    Building.cpp
     BuildingCompiler.cpp
     BuildingFactory.cpp
     BuildingSymbol.cpp
+    Elevation.cpp
     FeaturePlugin.cpp
 )
 
