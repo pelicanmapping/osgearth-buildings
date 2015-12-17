@@ -152,16 +152,24 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
 {
     if ( !building ) return;
 
-    // figure out the building's height:
-    float height = 15.0f;
+    // figure out the building's height and number of floors.
+    // single-elevation building.
+    float height       = 15.0f;
+    unsigned numFloors = 4u;
 
-    if ( _session.valid() && feature )
+    if ( _session.valid() )
     {
         const BuildingSymbol* sym = _session->styles()->getDefaultStyle()->get<BuildingSymbol>();
         if ( sym )
         {
-            NumericExpression heightExpr = sym->height().get();
-            height = feature->eval( heightExpr, _session.get() );
+            if ( feature )
+            {
+                NumericExpression heightExpr = sym->height().get();
+                height = feature->eval( heightExpr, _session.get() );
+            }
+
+            // estimate the number of floors based on the height.
+            numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->metersPerFloor().get()));
         }
     }
 
@@ -170,6 +178,8 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
     building->getElevations().push_back(elevation);
 
     elevation->setHeight( height );
+    elevation->setNumFloors( numFloors );
+
     elevation->build( building->getFootprint() );
 }
 

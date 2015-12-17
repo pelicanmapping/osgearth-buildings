@@ -64,6 +64,8 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~BuildingCompiler() { }
 
+        const Style& getStyle() const;
+
         /**
          * Create a geometry for a single building.
          * @param[in ] building    Building for while to create geometry

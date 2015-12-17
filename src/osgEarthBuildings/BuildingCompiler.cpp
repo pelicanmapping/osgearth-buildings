@@ -144,10 +144,11 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
     {
         const Elevation* elevation = e->get();
 
-        double texWidthM   = 1.0; // TODO wallSkin ? *wallSkin->imageWidth()  : 1.0;
-        double texHeightM  = 1.0; // TODOwallSkin ? *wallSkin->imageHeight() : 1.0;
-        bool   genColors   = true; // TODO (!wallSkin || wallSkin->texEnvMode() != osg::TexEnv::DECAL) && !_makeStencilVolume;
-        bool   useTexture  = false; // TODO
+        bool useTexture = elevation->getSkin() != 0L;
+        float texWidth  = elevation->getSkin() ? elevation->getSkin()->imageWidth().get() : 0.0f;
+        float texHeight = elevation->getSkin() ? elevation->getSkin()->imageHeight().get() : 3.5f;
+
+        bool   genColors   = true;  // TODO (!wallSkin || wallSkin->texEnvMode() != osg::TexEnv::DECAL) && !_makeStencilVolume;
         bool   genNormals  = false; // TODO
 
         //TODO
@@ -166,6 +167,8 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         {
             totalNumVerts += (6 * wall->getNumPoints());
         }
+
+        totalNumVerts *= elevation->getNumFloors();
         OE_DEBUG << LC << "Extrusion: total verts in elevation = " << totalNumVerts << "\n";
 
         // preallocate all attribute arrays.
@@ -196,6 +199,7 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         }
 
         unsigned vertPtr = 0;
+        float    floorHeight = elevation->getHeight() / (float)elevation->getNumFloors();
 
         OE_DEBUG << LC << "...elevation has " << walls.size() << " walls\n";
 
@@ -203,11 +207,9 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         // zero or more inner walls (where there were holes in the original footprint).
         for(Elevation::Walls::const_iterator wall = walls.begin(); wall != walls.end(); ++wall)
         {
-            //bool madeGeom = true;
+            // 6 verts per face total (3 triangles) per floor
+            unsigned numWallVerts = 6 * wall->getNumPoints() * elevation->getNumFloors();
 
-            // 6 verts per face total (3 triangles)
-            unsigned numWallVerts = 6 * wall->getNumPoints();
-    
             //// Scale and bias:
             //osg::Vec2f scale, bias;
             //float layer;
@@ -249,98 +251,117 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
             de->reserveElements( numWallVerts );
             geom->addPrimitiveSet( de );
 
-            OE_DEBUG << LC << "...wall has " << wall->faces.size() << " faces\n";
-            for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 6)
-            {
-                osg::Vec3f LL = f->left.lower  * frame;
-                osg::Vec3f LR = f->right.lower * frame;
-                osg::Vec3f UR = f->right.upper * frame;
-                osg::Vec3f UL = f->left.upper  * frame;
+            OE_DEBUG << LC << "..elevation has " << elevation->getNumFloors() << " floors\n";
 
-                // set the 6 wall verts.
-                (*verts)[vertPtr+0] = UL;
-                (*verts)[vertPtr+1] = LL;
-                (*verts)[vertPtr+2] = LR;
-                (*verts)[vertPtr+3] = LR;
-                (*verts)[vertPtr+4] = UR;
-                (*verts)[vertPtr+5] = UL;
+            float numFloorsF = (float)elevation->getNumFloors();
             
-#if 0
-                if ( anchors )
+            for(unsigned flr=0; flr < elevation->getNumFloors(); ++flr)
+            {
+                float floorZ = (float)flr * floorHeight;
+    
+                OE_DEBUG << LC << "...wall has " << wall->faces.size() << " faces\n";
+                for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 6)
                 {
-                    float x = structure.baseCentroid.x(), y = structure.baseCentroid.y(), vo = structure.verticalOffset;
+                    osg::Vec3d Lvec = f->left.upper - f->left.lower; Lvec.normalize();
+                    osg::Vec3d Rvec = f->right.upper - f->right.lower; Rvec.normalize();
 
-                    (*anchors)[vertPtr+1].set( x, y, vo, Clamping::ClampToGround );
-                    (*anchors)[vertPtr+2].set( x, y, vo, Clamping::ClampToGround );
-                    (*anchors)[vertPtr+3].set( x, y, vo, Clamping::ClampToGround );
+                    float upperZ = floorZ + floorHeight;
 
-                    (*anchors)[vertPtr+0].set( x, y, vo, Clamping::ClampToAnchor );
-                    (*anchors)[vertPtr+4].set( x, y, vo, Clamping::ClampToAnchor );
-                    (*anchors)[vertPtr+5].set( x, y, vo, Clamping::ClampToAnchor );
-                }
-#endif
+                    osg::Vec3d LL = (f->left.lower  + Lvec*floorZ) * frame;
+                    osg::Vec3d UL = (f->left.lower  + Lvec*upperZ) * frame;
+                    osg::Vec3d LR = (f->right.lower + Rvec*floorZ) * frame;
+                    osg::Vec3d UR = (f->right.lower + Rvec*upperZ) * frame;
 
-                // Assign wall polygon colors.
-                if ( genColors )
-                {
-                    (*colors)[vertPtr+0] = upperWallColor;
-                    (*colors)[vertPtr+1] = lowerWallColor;
-                    (*colors)[vertPtr+2] = lowerWallColor;
-                    (*colors)[vertPtr+3] = lowerWallColor;
-                    (*colors)[vertPtr+4] = upperWallColor;
-                    (*colors)[vertPtr+5] = upperWallColor;
-                }
+                    // set the 6 wall verts.
+                    (*verts)[vertPtr+0] = UL;
+                    (*verts)[vertPtr+1] = LL;
+                    (*verts)[vertPtr+2] = LR;
+                    (*verts)[vertPtr+3] = LR;
+                    (*verts)[vertPtr+4] = UR;
+                    (*verts)[vertPtr+5] = UL;
 
-#if 0
-                // Calculate texture coordinates:
-                if ( useTexture )
-                {
-                    // Calculate left and right corner V coordinates:
-                    double hL = (f->left.upper - f->left.lower).length();
-                    double hR = (f->right.upper - f->right.lower).length();
+           
+    #if 0
+                    if ( anchors )
+                    {
+                        float x = structure.baseCentroid.x(), y = structure.baseCentroid.y(), vo = structure.verticalOffset;
+
+                        (*anchors)[vertPtr+1].set( x, y, vo, Clamping::ClampToGround );
+                        (*anchors)[vertPtr+2].set( x, y, vo, Clamping::ClampToGround );
+                        (*anchors)[vertPtr+3].set( x, y, vo, Clamping::ClampToGround );
+
+                        (*anchors)[vertPtr+0].set( x, y, vo, Clamping::ClampToAnchor );
+                        (*anchors)[vertPtr+4].set( x, y, vo, Clamping::ClampToAnchor );
+                        (*anchors)[vertPtr+5].set( x, y, vo, Clamping::ClampToAnchor );
+                    }
+    #endif
+
+                    // Assign wall polygon colors.
+                    if ( genColors )
+                    {
+                        (*colors)[vertPtr+0] = upperWallColor;
+                        (*colors)[vertPtr+1] = lowerWallColor;
+                        (*colors)[vertPtr+2] = lowerWallColor;
+                        (*colors)[vertPtr+3] = lowerWallColor;
+                        (*colors)[vertPtr+4] = upperWallColor;
+                        (*colors)[vertPtr+5] = upperWallColor;
+                    }
+
+    #if 0
+                    // Calculate texture coordinates:
+                    if ( useTexture )
+                    {
+                        // Calculate left and right corner V coordinates:
+                        double hL = (f->left.upper - f->left.lower).length();
+                        double hR = (f->right.upper - f->right.lower).length();
                 
-                    // Calculate the texture coordinates at each corner. The structure builder
-                    // will have spaced the verts correctly for this to work.
-                    float uL = fmod( f->left.offsetX, texWidthM ) / texWidthM;
-                    float uR = fmod( f->right.offsetX, texWidthM ) / texWidthM;
+                        // Calculate the texture coordinates at each corner. The structure builder
+                        // will have spaced the verts correctly for this to work.
+                        float uL = fmod( f->left.offsetX, texWidthM ) / texWidthM;
+                        float uR = fmod( f->right.offsetX, texWidthM ) / texWidthM;
 
-                    // Correct for the case in which the rightmost corner is exactly on a
-                    // texture boundary.
-                    if ( uR < uL || (uL == 0.0 && uR == 0.0))
-                        uR = 1.0f;
+                        // Correct for the case in which the rightmost corner is exactly on a
+                        // texture boundary.
+                        if ( uR < uL || (uL == 0.0 && uR == 0.0))
+                            uR = 1.0f;
 
-                    osg::Vec2f texBaseL( uL, 0.0f );
-                    osg::Vec2f texBaseR( uR, 0.0f );
-                    osg::Vec2f texRoofL( uL, hL/elev->texHeightAdjustedM );
-                    osg::Vec2f texRoofR( uR, hR/elev->texHeightAdjustedM );
+                        osg::Vec2f texBaseL( uL, 0.0f );
+                        osg::Vec2f texBaseR( uR, 0.0f );
+                        osg::Vec2f texRoofL( uL, hL/elev->texHeightAdjustedM );
+                        osg::Vec2f texRoofR( uR, hR/elev->texHeightAdjustedM );
 
-                    texRoofL = bias + osg::componentMultiply(texRoofL, scale);
-                    texRoofR = bias + osg::componentMultiply(texRoofR, scale);
-                    texBaseL = bias + osg::componentMultiply(texBaseL, scale);
-                    texBaseR = bias + osg::componentMultiply(texBaseR, scale);
+                        texRoofL = bias + osg::componentMultiply(texRoofL, scale);
+                        texRoofR = bias + osg::componentMultiply(texRoofR, scale);
+                        texBaseL = bias + osg::componentMultiply(texBaseL, scale);
+                        texBaseR = bias + osg::componentMultiply(texBaseR, scale);
 
-                    (*tex)[vertptr+0].set( texRoofL.x(), texRoofL.y(), layer );
-                    (*tex)[vertptr+1].set( texBaseL.x(), texBaseL.y(), layer );
-                    (*tex)[vertptr+2].set( texBaseR.x(), texBaseR.y(), layer );
-                    (*tex)[vertptr+3].set( texBaseR.x(), texBaseR.y(), layer );
-                    (*tex)[vertptr+4].set( texRoofR.x(), texRoofR.y(), layer );
-                    (*tex)[vertptr+5].set( texRoofL.x(), texRoofL.y(), layer );
-                }
-#endif
+                        (*tex)[vertptr+0].set( texRoofL.x(), texRoofL.y(), layer );
+                        (*tex)[vertptr+1].set( texBaseL.x(), texBaseL.y(), layer );
+                        (*tex)[vertptr+2].set( texBaseR.x(), texBaseR.y(), layer );
+                        (*tex)[vertptr+3].set( texBaseR.x(), texBaseR.y(), layer );
+                        (*tex)[vertptr+4].set( texRoofR.x(), texRoofR.y(), layer );
+                        (*tex)[vertptr+5].set( texRoofL.x(), texRoofL.y(), layer );
+                    }
+    #endif
 
-                for(int i=0; i<6; ++i)
-                {
-                    de->addElement( vertPtr+i );
-                }
-            }
-        }
+                    for(int i=0; i<6; ++i)
+                    {
+                        de->addElement( vertPtr+i );
+                    }
+
+                } // faces loop
+
+            } // floors loop
+
+        } // walls loop
 
         // TODO - temporary, doesn't smooth disconnected edges
         osgUtil::SmoothingVisitor::smooth( *geom.get(), 15.0f );
 
         OE_DEBUG << LC "...adding geometry\n";
         geode->addDrawable( geom.get() );
-    }
+
+    } // elevations loop
 
     return true;
 }

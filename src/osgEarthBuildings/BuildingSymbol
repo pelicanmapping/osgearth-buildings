@@ -39,9 +39,9 @@ namespace osgEarth { namespace Buildings
         BuildingSymbol(const Config& conf =Config());
         BuildingSymbol(const BuildingSymbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
 
-        /** Number of meters in a "story" */
-        optional<float>& metersPerStory() { return _metersPerStory; }
-        const optional<float>& metersPerStory() const { return _metersPerStory; }
+        /** Number of meters in a floor, approximately */
+        optional<float>& metersPerFloor() { return _metersPerFloor; }
+        const optional<float>& metersPerFloor() const { return _metersPerFloor; }
 
         /** Expression resolving to the height (in meters) of a building. */
         optional<NumericExpression>& height() { return _heightExpr; }
@@ -53,7 +53,7 @@ namespace osgEarth { namespace Buildings
         static void parseSLD(const Config& c, class Style& style);
 
     protected:
-        optional<float>             _metersPerStory;
+        optional<float>             _metersPerFloor;
         optional<NumericExpression> _heightExpr;
     };
 } }

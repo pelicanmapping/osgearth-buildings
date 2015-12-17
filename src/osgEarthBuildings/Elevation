@@ -57,6 +57,12 @@ namespace osgEarth { namespace Buildings
          */
         bool build(const Footprint* footprint);
 
+        /**
+         * Number of floors in this elevation. This value is calculated.
+         */
+        void setNumFloors(unsigned num) { _numFloors = num; }
+        unsigned getNumFloors() const { return _numFloors; }
+
 
     public: // structural data model elements
 
@@ -101,6 +107,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
         float _height;
+        unsigned _numFloors;
         osg::ref_ptr<SkinResource> _skin;
         Walls _walls;
 
