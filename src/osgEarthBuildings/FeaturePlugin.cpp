@@ -122,15 +122,18 @@ namespace osgEarth { namespace Buildings
             osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
             osg::Node* node = compiler->compile(buildings);            
             OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
-            OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
 
             if ( node )
             {
+                OE_START_TIMER(optimize);
+
                 osgUtil::Optimizer::MergeGeometryVisitor mgv;
                 mgv.setTargetMaximumNumberOfVertices(1024000);
                 node->accept( mgv );
 
-                //osgEarth::Registry::shaderGenerator().run( node );
+                OE_INFO << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
+
+                OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
                 return node;
             }
             else
