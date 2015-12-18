@@ -1,4 +1,3 @@
-/* -*-c++-*- */
 /* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
  * Copyright 2008-2016 Pelican Mapping
  * http://osgearth.org
@@ -16,15 +15,4 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-#ifndef OSGEARTH_BUILDINGS_FOOTPRINT_H
-#define OSGEARTH_BUILDINGS_FOOTPRINT_H
-
-#include "Common"
-#include <osgEarthSymbology/Geometry>
-
-namespace osgEarth { namespace Buildings
-{
-    typedef osgEarth::Symbology::Polygon Footprint;    
-} }
-
-#endif // OSGEARTH_BUILDINGS_ELEVATION_H
+#include "Footprint"

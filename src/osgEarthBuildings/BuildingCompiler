@@ -41,6 +41,8 @@ namespace osgEarth { namespace Buildings
         /** Constructor */
         BuildingCompiler();
 
+        BuildingCompiler(Session* session);
+
         /**
          * Compile a single Building into an OSG graph.
          * @param[in ] input    Building object to compile
@@ -79,6 +81,9 @@ namespace osgEarth { namespace Buildings
         virtual bool addElevations(osg::Geode*, Building*, const osg::Matrix&) const;
 
         virtual bool addRoof(osg::Geode*, Building*, const osg::Matrix&) const;
+
+    protected:
+        osg::ref_ptr<Session> _session;
     };
 
 } } // namespace

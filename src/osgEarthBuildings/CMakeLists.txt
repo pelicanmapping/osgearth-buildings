@@ -29,6 +29,8 @@ set(LIB_COMMON_FILES
     BuildingSymbol.cpp
     Elevation.cpp
     FeaturePlugin.cpp
+    Footprint.cpp
+    Roof.cpp
 )
 
 

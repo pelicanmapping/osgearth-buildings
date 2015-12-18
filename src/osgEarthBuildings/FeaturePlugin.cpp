@@ -19,8 +19,12 @@
 #include "Common"
 #include "BuildingFactory"
 #include "BuildingCompiler"
+
 #include <osgDB/FileNameUtils>
 #include <osgDB/Registry>
+#include <osgUtil/Optimizer>
+
+#include <osgEarth/Registry>
 #include <osgEarthFeatures/FeatureSource>
 #include <osgEarthDrivers/feature_ogr/OGRFeatureOptions>
 
@@ -74,8 +78,7 @@ namespace osgEarth { namespace Buildings
                 OE_WARN << LC << "Failed to create feature soruce from input file\n";
                 return ReadResult::FILE_NOT_FOUND;
             }
-
-            fs->initialize();
+            fs->initialize(options);
 
             // Create a cursor to iterator over the feature data:
             osg::ref_ptr<FeatureCursor> cursor = fs->createFeatureCursor();
@@ -83,17 +86,25 @@ namespace osgEarth { namespace Buildings
             {
                 OE_WARN << LC << "Failed to open a cursor from input file\n";
                 return ReadResult::ERROR_IN_READING_FILE;
-            }
-            
+            }            
             OE_INFO << LC << "Loaded feature data from " << inputFile << "\n";
 
+            // Load a resource catalog.
+            ResourceLibrary* reslib = new ResourceLibrary("", "repo/data/catalog/catalog.xml");
+            if ( !reslib->initialize( options ) )
+            {
+                OE_WARN << LC << "Failed to load a resource library\n";
+            }
 
             StyleSheet* sheet = new StyleSheet();
+            sheet->addResourceLibrary( reslib );
+
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
             sym->height() = NumericExpression("max(3.5*[story_ht_],1.0)");
 
             Session* session = new Session(0L);
             session->setStyles( sheet );
+            session->setResourceCache( new ResourceCache(options) );
 
             // Create building data model from features:
             osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
@@ -108,15 +119,24 @@ namespace osgEarth { namespace Buildings
 
             // Create OSG model from buildings.
             OE_START_TIMER(compile);
-            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler();
+            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
             osg::Node* node = compiler->compile(buildings);            
             OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
             OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
 
             if ( node )
+            {
+                osgUtil::Optimizer::MergeGeometryVisitor mgv;
+                mgv.setTargetMaximumNumberOfVertices(1024000);
+                node->accept( mgv );
+
+                //osgEarth::Registry::shaderGenerator().run( node );
                 return node;
+            }
             else
+            {
                 return ReadResult::ERROR_IN_READING_FILE;
+            }
         }
     };
 

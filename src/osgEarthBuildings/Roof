@@ -20,10 +20,15 @@
 #define OSGEARTH_BUILDINGS_ROOF_H
 
 #include "Common"
+#include <osgEarthSymbology/Skins>
 #include <vector>
 
 namespace osgEarth { namespace Buildings
 {
+    using namespace osgEarth::Symbology;
+
+    class Elevation;
+
     /**
      * Top of a building.
      */
@@ -35,15 +40,26 @@ namespace osgEarth { namespace Buildings
             TYPE_GABLE,
             TYPE_HIP
         };
+
     public:
         /** Constructor */
-        Roof() { }
+        Roof();
 
-        /** Assemble the internal structure of the roof. */
-        virtual bool build() { return false; }
+        /** Roof type */
+        void setType(const Type& type) { _type = type; }
+        const Type& getType() const    { return _type; }
+
+        /**
+         * Texture and properties for texturing this roof 
+         */
+        void setSkinResource(SkinResource* skin) { _skinResource = skin; }
+        SkinResource* getSkinResource() const    { return _skinResource; }
 
     protected:
         virtual ~Roof() { }
+
+        Type _type;
+        osg::ref_ptr<SkinResource> _skinResource;
     };
 } }
 

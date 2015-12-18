@@ -25,15 +25,16 @@ using namespace osgEarth::Buildings;
 OSGEARTH_REGISTER_SIMPLE_SYMBOL(building, BuildingSymbol);
 
 BuildingSymbol::BuildingSymbol(const Config& conf) :
-Symbol          ( conf ),
-_metersPerFloor ( 3.5f )
+Symbol      ( conf ),
+_floorHeight( 3.5f )
 {
     mergeConfig(conf);
 }
 
 BuildingSymbol::BuildingSymbol(const BuildingSymbol& rhs,const osg::CopyOp& copyop) :
-Symbol         (rhs, copyop),
-_metersPerFloor( rhs._metersPerFloor )
+Symbol      ( rhs, copyop ),
+_floorHeight( rhs._floorHeight ),
+_heightExpr ( rhs._heightExpr )
 {
     //nop
 }
@@ -43,16 +44,16 @@ BuildingSymbol::getConfig() const
 {
     Config conf = Symbol::getConfig();
     conf.key() = "building";
-    conf.addIfSet   ( "meters_per_floor", _metersPerFloor );
-    conf.addObjIfSet( "height",           _heightExpr );
+    conf.addIfSet   ( "floor_height", _floorHeight );
+    conf.addObjIfSet( "height",       _heightExpr );
     return conf;
 }
 
 void 
 BuildingSymbol::mergeConfig( const Config& conf )
 {
-    conf.getIfSet   ( "meters_per_floor", _metersPerFloor );
-    conf.getObjIfSet( "height",           _heightExpr );
+    conf.getIfSet   ( "floor_height", _floorHeight );
+    conf.getObjIfSet( "height",       _heightExpr );
 }
 
 void
@@ -60,8 +61,8 @@ BuildingSymbol::parseSLD(const Config& c, Style& style)
 {
     BuildingSymbol defaults;
 
-    if ( match(c.key(), "building-meters-per-floor") ) {
-        style.getOrCreate<BuildingSymbol>()->metersPerFloor() = as<float>(c.value(), *defaults.metersPerFloor());
+    if ( match(c.key(), "building-floor-height") ) {
+        style.getOrCreate<BuildingSymbol>()->floorHeight() = as<float>(c.value(), *defaults.floorHeight());
     }
     else if ( match(c.key(), "building-height") ) {
         style.getOrCreate<BuildingSymbol>()->height() = !c.value().empty() ? NumericExpression(c.value()) : *defaults.height();

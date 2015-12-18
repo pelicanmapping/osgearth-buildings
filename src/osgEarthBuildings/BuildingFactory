@@ -88,9 +88,6 @@ namespace osgEarth { namespace Buildings
         /** Add Elevation objects to a Building */
         virtual void addElevations(Building* building, const Feature* feature);
 
-        /** Add a roof to the Building */
-        virtual void addRoof(Building* building, const Feature* feature);
-
     protected: 
         osg::ref_ptr<Session> _session;
         GeoPoint              _localOrigin;

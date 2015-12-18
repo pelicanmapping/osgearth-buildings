@@ -116,11 +116,8 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
                 cleanPolygon( footprint );
                 building->setFootprint( footprint );
 
-                // Add the elevations for the buildings:
+                // Add the elevations for the building:
                 addElevations(building, feature);
-
-                // Add the roof:
-                addRoof(building, feature);
 
                 // Finally, build the internal structure from the footprint.
                 building->build();
@@ -155,10 +152,41 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
     // figure out the building's height and number of floors.
     // single-elevation building.
     float height       = 15.0f;
-    unsigned numFloors = 4u;
+    unsigned numFloors = 1u;
+
+    // Add a single elevation.
+    Elevation* elevation = new Elevation();
+    building->getElevations().push_back(elevation);
+    
+    Roof* roof = new Roof();
+    roof->setType( Roof::TYPE_FLAT );
+    elevation->setRoof( roof );
 
     if ( _session.valid() )
     {
+        SkinResource* wallSkin = 0L;
+        SkinResource* roofSkin = 0L;
+
+        ResourceLibrary* reslib = _session->styles()->getDefaultResourceLibrary();
+        if ( reslib )
+        {
+            wallSkin = reslib->getSkin( "facade.commercial.1" );
+            if ( wallSkin )
+                elevation->setSkinResource( wallSkin );
+            else
+                OE_WARN << "no wall skin\n";
+
+            roofSkin = reslib->getSkin( "roof.commercial.1" );
+            if ( roofSkin )
+                roof->setSkinResource( roofSkin );
+            else
+                OE_WARN << "no roof skin\n";
+        }
+        else
+        {
+            //OE_WARN << LC << "No resource library\n";
+        }
+
         const BuildingSymbol* sym = _session->styles()->getDefaultStyle()->get<BuildingSymbol>();
         if ( sym )
         {
@@ -169,25 +197,18 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
             }
 
             // estimate the number of floors based on the height.
-            numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->metersPerFloor().get()));
+            //numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->metersPerFloor().get()));
+            if ( wallSkin )
+            {
+                numFloors = (unsigned)std::max(1.0f, osg::round(height / wallSkin->imageHeight().get()));
+            }
         }
-    }
 
-    // Add a single elevation.
-    Elevation* elevation = new Elevation();
-    building->getElevations().push_back(elevation);
+        
+    }
 
     elevation->setHeight( height );
     elevation->setNumFloors( numFloors );
 
     elevation->build( building->getFootprint() );
-}
-
-void
-BuildingFactory::addRoof(Building* building, const Feature* feature)
-{
-    if ( !building ) return;
-   
-    Roof* roof = new Roof();
-    building->setRoof( roof );
 }

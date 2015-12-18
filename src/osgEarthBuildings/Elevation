@@ -21,7 +21,9 @@
 
 #include "Common"
 #include "Footprint"
+#include "Roof"
 #include <osg/Vec3d>
+#include <osg/Texture>
 #include <osgEarthSymbology/Skins>
 #include <vector>
 #include <list>
@@ -46,22 +48,34 @@ namespace osgEarth { namespace Buildings
         float getHeight() const      { return _height; }
 
         /**
+         * Number of floors in this elevation. This value is calculated.
+         */
+        void setNumFloors(unsigned num) { _numFloors = num; }
+        unsigned getNumFloors() const { return _numFloors; }
+
+        /**
+         * The roof.
+         */
+        void setRoof(Roof* roof) { _roof = roof; }
+        Roof* getRoof() const    { return _roof.get(); }
+
+        /**
+         * The skin (texture and properties) for the elevation walls.
+         */
+        void setSkinResource(SkinResource* res) { _skinResource = res; }
+        SkinResource* getSkinResource() const   { return _skinResource; }
+
+        /**
          * Skin to use to texture this elevation. (optional)
          */
-        void setSkin(SkinResource* skin) { _skin = skin; }
-        SkinResource* getSkin() const    { return _skin.get(); }
+        void setSkinSymbol(SkinSymbol* skin) { _skin = skin; }
+        SkinSymbol* getSkinSymbol() const    { return _skin.get(); }
 
         /**
          * Builds an internal structure for this elevation. If this returns
          * true, you can then call getWalls() to access the structure.
          */
         bool build(const Footprint* footprint);
-
-        /**
-         * Number of floors in this elevation. This value is calculated.
-         */
-        void setNumFloors(unsigned num) { _numFloors = num; }
-        unsigned getNumFloors() const { return _numFloors; }
 
 
     public: // structural data model elements
@@ -70,12 +84,11 @@ namespace osgEarth { namespace Buildings
         struct Corner
         {
             osg::Vec3d lower, upper;
-            float      roofTexU, roofTexV;
-            double     offsetX;
-            float      wallTexHeightAdjusted;
+            osg::Vec2f roofUV;
+            float      offsetX;
             bool       isFromSource;
             float      cosAngle;
-            float      height;
+            float      height;            
         };
         typedef std::list<Corner> Corners; // use a list to prevent iterator invalidation
 
@@ -84,7 +97,7 @@ namespace osgEarth { namespace Buildings
         {
             Corner left;
             Corner right;
-            double widthM;
+            float widthM;
         };
         typedef std::vector<Face> Faces;
 
@@ -92,7 +105,7 @@ namespace osgEarth { namespace Buildings
         struct Wall
         {
             Faces  faces;
-            double texHeightAdjustedM;
+            float texHeightAdjustedM;
 
             unsigned getNumPoints() const {
                 return faces.size() * 6;
@@ -108,11 +121,18 @@ namespace osgEarth { namespace Buildings
     protected:
         float _height;
         unsigned _numFloors;
-        osg::ref_ptr<SkinResource> _skin;
+        osg::ref_ptr<SkinResource> _skinResource;
+        osg::ref_ptr<SkinSymbol> _skin;
         Walls _walls;
+        osg::ref_ptr<Roof> _roof;
 
     protected:
         virtual ~Elevation() { }
+
+        /**
+         * Determines the apparent rotation of a building.
+         */
+        float getRotation(const Footprint*) const;
     };
 
     typedef std::vector< osg::ref_ptr<Elevation> > ElevationVector;

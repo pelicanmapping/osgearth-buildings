@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<resources name="osgearth-buildings">
+
+    <!-- Facades -->
+    
+    <skin name="facade.commercial.1" tags="facade commercial">
+	    <url>facade/commercial1.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>25</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+    
+    <!-- Roofs -->
+    
+    <skin name="roof.commercial.1" tags="roof commercial">
+	    <url>roof/commercial1.jpg</url>
+		<tiled>true</tiled>
+		<image_width>10</image_width>
+		<image_height>10</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+
+</resources>

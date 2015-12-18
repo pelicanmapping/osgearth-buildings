@@ -30,16 +30,65 @@ _numFloors( 4.0f )
     //nop
 }
 
+float
+Elevation::getRotation(const Footprint* footprint) const
+{
+    // looks for the longest segment in the footprint and
+    // returns the angle of that segment relative to north.
+    Segment n;
+    double  maxLen2 = 0.0;
+    ConstSegmentIterator i( footprint, true );
+    while( i.hasMore() )
+    {
+        Segment s = i.next();
+        double len2 = (s.second - s.first).length2();
+        if ( len2 > maxLen2 ) 
+        {
+            maxLen2 = len2;
+            n = s;
+        }
+    }
+
+    const osg::Vec3d& p1 = n.first.x() < n.second.x() ? n.first : n.second;
+    const osg::Vec3d& p2 = n.first.x() < n.second.x() ? n.second : n.first;
+
+    return atan2( p2.x()-p1.x(), p2.y()-p1.y() );
+}
+
 bool
 Elevation::build(const Footprint* footprint)
 {
     _walls.clear();
 
     // prep for wall texture coordinate generation.
-    double texWidthM  = _skin.valid() ? _skin->imageWidth().get() : 0.0;
-    double texHeightM = _skin.valid() ? _skin->imageHeight().get() : 1.0;
-
+    float texWidthM  = _skinResource.valid() ? _skinResource->imageWidth().get()  : 0.0f;
+    float texHeightM = _skinResource.valid() ? _skinResource->imageHeight().get() : 1.0f;
+    
     bool hasTexture = true; // TODO
+
+    // calcluate the bounds and the dominant rotation of the shape
+    // based on the longest side.
+    Bounds bounds = footprint->getBounds();
+
+    // roof data:
+    osg::Vec2f roofTexSpan;
+    float sinR, cosR;
+    SkinResource* roofSkin = _roof.valid() ? _roof->getSkinResource() : 0L;
+    if ( roofSkin )
+    {
+        float roofRotation = getRotation( footprint );
+            
+        sinR = sinf(roofRotation);
+        cosR = cosf(roofRotation);
+
+        roofTexSpan.x() = roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : 10.0;
+        if ( roofTexSpan.x() <= 0.0 )
+            roofTexSpan.x() = 10.0;
+
+        roofTexSpan.y() = roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : 10.0;
+        if ( roofTexSpan.y() <= 0.0 )
+            roofTexSpan.y() = 10.0;
+    }
 
     ConstGeometryIterator iter( footprint );
     while( iter.hasMore() )
@@ -54,12 +103,6 @@ Elevation::build(const Footprint* footprint)
         _walls.push_back( Wall() );
         Wall& wall = _walls.back();
 
-        //double maxHeight = targetLen - minLoc.z();
-
-        // Adjust the texture height so it is a multiple of the maximum height
-        //double div = osg::round(maxHeight / texHeightM);
-        //wall.texHeightAdjustedM = div > 0.0 ? maxHeight / div : maxHeight;
-
         // Step 1 - Create the real corners and transform them into our target SRS.
         Corners corners;
         for(Geometry::const_iterator m = part->begin(); m != part->end(); ++m)
@@ -72,32 +115,14 @@ Elevation::build(const Footprint* footprint)
 
             // extrude:
             corner->upper.set( corner->lower.x(), corner->lower.y(), _height );
-            
-            //// figure out the rooftop texture coords before doing any transformation:
-            //if ( roofSkin && srs )
-            //{
-            //    double xr, yr;
 
-            //    if ( srs && srs->isGeographic() && roofProjSRS )
-            //    {
-            //        osg::Vec3d projRoofPt;
-            //        srs->transform( corner->roof, roofProjSRS.get(), projRoofPt );
-            //        xr = (projRoofPt.x() - roofBounds.xMin());
-            //        yr = (projRoofPt.y() - roofBounds.yMin());
-            //    }
-            //    else
-            //    {
-            //        xr = (corner->roof.x() - roofBounds.xMin());
-            //        yr = (corner->roof.y() - roofBounds.yMin());
-            //    }
-
-            //    corner->roofTexU = (cosR*xr - sinR*yr) / roofTexSpanX;
-            //    corner->roofTexV = (sinR*xr + cosR*yr) / roofTexSpanY;
-            //}
-
-            //// transform into target SRS.
-            //transformAndLocalize( corner->base, srs, corner->base, mapSRS, _world2local, makeECEF );
-            //transformAndLocalize( corner->roof, srs, corner->roof, mapSRS, _world2local, makeECEF );
+            // resolve UV coordinates based on dominant rotation:
+            if ( roofSkin )
+            {
+                float xr = corner->upper.x() - bounds.xMin();
+                float yr = corner->upper.y() - bounds.yMin();            
+                corner->roofUV.set((cosR*xr - sinR*yr) / roofTexSpan.x(), (sinR*xr + cosR*yr) / roofTexSpan.y());
+            }
 
             // cache the length for later use.
             corner->height = (corner->upper - corner->lower).length();
@@ -106,8 +131,8 @@ Elevation::build(const Footprint* footprint)
         // Step 2 - Insert intermediate Corners as needed to satisfy texturing
         // requirements (if necessary) and record each corner offset (horizontal distance
         // from the beginning of the part geometry to the corner.)
-        double cornerOffset    = 0.0;
-        double nextTexBoundary = texWidthM;
+        float cornerOffset    = 0.0;
+        float nextTexBoundary = texWidthM;
 
         for(Corners::iterator c = corners.begin(); c != corners.end(); ++c)
         {
@@ -121,15 +146,15 @@ Elevation::build(const Footprint* footprint)
 				next_corner = corners.begin();
 			}
 
-            osg::Vec3d base_vec = next_corner->lower - this_corner->lower;
-            double span = base_vec.length();
+            osg::Vec3f base_vec = next_corner->lower - this_corner->lower;
+            float span = base_vec.length();
 
             this_corner->offsetX = cornerOffset;
 
             if ( hasTexture )
             {
                 base_vec /= span; // normalize
-                osg::Vec3d roof_vec = next_corner->upper - this_corner->upper;
+                osg::Vec3f roof_vec = next_corner->upper - this_corner->upper;
                 roof_vec.normalize();
 
                 while(texWidthM > 0.0 && nextTexBoundary < cornerOffset+span)
@@ -149,7 +174,7 @@ Elevation::build(const Footprint* footprint)
 					}
 
                     new_corner->isFromSource = false;
-                    double advance = nextTexBoundary-cornerOffset;
+                    float advance = nextTexBoundary-cornerOffset;
                     new_corner->lower = this_corner->lower + base_vec*advance;
                     new_corner->upper = this_corner->upper + roof_vec*advance;
                     new_corner->height = (new_corner->upper - new_corner->lower).length();
@@ -165,7 +190,7 @@ Elevation::build(const Footprint* footprint)
         }
 
         // Step 3 - Calculate the angle of each corner.
-        osg::Vec3d prev_vec;
+        osg::Vec3f prev_vec;
         for(Corners::iterator c = corners.begin(); c != corners.end(); ++c)
         {
             Corners::const_iterator this_corner = c;
@@ -182,7 +207,7 @@ Elevation::build(const Footprint* footprint)
                 prev_vec.normalize();
             }
 
-            osg::Vec3d this_vec = next_corner->upper - this_corner->upper;
+            osg::Vec3f this_vec = next_corner->upper - this_corner->upper;
             this_vec.normalize();
             if ( c != corners.begin() )
             {
@@ -208,7 +233,7 @@ Elevation::build(const Footprint* footprint)
             // recalculate the final offset on the last face
             if ( next_corner == corners.begin() )
             {
-                osg::Vec3d vec = next_corner->upper - this_corner->upper;
+                osg::Vec3f vec = next_corner->upper - this_corner->upper;
                 face.right.offsetX = face.left.offsetX + vec.length();
             }
 

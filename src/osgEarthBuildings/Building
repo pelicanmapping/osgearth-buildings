@@ -21,7 +21,6 @@
 
 #include "Common"
 #include "Elevation"
-#include "Roof"
 #include "Zoning"
 #include <vector>
 #include <osgEarthSymbology/Geometry>
@@ -58,12 +57,6 @@ namespace osgEarth { namespace Buildings
          */
         ElevationVector& getElevations() { return _elevations; }
         const ElevationVector& getElevations() const { return _elevations; }
-
-        /**
-         * Roof of the building.
-         */
-        void setRoof(Roof* roof) { _roof = roof; }
-        Roof* getRoof() const { return _roof.get(); }
 
         /**
          * Zoning for this building 
