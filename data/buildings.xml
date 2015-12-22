@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<buildings>
+
+    <building tags="commercial simple">
+        <elevations>
+            <elevation height_percentage="100">
+                <skin tags="commercial"/>
+                <roof type="flat" tags="commercial"/>
+                <elevations>                
+                    <elevation type="parapet" width="1" height="2">
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>
+    </building>
+   
+   <building tags="commercial 2tier" min_floors="15">
+        <skin tags="commercial"/>
+        <elevations>
+            <elevation height_percentage="90">
+                <roof type="flat"/>
+                <elevations>                
+                    <elevation height_percentage="10" inset="3">
+                        <roof type="flat"/>
+                        <elevations>
+                            <elevation type="parapet" height="1.5" width="2" inset="-1">
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>            
+        </elevations>
+   </building>
+
+   <building tags="commercial 3tier multi" min_floors="20">
+        <skin tags="commercial"/>
+        <elevations>
+            <elevation height_percentage="30">
+                <roof type="flat"/>
+                <elevations>
+                    <elevation height_percentage="50" inset="5" xoffset="3" yoffset="0">
+                        <roof type="flat"/>
+                        <elevations>
+                            <elevation type="parapet" width="1" height="2">
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                    <elevation height_percentage="70" inset="5" xoffset="-3" yoffset="-3">
+                        <roof type="flat"/>
+                        <elevations>
+                            <elevation type="parapet" width="1" height="2">
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>           
+        </elevations>
+   </building>
+
+</buildings>
