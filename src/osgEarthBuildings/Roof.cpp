@@ -27,3 +27,10 @@ Roof::Roof()
 {
     //nop
 }
+
+Config
+Roof::getConfig() const
+{
+    Config conf("roof");
+    return conf;
+}

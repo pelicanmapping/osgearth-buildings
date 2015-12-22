@@ -74,13 +74,13 @@ namespace osgEarth { namespace Buildings
          * @param[in ] world2local Reference frame into which to re-localize coordinates (optional)
          * @return     OSG geometry
          */
-        virtual bool addBuilding(osg::Geode*, Building*, const osg::Matrix&) const;
+        virtual bool addBuilding(osg::Geode*, const Building*, const osg::Matrix&) const;
 
-        virtual bool addSimpleFootprint(osg::Geode*, Building*, const osg::Matrix&) const;
+        virtual bool addSimpleFootprint(osg::Geode*, const Building*, const osg::Matrix&) const;
 
-        virtual bool addElevations(osg::Geode*, Building*, const osg::Matrix&) const;
+        virtual bool addElevations(osg::Geode*, const Building*, const ElevationVector&, const osg::Matrix&) const;
 
-        virtual bool addRoof(osg::Geode*, Building*, const osg::Matrix&) const;
+        virtual bool addRoof(osg::Geode*, const Building*, const Elevation*, const osg::Matrix&) const;
 
     protected:
         osg::ref_ptr<Session> _session;

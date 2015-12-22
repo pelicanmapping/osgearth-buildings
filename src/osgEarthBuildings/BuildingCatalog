@@ -1,0 +1,94 @@
+/* -*-c++-*- */
+/* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
+ * Copyright 2008-2016 Pelican Mapping
+ * http://osgearth.org
+ *
+ * osgEarth is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+#ifndef OSGEARTH_BUILDINGS_BUILDING_CATALOG_H
+#define OSGEARTH_BUILDINGS_BUILDING_CATALOG_H
+
+#include "Common"
+#include "Building"
+
+#include <osgEarth/Progress>
+#include <osgEarthFeatures/Feature>
+#include <osgEarthFeatures/Session>
+
+namespace osgEarth { namespace Buildings 
+{
+    using namespace osgEarth::Features;
+
+    class Roof;
+
+    /**
+     * Catalog of building templates that are loaded from an XML file.
+     */
+    class OSGEARTHBUILDINGS_EXPORT BuildingCatalog : public osg::Referenced
+    {
+    public:
+        BuildingCatalog();
+        
+        /**
+         * Loads a catalog from a URI.
+         * @param[in ] uri      Location from which to load the catalog XML.
+         * @param[in ] dbo      IO loading options
+         * @param[in ] progress Progress token for error reporting
+         * @return true upon success, false upon failure.
+         */
+        bool load(const URI& uri, const osgDB::Options* dbo, ProgressCallback* progress);
+
+        /**
+         * Loads a catalog from a Config.
+         * @param[in ] conf     Config object containing serialized buildings data
+         * @param[in ] progress Progress token for error reporting
+         * @return true upon success, false upon failure.
+         */
+        bool load(const Config& conf, ProgressCallback* progress);
+
+        /**
+         * Given a feature, create one or more Building instances.
+         * @param[in ] feature Feature for which to create a building
+         * @param[in ] session Session for processing features
+         * @param[out] output  Vector to push building instances to
+         * @return     true=success, false=failure
+         */
+        bool createBuildings(
+            Feature*        feature,
+            Session*        session,
+            BuildingVector& output) const;
+
+    protected:
+
+        Building* createBuildingTemplate(Feature*   feature,
+                                         Footprint* footprint,
+                                         Session*   session) const;
+        
+        bool parseElevations(const Config&, Elevation*, ElevationVector&, ProgressCallback*);
+
+        Roof* parseRoof(const Config&, ProgressCallback*) const;
+        
+        void cleanPolygon(Footprint* polygon) const;
+
+        bool applyStyle(Feature* feature, Building* building, Session* session) const;
+
+    protected:
+
+        BuildingVector _buildingsTemplates; // replace later
+    };
+
+} }
+
+#endif // OSGEARTH_BUILDINGS_BUILDING_CATALOG_H
+

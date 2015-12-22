@@ -18,13 +18,37 @@
  */
 #include "Building"
 
+#define LC "[Building] "
+
 using namespace osgEarth::Buildings;
+
+Building::Building(const Building& rhs)
+{
+    _zoning = rhs.getZoning();
+
+    for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e)
+        _elevations.push_back( e->get()->clone() );
+}
+
+Building*
+Building::clone() const
+{
+    return new Building(*this);
+}
+
+void
+Building::setHeight(float height)
+{
+    for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
+    {
+        e->get()->setHeight( height );
+    }
+}
 
 bool
 Building::build()
 {
-    if ( !_footprint.valid() )
-        return false;
+    if ( !_footprint.valid() ) return false;
 
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
@@ -32,4 +56,19 @@ Building::build()
     }
 
     return true;
+}
+
+Config
+Building::getConfig() const
+{
+    Config conf("building");
+    //conf.add( "zoning", _zoning );
+    if ( !getElevations().empty() )
+    {
+        Config evec("elevations");
+        for(ElevationVector::const_iterator e = getElevations().begin(); e != getElevations().end(); ++e)
+            evec.add("elevation", e->get()->getConfig());
+        conf.add(evec);
+    }
+    return conf;
 }

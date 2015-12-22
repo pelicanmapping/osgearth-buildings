@@ -38,26 +38,90 @@ namespace osgEarth { namespace Buildings
     class OSGEARTHBUILDINGS_EXPORT Elevation : public osg::Referenced
     {
     public:
+        typedef std::vector<osg::ref_ptr<Elevation> > Vector;
+
         /** Constructor */
         Elevation();
 
+        Elevation(const Elevation& rhs);
+
+        virtual Elevation* clone() const;
+
         /**
-         * Sets the height (in meters) of this elevation.
+         * Sets the parent elevation of this elevation. If an elevation
+         * has a parent, that means that it sits on top of the parent
+         * elevation, and its height is height above the parent.
          */
-        void setHeight(float height) { _height = height; }
-        float getHeight() const      { return _height; }
+        void setParent(Elevation* parent) { _parent = parent; }
+        Elevation* getParent() const      { return _parent.get(); }
+
+        /**
+         * Child elevations. You should call setParent() on a child elevation
+         * before adding it to this list.
+         */
+        Vector& getElevations()             { return _elevations; }
+        const Vector& getElevations() const { return _elevations; }
+
+        /**
+         * Height of this elevation, in meters. If the heightPercentage
+         * property is set, this method will resolve the actual height 
+         * by mutliplying the input value by that percentage.
+         */
+        void setHeight(float value);
+        float getHeight() const { return _height.get(); }
+
+        void setAbsoluteHeight(float value);
+
+        /**
+         * Height of this elevation as a percantage of total height.
+         */
+        optional<float>& heightPercentage()             { return _heightPercentage; }
+        const optional<float>& heightPercentage() const { return _heightPercentage; }
+        void setHeightPercentage(float value)           { _heightPercentage = value; }
+        float getHeightPercentage() const               { return _heightPercentage.get(); }
+
+        /**
+         * The absolute bottom of this elevation (accounting for parent).
+         */
+        float getBottom() const;
+
+        /**
+         * The absolute top of this elevation (accounting for parents).
+         */
+        float getTop() const;
 
         /**
          * Number of floors in this elevation. This value is calculated.
          */
-        void setNumFloors(unsigned num) { _numFloors = num; }
-        unsigned getNumFloors() const { return _numFloors; }
+        float getNumFloors() const { return _numFloors.get(); }
+
+        /**
+         * Inset in meters of this elevation from its parent elevation
+         */
+        void setInset(float inset)   { _inset = inset; }
+        const float getInset() const { return _inset; }
+
+        /**
+         * Offset in meters of this elevation from its parent elevation
+         */
+        void setXOffset(float value) { _xoffset = value; }
+        float getXOffset() const     { return _xoffset; }
+
+        void setYOffset(float value) { _yoffset = value; }
+        float getYOffset() const     { return _yoffset; }
 
         /**
          * The roof.
          */
         void setRoof(Roof* roof) { _roof = roof; }
         Roof* getRoof() const    { return _roof.get(); }
+
+        /**
+         * Elevation color. If a skin is set, it will be modulated
+         * by the color.
+         */
+        void setColor(const Color& color) { _color = color; }
+        const Color& getColor() const     { return _color; }
 
         /**
          * The skin (texture and properties) for the elevation walls.
@@ -75,8 +139,9 @@ namespace osgEarth { namespace Buildings
          * Builds an internal structure for this elevation. If this returns
          * true, you can then call getWalls() to access the structure.
          */
-        bool build(const Footprint* footprint);
+        virtual bool build(const Footprint* footprint);
 
+        virtual Config getConfig() const;
 
     public: // structural data model elements
 
@@ -119,12 +184,20 @@ namespace osgEarth { namespace Buildings
         const Walls& getWalls() const { return _walls; }
 
     protected:
-        float _height;
-        unsigned _numFloors;
+        optional<float>    _height;
+        optional<float>    _heightPercentage;
+        optional<unsigned> _numFloors;
+        float              _inset;
+        float              _xoffset;
+        float              _yoffset;
+        //osg::Vec2f         _offset;
+        Color _color;
         osg::ref_ptr<SkinResource> _skinResource;
         osg::ref_ptr<SkinSymbol> _skin;
         Walls _walls;
         osg::ref_ptr<Roof> _roof;
+        osg::ref_ptr<Elevation> _parent;
+        Vector _elevations;
 
     protected:
         virtual ~Elevation() { }
@@ -135,7 +208,7 @@ namespace osgEarth { namespace Buildings
         float getRotation(const Footprint*) const;
     };
 
-    typedef std::vector< osg::ref_ptr<Elevation> > ElevationVector;
+    typedef Elevation::Vector ElevationVector;
 
 } }
 

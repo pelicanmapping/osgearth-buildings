@@ -21,6 +21,7 @@
 
 #include "Common"
 #include "Building"
+#include "BuildingCatalog"
 #include "BuildingSymbol"
 #include <osgEarth/Progress>
 #include <osgEarthFeatures/Session>
@@ -61,6 +62,12 @@ namespace osgEarth { namespace Buildings
         const GeoPoint& getLocalOrigin() const { return _localOrigin; }
 
         /**
+         * Sets a building catalog to use
+         */
+        void setCatalog(BuildingCatalog* catalog) { _catalog = catalog; }
+        BuildingCatalog* getCatalog() const       { return _catalog.get(); }
+
+        /**
          * Given one or more Features, produce a correspond set of Building objects.
          * @param[in ] input    Cursor iterating over input feautures
          * @param[out] output   Resulting building data models
@@ -86,11 +93,12 @@ namespace osgEarth { namespace Buildings
         virtual void cleanPolygon(Polygon* polygon);
 
         /** Add Elevation objects to a Building */
-        virtual void addElevations(Building* building, const Feature* feature);
+        virtual Building* createSampleBuilding(const Feature* feature);
 
     protected: 
-        osg::ref_ptr<Session> _session;
-        GeoPoint              _localOrigin;
+        osg::ref_ptr<Session>         _session;
+        GeoPoint                      _localOrigin;
+        osg::ref_ptr<BuildingCatalog> _catalog;
     };
 
 } } // namespace

@@ -11,6 +11,7 @@ set(HEADER_PATH ${OSGEARTH_SOURCE_DIR}/include/${LIB_NAME})
 
 set(LIB_PUBLIC_HEADERS
     Building
+    BuildingCatalog
     BuildingCompiler
     BuildingFactory
     BuildingSymbol
@@ -18,18 +19,21 @@ set(LIB_PUBLIC_HEADERS
     Elevation
     Export
     Footprint
+    Parapet
     Roof
     Zoning
 )
 
 set(LIB_COMMON_FILES
     Building.cpp
+    BuildingCatalog.cpp
     BuildingCompiler.cpp
     BuildingFactory.cpp
     BuildingSymbol.cpp
     Elevation.cpp
     FeaturePlugin.cpp
     Footprint.cpp
+    Parapet.cpp
     Roof.cpp
 )
 

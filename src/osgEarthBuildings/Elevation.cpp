@@ -19,15 +19,46 @@
 #include "Elevation"
 #include <osgEarthSymbology/Geometry>
 
+#define LC "[Elevation] "
+
 using namespace osgEarth;
 using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 Elevation::Elevation() :
-_height   ( 15.0f ),
-_numFloors( 4.0f )
+_height            ( 50.0f ),
+_heightPercentage  ( 1.0f ),
+_numFloors         ( _height.get()/3.5f ),
+_inset             ( 0.0f ),
+_xoffset           ( 0.0f ),
+_yoffset           ( 0.0f )
 {
     //nop
+}
+
+Elevation::Elevation(const Elevation& rhs) :
+_height          ( rhs._height ),
+_heightPercentage( rhs._heightPercentage ),
+_numFloors       ( rhs._numFloors ),
+_inset           ( rhs._inset ),
+_xoffset         ( rhs._xoffset ),
+_yoffset         ( rhs._yoffset )
+{
+    if ( rhs.getRoof() )
+        setRoof( new Roof(*rhs.getRoof()) );
+
+    for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e) 
+    {
+        Elevation* copy = e->get()->clone();
+        copy->setParent( this );
+        _elevations.push_back( copy );
+    }
+}
+
+Elevation*
+Elevation::clone() const
+{
+    return new Elevation( *this );
 }
 
 float
@@ -55,10 +86,90 @@ Elevation::getRotation(const Footprint* footprint) const
     return atan2( p2.x()-p1.x(), p2.y()-p1.y() );
 }
 
-bool
-Elevation::build(const Footprint* footprint)
+void
+Elevation::setHeight(float height)
 {
+    // if the height was already set expressly, skip this.
+    if ( !_height.isSet() )
+    {
+        float newHeight = height;
+        if ( _heightPercentage.isSet() )
+        {
+            float hp = osg::clampBetween(_heightPercentage.get(), 0.01f, 1.0f);
+            newHeight = height * hp;
+        }
+        _height.init( newHeight );
+    }
+
+    _numFloors = (unsigned)std::max(1.0f, _height.get()/3.5f);
+
+    for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
+    {
+        e->get()->setHeight( height );
+    }
+}
+
+void
+Elevation::setAbsoluteHeight(float height)
+{
+    _height = height;
+}
+
+float
+Elevation::getBottom() const
+{
+    return _parent.valid() ? _parent->getTop() : 0.0f;
+}
+
+float
+Elevation::getTop() const
+{
+    return getBottom() + getHeight();
+}
+
+bool
+Elevation::build(const Footprint* in_footprint)
+{
+    if ( !in_footprint ) return false;
+
     _walls.clear();
+
+    float rotation = getRotation( in_footprint );
+    float sinR = sinf(rotation);
+    float cosR = cosf(rotation);
+
+    // Buffer the footprint if necessary to apply the inset:
+    const Footprint* footprint = in_footprint;
+    osg::ref_ptr<Geometry> copy;
+    if ( getInset() != 0.0f )
+    {
+        BufferParameters bp( BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE );
+        if ( footprint->buffer( -getInset(), copy, bp ) )
+            footprint = dynamic_cast<Polygon*>(copy.get());
+    }
+
+    // offsets: shift the coordinates relative to the dominant rotation angle:
+    if ( getXOffset() != 0.0f || getYOffset() != 0.0f )
+    {
+        if ( !copy.valid() )
+            copy = footprint->clone();
+
+        float dx = cosR*getXOffset() - sinR*getYOffset();
+        float dy = sinR*getXOffset() + cosR*getYOffset();
+        
+        GeometryIterator gi( copy.get() );
+        while( gi.hasMore() ) {
+            Geometry* part = gi.next();
+            for(Geometry::iterator i = part->begin(); i != part->end(); ++i) {
+                i->x() += dx;
+                i->y() += dy;
+            }
+        }
+        footprint = dynamic_cast<Polygon*>(copy.get());
+    }
+
+    if ( !footprint )
+        return false;
 
     // prep for wall texture coordinate generation.
     float texWidthM  = _skinResource.valid() ? _skinResource->imageWidth().get()  : 0.0f;
@@ -72,15 +183,9 @@ Elevation::build(const Footprint* footprint)
 
     // roof data:
     osg::Vec2f roofTexSpan;
-    float sinR, cosR;
     SkinResource* roofSkin = _roof.valid() ? _roof->getSkinResource() : 0L;
     if ( roofSkin )
     {
-        float roofRotation = getRotation( footprint );
-            
-        sinR = sinf(roofRotation);
-        cosR = cosf(roofRotation);
-
         roofTexSpan.x() = roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : 10.0;
         if ( roofTexSpan.x() <= 0.0 )
             roofTexSpan.x() = 10.0;
@@ -111,10 +216,10 @@ Elevation::build(const Footprint* footprint)
             
             // mark as "from source", as opposed to being inserted by the algorithm.
             corner->isFromSource = true;
-            corner->lower = *m;
+            corner->lower.set( m->x(), m->y(), getBottom() );
 
             // extrude:
-            corner->upper.set( corner->lower.x(), corner->lower.y(), _height );
+            corner->upper.set( corner->lower.x(), corner->lower.y(), getTop() );
 
             // resolve UV coordinates based on dominant rotation:
             if ( roofSkin )
@@ -241,5 +346,37 @@ Elevation::build(const Footprint* footprint)
         }
     }
 
+    if ( getRoof() )
+    {
+        getRoof()->build( footprint );
+    }
+
+    for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
+    {
+        e->get()->build( footprint );
+    }
+
     return true;
+}
+
+Config
+Elevation::getConfig() const
+{
+    Config conf;
+
+    conf.add("inset", getInset());
+    conf.addIfSet("height_percentage", _heightPercentage);
+    conf.add("height", _height);
+    
+    if ( getRoof() )
+        conf.add("roof", getRoof()->getConfig());
+
+    if ( !getElevations().empty() )
+    {
+        Config evec("elevations");
+        for(ElevationVector::const_iterator sub = getElevations().begin(); sub != getElevations().end(); ++sub)
+            evec.add("elevation", sub->get()->getConfig());
+        conf.add(evec);
+    }
+    return conf;
 }

@@ -83,8 +83,7 @@ BuildingCompiler::compile(const BuildingVector& input,
     {
         Building* building = i->get();
         //addSimpleFootprint( geode, building, world2local );
-        addElevations( geode, building, world2local );
-        addRoof( geode, building, world2local );
+        addElevations( geode, building, building->getElevations(), world2local );
     }
 
     return root.release();
@@ -92,7 +91,7 @@ BuildingCompiler::compile(const BuildingVector& input,
 
 bool
 BuildingCompiler::addBuilding(osg::Geode*        geode,
-                              Building*          building,
+                              const Building*    building,
                               const osg::Matrix& world2local) const
 {
     return addSimpleFootprint(geode, building, world2local);
@@ -100,13 +99,11 @@ BuildingCompiler::addBuilding(osg::Geode*        geode,
 
 bool
 BuildingCompiler::addSimpleFootprint(osg::Geode*        geode,
-                                     Building*          building,
+                                     const Building*    building,
                                      const osg::Matrix& world2local) const
 {
     if ( !geode ) return false;
     if ( !building ) return false;
-
-    Polygon* fp = building->getFootprint();
 
     osg::Geometry* geom = new osg::Geometry();
     geom->setUseVertexBufferObjects( true );
@@ -115,7 +112,7 @@ BuildingCompiler::addSimpleFootprint(osg::Geode*        geode,
     osg::Vec3Array* v = new osg::Vec3Array();
     geom->setVertexArray( v );
 
-    GeometryIterator iter(fp);
+    GeometryIterator iter( building->getFootprint() );
     while( iter.hasMore() )
     {
         int ptr = v->size();
@@ -133,9 +130,10 @@ BuildingCompiler::addSimpleFootprint(osg::Geode*        geode,
 }
 
 bool
-BuildingCompiler::addElevations(osg::Geode*        geode,
-                                Building*          building,
-                                const osg::Matrix& world2local) const
+BuildingCompiler::addElevations(osg::Geode*            geode,
+                                const Building*        building,
+                                const ElevationVector& elevations,
+                                const osg::Matrix&     world2local) const
 {
     if ( !geode ) return false;
     if ( !building ) return false;
@@ -144,8 +142,8 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
     osg::Matrix frame = building->getReferenceFrame() * world2local;
 
     // Iterator over each Elevation in this building:
-    for(ElevationVector::iterator e = building->getElevations().begin();
-        e != building->getElevations().end();
+    for(ElevationVector::const_iterator e = elevations.begin();
+        e != elevations.end();
         ++e)
     {
         const Elevation* elevation = e->get();
@@ -177,11 +175,10 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         bool   genNormals  = false; // TODO
 
         //TODO
-        osg::Vec4 lowerWallColor(0.5f, 0.6f, 0.5f, 1.0f);
-        osg::Vec4 upperWallColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-        if ( skin )
-            lowerWallColor = upperWallColor;
+        Color upperWallColor = elevation->getColor();
+        Color lowerWallColor = elevation->getColor();
+        if ( !skin )
+            lowerWallColor = upperWallColor.brightness(0.95f);
 
         osg::ref_ptr<osg::Geometry> geom = new osg::Geometry();
         geom->setUseVertexBufferObjects( true );
@@ -232,7 +229,8 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         }
 
         unsigned vertPtr = 0;
-        float    floorHeight = elevation->getHeight() / (float)elevation->getNumFloors();
+        //TODO
+        float  floorHeight = elevation->getHeight() / (float)elevation->getNumFloors();
 
         OE_DEBUG << LC << "...elevation has " << walls.size() << " walls\n";
 
@@ -361,8 +359,17 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
         // TODO - temporary, doesn't smooth disconnected edges
         osgUtil::SmoothingVisitor::smooth( *geom.get(), 15.0f );
 
-        OE_DEBUG << LC "...adding geometry\n";
         geode->addDrawable( geom.get() );
+
+        if ( elevation->getRoof() )
+        {
+            addRoof( geode, building, elevation, world2local );
+        }
+
+        if ( !elevation->getElevations().empty() )
+        {
+            addElevations( geode, building, elevation->getElevations(), world2local );
+        }
 
     } // elevations loop
 
@@ -370,31 +377,25 @@ BuildingCompiler::addElevations(osg::Geode*        geode,
 }
 
 bool
-BuildingCompiler::addRoof(osg::Geode* geode, Building* building, const osg::Matrix& world2local) const
+BuildingCompiler::addRoof(osg::Geode* geode, const Building* building, const Elevation* elevation, const osg::Matrix& world2local) const
 {
     if ( !geode ) return false;
     if ( !building ) return false;
+    if ( !elevation ) return false;
+    if ( !elevation->getRoof() ) return false;
 
-    // check for at least one elevation
-    if ( building->getElevations().empty() )
-        return false;
+    const Roof* roof = elevation->getRoof();
 
     // precalculate the frame transformation; combining these will
     // prevent any precision loss during the transform.
     osg::Matrix frame = building->getReferenceFrame() * world2local;
 
-    // base the roof on the last elevation
-    Elevation* elevation = building->getElevations().back().get();
-    if ( !elevation )
-        return false;
-
-    if ( elevation->getRoof() )
+    //if ( elevation->getRoof() )
     {
         bool genColors = true;   // TODO
-        osg::Vec4 roofColor(1.0f, 1.0, 1.0f, 1.0f); //TODO
 
         // find a texture:
-        SkinResource* skin = elevation->getRoof()->getSkinResource();
+        SkinResource* skin = roof->getSkinResource();
         osg::ref_ptr<osg::StateSet> stateSet;
         if ( skin )
         {
@@ -456,7 +457,7 @@ BuildingCompiler::addRoof(osg::Geode* geode, Building* building, const osg::Matr
 
                     if ( colors )
                     {
-                        colors->push_back( roofColor );
+                        colors->push_back( roof->getColor() );
                     }
 
                     if ( texCoords )

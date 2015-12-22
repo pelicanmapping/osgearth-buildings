@@ -100,14 +100,24 @@ namespace osgEarth { namespace Buildings
             sheet->addResourceLibrary( reslib );
 
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
-            sym->height() = NumericExpression("max(3.5*[story_ht_],1.0)");
+            //sym->height() = NumericExpression("max(5.0,[story_ht_]*3.5)");
+            sym->height() = NumericExpression("max(5.0, [HEIGHT])");
 
             Session* session = new Session(0L);
             session->setStyles( sheet );
             session->setResourceCache( new ResourceCache(options) );
 
+            // Load the building catalog:
+            osg::ref_ptr<BuildingCatalog> cat = new BuildingCatalog();
+            if ( !cat->load( URI("repo/data/buildings.xml"), options, 0L ) )
+            {
+                OE_WARN << LC << "Failed to load the buildings catalog\n";
+                cat = 0L;
+            }
+
             // Create building data model from features:
             osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
+            factory->setCatalog( cat.get() );
 
             BuildingVector buildings;
             if ( !factory->create(cursor.get(), buildings) )

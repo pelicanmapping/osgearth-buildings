@@ -20,6 +20,8 @@
 #define OSGEARTH_BUILDINGS_ROOF_H
 
 #include "Common"
+#include "Footprint"
+#include <osgEarthSymbology/Color>
 #include <osgEarthSymbology/Skins>
 #include <vector>
 
@@ -50,15 +52,30 @@ namespace osgEarth { namespace Buildings
         const Type& getType() const    { return _type; }
 
         /**
+         * Roof color. If there is a skin, it will be modulated
+         * by this color.
+         */
+        void setColor(const Color& color) { _color = color; }
+        const Color& getColor() const     { return _color; }
+
+        /**
          * Texture and properties for texturing this roof 
          */
         void setSkinResource(SkinResource* skin) { _skinResource = skin; }
         SkinResource* getSkinResource() const    { return _skinResource; }
 
+    public:
+
+        // noop for now.
+        bool build(const Footprint*) { return true; }
+
+        virtual Config getConfig() const;
+
     protected:
         virtual ~Roof() { }
 
         Type _type;
+        Color _color;
         osg::ref_ptr<SkinResource> _skinResource;
     };
 } }

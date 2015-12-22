@@ -39,6 +39,11 @@ namespace osgEarth { namespace Buildings
         /** Construct a new Building */
         Building() { }
 
+        /** Copy constructor */
+        Building(const Building& rhs);
+
+        virtual Building* clone() const;
+
         /**
          * Reference frame for all coordinates used to define the building.
          */
@@ -50,7 +55,14 @@ namespace osgEarth { namespace Buildings
          * relative to the reference frame set for this object.
          */
         void setFootprint(Polygon* footprint) { _footprint = footprint; }
-        Polygon* getFootprint() { return _footprint.get(); }
+        Polygon* getFootprint() const { return _footprint.get(); }        
+        
+        /**
+         * Sets the overall height of the building in meters.
+         * This method will traverse all the elevations and resolve any heights
+         * that are set as percentages into actual height values.
+         */
+        void setHeight(float value);
 
         /**
          * One or more elevations that comprise the facade of the building.
@@ -66,18 +78,20 @@ namespace osgEarth { namespace Buildings
 
         /**
          * Build the internal structure of the building and its components.
+         * You must call setFootprint() before calling this function.
          */
         bool build();
 
+        virtual Config getConfig() const;
 
     protected:
         virtual ~Building() { }
 
-        osg::ref_ptr<Polygon>  _footprint;
-        ElevationVector        _elevations;
-        osg::ref_ptr<Roof>     _roof;
-        Zoning                 _zoning;
-        osg::Matrix            _local2world;
+        osg::ref_ptr<Footprint> _footprint;
+        ElevationVector         _elevations;
+        osg::ref_ptr<Roof>      _roof;
+        Zoning                  _zoning;
+        osg::Matrix             _local2world;
     };
 
     typedef std::vector< osg::ref_ptr<Building> > BuildingVector;

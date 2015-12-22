@@ -18,6 +18,7 @@
  */
 #include "BuildingFactory"
 #include "BuildingSymbol"
+#include "Parapet"
 #include <osgEarthSymbology/Geometry>
 
 using namespace osgEarth;
@@ -53,10 +54,18 @@ BuildingFactory::create(FeatureCursor*    input,
         Feature* feature = input->nextFeature();
         if ( feature )
         {
-            Building* building = createBuilding(feature);
-            if ( building )
+            if ( _catalog.valid() )
             {
-                output.push_back( building );
+                _catalog->createBuildings(feature, _session.get(), output);
+            }
+
+            else
+            {
+                Building* building = createBuilding(feature);
+                if ( building )
+                {
+                    output.push_back( building );
+                }
             }
         }
     }
@@ -107,19 +116,16 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
             if ( footprint && footprint->isValid() )
             {
                 // A footprint is the minumum info required to make a building.
-                building = new Building();
+                building = createSampleBuilding( feature );
 
                 // Install the reference frame of the footprint geometry:
                 building->setReferenceFrame( local2world );
 
                 // Do initial cleaning of the footprint and install is:
                 cleanPolygon( footprint );
-                building->setFootprint( footprint );
-
-                // Add the elevations for the building:
-                addElevations(building, feature);
 
                 // Finally, build the internal structure from the footprint.
+                building->setFootprint( footprint );
                 building->build();
             }
             else
@@ -144,10 +150,10 @@ BuildingFactory::cleanPolygon(Polygon* polygon)
     // TODO: remove colinear points? for skeleton?
 }
 
-void
-BuildingFactory::addElevations(Building* building, const Feature* feature)
+Building*
+BuildingFactory::createSampleBuilding(const Feature* feature)
 {
-    if ( !building ) return;
+    Building* building = new Building();
 
     // figure out the building's height and number of floors.
     // single-elevation building.
@@ -161,26 +167,20 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
     Roof* roof = new Roof();
     roof->setType( Roof::TYPE_FLAT );
     elevation->setRoof( roof );
+    
+    SkinResource* wallSkin = 0L;
+    SkinResource* roofSkin = 0L;
 
     if ( _session.valid() )
     {
-        SkinResource* wallSkin = 0L;
-        SkinResource* roofSkin = 0L;
-
         ResourceLibrary* reslib = _session->styles()->getDefaultResourceLibrary();
         if ( reslib )
         {
             wallSkin = reslib->getSkin( "facade.commercial.1" );
-            if ( wallSkin )
-                elevation->setSkinResource( wallSkin );
-            else
-                OE_WARN << "no wall skin\n";
+            elevation->setSkinResource( wallSkin );
 
             roofSkin = reslib->getSkin( "roof.commercial.1" );
-            if ( roofSkin )
-                roof->setSkinResource( roofSkin );
-            else
-                OE_WARN << "no roof skin\n";
+            roof->setSkinResource( roofSkin );
         }
         else
         {
@@ -196,19 +196,32 @@ BuildingFactory::addElevations(Building* building, const Feature* feature)
                 height = feature->eval( heightExpr, _session.get() );
             }
 
-            // estimate the number of floors based on the height.
-            //numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->metersPerFloor().get()));
+            // calculate the number of floors
             if ( wallSkin )
             {
                 numFloors = (unsigned)std::max(1.0f, osg::round(height / wallSkin->imageHeight().get()));
             }
+            else
+            {
+                numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->floorHeight().get()));
+            }
         }
-
-        
     }
 
     elevation->setHeight( height );
-    elevation->setNumFloors( numFloors );
+    //elevation->setNumFloors( numFloors );
 
-    elevation->build( building->getFootprint() );
+    Parapet* parapet = new Parapet();
+    parapet->setParent( elevation );
+    parapet->setWidth( 2.0f );
+    parapet->setHeight( 2.0f );
+    //parapet->setNumFloors( 1u );
+    parapet->setColor( Color::Gray.brightness(1.3f) );
+    parapet->setRoof( new Roof() );
+    parapet->getRoof()->setSkinResource( roofSkin );
+    parapet->getRoof()->setColor( Color::Gray.brightness(1.2f) );
+
+    elevation->getElevations().push_back( parapet );
+
+    return building;
 }
