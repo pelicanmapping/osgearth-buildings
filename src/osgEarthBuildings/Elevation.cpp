@@ -115,8 +115,6 @@ Elevation::setHeight(float height)
         _height.init( newHeight );
     }
 
-    //_numFloors = (unsigned)std::max(1.0f, _height.get()/3.5f);
-
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
         e->get()->setHeight( height );

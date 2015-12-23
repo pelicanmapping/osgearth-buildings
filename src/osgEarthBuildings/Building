@@ -39,10 +39,16 @@ namespace osgEarth { namespace Buildings
     {
     public:
         /** Construct a new Building */
-        Building() { }
+        Building();
 
         /** Copy constructor */
         Building(const Building& rhs);
+
+        /**
+         * Building's unique identifier.
+         */
+        void setUID(UID uid) { _uid = uid; }
+        UID getUID() const   { return _uid; }
 
         virtual Building* clone() const;
 
@@ -50,14 +56,14 @@ namespace osgEarth { namespace Buildings
          * Reference frame for all coordinates used to define the building.
          */
         void setReferenceFrame(const osg::Matrix& local2world) { _local2world = local2world; }
-        const osg::Matrix& getReferenceFrame() const { return _local2world; }
+        const osg::Matrix& getReferenceFrame() const           { return _local2world; }
 
         /**
          * The polygon footprint of the building. Footprint coordinates expressed
          * relative to the reference frame set for this object.
          */
         void setFootprint(Polygon* footprint) { _footprint = footprint; }
-        Polygon* getFootprint() const { return _footprint.get(); }        
+        Polygon* getFootprint() const         { return _footprint.get(); }        
         
         /**
          * Sets the overall height of the building in meters.
@@ -69,14 +75,26 @@ namespace osgEarth { namespace Buildings
         /**
          * One or more elevations that comprise the facade of the building.
          */
-        ElevationVector& getElevations() { return _elevations; }
+        ElevationVector& getElevations()             { return _elevations; }
         const ElevationVector& getElevations() const { return _elevations; }
 
         /**
          * Zoning for this building 
          */
-        void setZoning(const Zoning& zoning) { _zoning = zoning; }
-        const Zoning& getZoning() const { return _zoning; }
+        void setZoning(const Zoning::Type& zoning) { _zoning = zoning; }
+        const Zoning::Type& getZoning() const     { return _zoning; }
+
+        /**
+         * Minimum height for which to use this building. 
+         */
+        void setMinHeight(float value) { _minHeight = value; }
+        float getMinHeight() const     { return _minHeight; }
+
+        /**
+         * Maximum height for which to use this building.
+         */
+        void setMaxHeight(float value) { _maxHeight = value; }
+        float getMaxHeight() const     { return _maxHeight; }
 
         /**
          * Build the internal structure of the building and its components.
@@ -94,11 +112,14 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~Building() { }
 
+        UID                     _uid;
         osg::ref_ptr<Footprint> _footprint;
         ElevationVector         _elevations;
         osg::ref_ptr<Roof>      _roof;
-        Zoning                  _zoning;
+        Zoning::Type            _zoning;
         osg::Matrix             _local2world;
+        float                   _minHeight;
+        float                   _maxHeight;
     };
 
     typedef std::vector< osg::ref_ptr<Building> > BuildingVector;

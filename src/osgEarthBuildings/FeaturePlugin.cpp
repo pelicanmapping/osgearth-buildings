@@ -102,6 +102,7 @@ namespace osgEarth { namespace Buildings
             sheet->addResourceLibrary( reslib );
 
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
+            //sym->height() = NumericExpression("max(5.0,[maxheight])");
             sym->height() = NumericExpression("max(5.0,[story_ht_]*3.5)");
             //sym->height() = NumericExpression("max(5.0, [HEIGHT])");
 
@@ -141,6 +142,7 @@ namespace osgEarth { namespace Buildings
                 OE_START_TIMER(optimize);
 
 #if 1
+                // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
                 osgUtil::Optimizer o;
                 o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
                 

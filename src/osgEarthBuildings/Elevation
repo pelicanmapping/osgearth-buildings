@@ -135,16 +135,6 @@ namespace osgEarth { namespace Buildings
          */
         void setSkinSymbol(SkinSymbol* sym) { _skinSymbol = sym; }
         SkinSymbol* getSkinSymbol() const    { return _skinSymbol.get(); }
-        
-        /**
-         * The skin symbol of this elevation, which might be inherited
-         * from a parent elevation.
-         */
-        SkinSymbol* getOrInheritSkinSymbol() const {
-            return _skinSymbol.valid() ? _skinSymbol.get() :
-                   _parent             ? _parent->getOrInheritSkinSymbol() :
-                   0L;
-        }
 
         /**
          * Builds an internal structure for this elevation. If this returns

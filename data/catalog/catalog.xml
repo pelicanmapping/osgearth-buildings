@@ -43,6 +43,14 @@
 		<texture_mode>modulate</texture_mode>
     </skin>
     
+    <skin name="facade.commercial.6" tags="facade commercial">
+        <url>facade/3tile-white.jpg</url>
+		<tiled>true</tiled>
+		<image_width>30</image_width>
+		<image_height>12</image_height>
+		<texture_mode>modulate</texture_mode>
+    </skin>
+    
     <!-- Roofs -->
     
     <skin name="roof.commercial.1" tags="roof commercial">

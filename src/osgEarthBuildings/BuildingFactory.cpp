@@ -154,6 +154,7 @@ Building*
 BuildingFactory::createSampleBuilding(const Feature* feature)
 {
     Building* building = new Building();
+    building->setUID( feature->getFID() );
 
     // figure out the building's height and number of floors.
     // single-elevation building.

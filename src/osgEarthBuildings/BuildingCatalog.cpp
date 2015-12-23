@@ -32,6 +32,70 @@ using namespace osgEarth::Buildings;
 
 #define LC "[BuildingCatalog] "
 
+namespace
+{
+    // Resolves SkinSymbols into SkinResources.
+    struct ResolveSkins : public BuildingVisitor
+    {
+        const ResourceLibrary* _lib;
+        const osgDB::Options*  _dbo;
+        Random                 _prng;
+
+        ResolveSkins(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
+            : _lib(lib), _prng(seed), _dbo(dbo) { }
+
+        void apply(Elevation* elevation)
+        {
+            const SkinSymbol* symbol = elevation->getSkinSymbol();
+            if ( symbol )
+            {
+                SkinResourceVector candidates;
+                _lib->getSkins(symbol, candidates, _dbo);
+                
+                if ( !candidates.empty() )
+                {
+                    unsigned index = _prng.next( candidates.size() );
+                    SkinResource* skin = candidates.at(index);
+                    elevation->setSkinResource( skin );
+                    
+                    unsigned numFloors = (unsigned)std::max(1.0f, osg::round(elevation->getHeight() / skin->imageHeight().get()));
+                    elevation->setNumFloors( numFloors );
+                }
+            }
+            else if ( elevation->getParent() )
+            {
+                SkinResource* skin = elevation->getParent()->getSkinResource();
+                if ( skin )
+                {
+                    elevation->setSkinResource( skin );
+                    
+                    unsigned numFloors = (unsigned)std::max(1.0f, osg::round(elevation->getHeight() / skin->imageHeight().get()));
+                    elevation->setNumFloors( numFloors );
+                }
+            }
+            traverse(elevation);
+        }
+
+        void apply(Roof* roof)
+        {
+            const SkinSymbol* symbol = roof->getSkinSymbol();
+            if ( symbol )
+            {
+                SkinResourceVector candidates;
+                _lib->getSkins(symbol, candidates, _dbo);
+                
+                if ( !candidates.empty() )
+                {
+                    unsigned index = _prng.next( candidates.size() );
+                    roof->setSkinResource( candidates.at(index) );
+                }
+            }
+            traverse(roof);
+        }
+    };
+}
+
+
 BuildingCatalog::BuildingCatalog()
 {
     //nop
@@ -76,8 +140,20 @@ BuildingCatalog::createBuildings(Feature*        feature,
             Polygon* footprint = dynamic_cast<Polygon*>(iter2.next());
             if ( footprint && footprint->isValid() )
             {
+                float    height    = 0.0f;
+                unsigned numFloors = 0u;
+
+                // resolve the height:
+                const BuildingSymbol* sym = session->styles()->getDefaultStyle()->get<BuildingSymbol>();
+                if ( sym )
+                {
+                    NumericExpression heightExpr = sym->height().get();
+                    height = feature->eval( heightExpr, session );
+                    numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->floorHeight().get()));
+                }
+
                 // A footprint is the minumum info required to make a building.
-                osg::ref_ptr<Building> building = createBuildingTemplate( feature, footprint, session );
+                osg::ref_ptr<Building> building = createBuildingTemplate(feature, height, session);
 
                 if ( building )
                 {
@@ -91,8 +167,15 @@ BuildingCatalog::createBuildings(Feature*        feature,
                     building->setFootprint( footprint );
 
                     // Apply the symbology:
-                    applyStyle( feature, building.get(), session );
+                    building->setHeight( height );
+                    ResourceLibrary* reslib = session->styles()->getDefaultResourceLibrary();
+                    if ( reslib )
+                    {
+                        ResolveSkins resolveSkins( reslib, building->getUID(), session->getDBOptions() );
+                        building->accept( resolveSkins );
+                    }
                 
+                    // Build the internal structures:
                     if ( building->build() )
                     {
                         output.push_back( building.get() );
@@ -125,114 +208,33 @@ BuildingCatalog::cleanPolygon(Footprint* polygon) const
     // TODO: remove colinear points? for skeleton?
 }
 
-namespace
-{
-    // Resolves SkinSymbols into SkinResources.
-    struct ResolveSkins : public BuildingVisitor
-    {
-        const ResourceLibrary* _lib;
-        const osgDB::Options*  _dbo;
-        Random                 _prng;
-
-        ResolveSkins(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
-            : _lib(lib), _prng(seed), _dbo(dbo) { }
-
-        void apply(Elevation* elevation)
-        {
-            const SkinSymbol* symbol = elevation->getOrInheritSkinSymbol();
-            if ( symbol )
-            {
-                SkinResourceVector candidates;
-                _lib->getSkins(symbol, candidates, _dbo);
-                
-                if ( !candidates.empty() )
-                {
-                    unsigned index = _prng.next( candidates.size() );
-                    SkinResource* skin = candidates.at(index);
-                    elevation->setSkinResource( skin );
-                    
-                    unsigned numFloors = (unsigned)std::max(1.0f, osg::round(elevation->getHeight() / skin->imageHeight().get()));
-                    elevation->setNumFloors( numFloors );
-                }
-            }
-            traverse(elevation);
-        }
-
-        void apply(Roof* roof)
-        {
-            const SkinSymbol* symbol = roof->getSkinSymbol();
-            if ( symbol )
-            {
-                SkinResourceVector candidates;
-                _lib->getSkins(symbol, candidates, _dbo);
-                
-                if ( !candidates.empty() )
-                {
-                    unsigned index = _prng.next( candidates.size() );
-                    roof->setSkinResource( candidates.at(index) );
-                }
-            }
-            traverse(roof);
-        }
-    };
-}
-
-bool
-BuildingCatalog::applyStyle(Feature* feature, Building* building, Session* session) const
-{
-    if ( !feature || !building || !session ) return false;
-
-    float    height    = 50.0f;
-    unsigned numFloors = height/3.5f;
-
-    const BuildingSymbol* sym = session->styles()->getDefaultStyle()->get<BuildingSymbol>();
-    if ( sym )
-    {
-        if ( feature )
-        {
-            NumericExpression heightExpr = sym->height().get();
-            height = feature->eval( heightExpr, session );
-        }
-
-        //// calculate the number of floors
-        //if ( wallSkin )
-        //{
-        //    numFloors = (unsigned)std::max(1.0f, osg::round(height / wallSkin->imageHeight().get()));
-        //}
-        //else
-        {
-            numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->floorHeight().get()));
-        }
-    }
-
-    building->setHeight( height );
-    //building->setNumFloors( numFloors );
-    
-    ResourceLibrary* reslib = session->styles()->getDefaultResourceLibrary();
-    if ( reslib )
-    {
-        ResolveSkins resolveSkins( reslib, feature->getFID(), session->getDBOptions() );
-        building->accept( resolveSkins );
-    }
-
-    return true;
-}
-
 Building*
-BuildingCatalog::createBuildingTemplate(Feature*   feature,
-                                        Footprint* footprint,
-                                        Session*   session) const
+BuildingCatalog::createBuildingTemplate(Feature* feature,
+                                        float    height,
+                                        Session* session) const
 {
     if ( !_buildingsTemplates.empty() )
     {
-        Random prng(feature->getFID());
-        unsigned index = prng.next(_buildingsTemplates.size());
-        return _buildingsTemplates.at(index).get()->clone();
+        std::vector<unsigned> candidates;
+        for(unsigned i=0; i<_buildingsTemplates.size(); ++i)
+        {
+            const Building* bt = _buildingsTemplates.at(i).get();
+            if ( height >= bt->getMinHeight() && height <= bt->getMaxHeight() )
+                candidates.push_back(i);
+        }
+
+        if ( !candidates.empty() )
+        {
+            UID uid = feature->getFID() + 1u;
+            Random prng( uid );
+            unsigned index = prng.next(candidates.size());
+            Building* copy = _buildingsTemplates.at( candidates[index] ).get()->clone();
+            copy->setUID( uid );
+            return copy;
+        }
     }
-    else
-    {
-        return 0L;
-    }
+
+    return 0L;
 }
 
 bool
@@ -275,6 +277,12 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
             skinSymbol = new SkinSymbol();
             skinSymbol->addTags( b->value("skin_tags") );
         }
+
+        if ( b->hasValue("min_height") )
+            building->setMinHeight( b->value("min_height", 0.0f) );
+
+        if ( b->hasValue("max_height") )
+            building->setMaxHeight( b->value("max_height", FLT_MAX) );
 
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )

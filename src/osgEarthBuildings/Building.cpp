@@ -23,10 +23,18 @@
 
 using namespace osgEarth::Buildings;
 
-Building::Building(const Building& rhs)
+Building::Building() :
+_zoning   ( Zoning::ZONING_UNKNOWN ),
+_minHeight( 0.0f ),
+_maxHeight( FLT_MAX )
 {
-    _zoning = rhs.getZoning();
+}
 
+Building::Building(const Building& rhs) :
+_zoning   ( rhs._zoning ),
+_minHeight( rhs._minHeight ),
+_maxHeight( rhs._maxHeight )
+{
     for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e)
         _elevations.push_back( e->get()->clone() );
 }
@@ -69,7 +77,6 @@ Config
 Building::getConfig() const
 {
     Config conf("building");
-    //conf.add( "zoning", _zoning );
     if ( !getElevations().empty() )
     {
         Config evec("elevations");

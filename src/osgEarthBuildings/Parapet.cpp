@@ -53,7 +53,7 @@ Parapet::build(const Footprint* footprint)
     osg::ref_ptr<Geometry> buffered;
 
     // applly a negative buffer to the outer ring:
-    BufferParameters bp(BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_BEVEL);
+    BufferParameters bp(BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE);
     if ( newFootprint->buffer(-getWidth(), buffered, bp) )
     {
         Ring* ring = dynamic_cast<Ring*>( buffered.get() );

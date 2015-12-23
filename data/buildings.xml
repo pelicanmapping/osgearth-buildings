@@ -1,34 +1,42 @@
 <?xml version="1.0"?>
 <buildings>
 
-    <building tags="commercial simple with roof">
+    <building name="Commercial basic" tags="commercial" max_height="20">
+        <elevations>
+            <elevation height_percentage="100" skin_tags="facade commercial">
+                <roof type="flat" skin_tags="roof commercial"/>
+            </elevation>
+        </elevations>
+    </building>
+
+    <building name="Commercial with roof" tags="commercial" min_height="20" max_height="60">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
-                    <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3" color="#c0b7b0">
+                    <elevation type="parapet"  height="1.2" width="0.5" skin_name="roof.commercial.3">
                     </elevation>
                 </elevations>
             </elevation>
         </elevations>
     </building>
    
-   <building tags="commercial 2tier" min_height="50">
+   <building name="Commercial 2-tier building" tags="commercial" min_height="50">
         <skin_tags>commercial facade</skin_tags>
         <elevations>
             <elevation height_percentage="95">
-                <roof type="flat" skin_tags="roof commercial" color="#b0a090"/>
+                <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
-                    <elevation height_percentage="5" inset="3">
+                    <elevation height="5" inset="3">
                         <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>
-                            <elevation type="parapet" height="2" width="2" inset="1" skin_name="roof.commercial.3">
-                                <roof type="flat" skin_tags="roof" color="#b0a090"/>
+                            <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="roof.commercial.3">
+                                <roof type="flat" skin_tags="roof"/>
                             </elevation>
                         </elevations>
                     </elevation>
                 </elevations>
-            </elevation>            
+            </elevation>
         </elevations>
    </building>
 
