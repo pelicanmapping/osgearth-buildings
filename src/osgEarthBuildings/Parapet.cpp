@@ -30,6 +30,7 @@ _width( 1.0f )
     // parapet always has a roof.
     _roof = new Roof();
     _roof->setType( Roof::TYPE_FLAT );
+    _numFloors = 1u;
 }
 
 Parapet::Parapet(const Parapet& rhs) :

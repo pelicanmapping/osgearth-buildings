@@ -59,6 +59,12 @@ namespace osgEarth { namespace Buildings
         const Color& getColor() const     { return _color; }
 
         /**
+         * Symbol defining how to texture the roof
+         */
+        void setSkinSymbol(SkinSymbol* symbol)   { _skinSymbol = symbol; }
+        SkinSymbol* getSkinSymbol() const        { return _skinSymbol.get(); }
+
+        /**
          * Texture and properties for texturing this roof 
          */
         void setSkinResource(SkinResource* skin) { _skinResource = skin; }
@@ -74,8 +80,9 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~Roof() { }
 
-        Type _type;
-        Color _color;
+        Type                       _type;
+        Color                      _color;
+        osg::ref_ptr<SkinSymbol>   _skinSymbol;
         osg::ref_ptr<SkinResource> _skinResource;
     };
 } }

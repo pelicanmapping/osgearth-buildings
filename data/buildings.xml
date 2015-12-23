@@ -1,29 +1,29 @@
 <?xml version="1.0"?>
 <buildings>
 
-    <building tags="commercial simple">
+    <building tags="commercial simple with roof">
         <elevations>
-            <elevation height_percentage="100">
-                <skin tags="commercial"/>
-                <roof type="flat" tags="commercial"/>
+            <elevation height_percentage="100" skin_tags="facade commercial">
+                <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
-                    <elevation type="parapet" width="1" height="2">
+                    <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3" color="#c0b7b0">
                     </elevation>
                 </elevations>
             </elevation>
         </elevations>
     </building>
    
-   <building tags="commercial 2tier" min_floors="15">
-        <skin tags="commercial"/>
+   <building tags="commercial 2tier" min_height="50">
+        <skin_tags>commercial facade</skin_tags>
         <elevations>
-            <elevation height_percentage="90">
-                <roof type="flat"/>
+            <elevation height_percentage="95">
+                <roof type="flat" skin_tags="roof commercial" color="#b0a090"/>
                 <elevations>                
-                    <elevation height_percentage="10" inset="3">
-                        <roof type="flat"/>
+                    <elevation height_percentage="5" inset="3">
+                        <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>
-                            <elevation type="parapet" height="1.5" width="2" inset="-1">
+                            <elevation type="parapet" height="2" width="2" inset="1" skin_name="roof.commercial.3">
+                                <roof type="flat" skin_tags="roof" color="#b0a090"/>
                             </elevation>
                         </elevations>
                     </elevation>
@@ -32,23 +32,24 @@
         </elevations>
    </building>
 
+   <!--
    <building tags="commercial 3tier multi" min_floors="20">
-        <skin tags="commercial"/>
+        <skin_tags>commercial facade</skin_tags>
         <elevations>
             <elevation height_percentage="30">
-                <roof type="flat"/>
+                <roof type="flat" skin_tags="commercial roof"/>
                 <elevations>
                     <elevation height_percentage="50" inset="5" xoffset="3" yoffset="0">
-                        <roof type="flat"/>
+                        <roof type="flat" skin_tags="commercial roof"/>
                         <elevations>
-                            <elevation type="parapet" width="1" height="2">
+                            <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3">
                             </elevation>
                         </elevations>
                     </elevation>
                     <elevation height_percentage="70" inset="5" xoffset="-3" yoffset="-3">
-                        <roof type="flat"/>
+                        <roof type="flat" skin_tags="commercial roof"/>
                         <elevations>
-                            <elevation type="parapet" width="1" height="2">
+                            <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3">
                             </elevation>
                         </elevations>
                     </elevation>
@@ -56,5 +57,6 @@
             </elevation>           
         </elevations>
    </building>
+   -->
 
 </buildings>

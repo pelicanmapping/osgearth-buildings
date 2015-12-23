@@ -209,13 +209,14 @@ BuildingFactory::createSampleBuilding(const Feature* feature)
     }
 
     elevation->setHeight( height );
-    //elevation->setNumFloors( numFloors );
+    elevation->setNumFloors( numFloors );
 
     Parapet* parapet = new Parapet();
     parapet->setParent( elevation );
     parapet->setWidth( 2.0f );
     parapet->setHeight( 2.0f );
-    //parapet->setNumFloors( 1u );
+    parapet->setNumFloors( 1u );
+
     parapet->setColor( Color::Gray.brightness(1.3f) );
     parapet->setRoof( new Roof() );
     parapet->getRoof()->setSkinResource( roofSkin );

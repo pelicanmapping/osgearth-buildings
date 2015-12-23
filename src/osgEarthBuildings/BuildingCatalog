@@ -55,7 +55,7 @@ namespace osgEarth { namespace Buildings
          * @param[in ] progress Progress token for error reporting
          * @return true upon success, false upon failure.
          */
-        bool load(const Config& conf, ProgressCallback* progress);
+        bool parseBuildings(const Config& conf, ProgressCallback* progress);
 
         /**
          * Given a feature, create one or more Building instances.
@@ -75,9 +75,11 @@ namespace osgEarth { namespace Buildings
                                          Footprint* footprint,
                                          Session*   session) const;
         
-        bool parseElevations(const Config&, Elevation*, ElevationVector&, ProgressCallback*);
+        bool parseElevations(const Config&, Elevation*, ElevationVector&, SkinSymbol*, ProgressCallback*);
 
-        Roof* parseRoof(const Config&, ProgressCallback*) const;
+        Roof* parseRoof(const Config*, ProgressCallback*) const;
+        
+        SkinSymbol* parseSkinSymbol(const Config* conf) const;
         
         void cleanPolygon(Footprint* polygon) const;
 

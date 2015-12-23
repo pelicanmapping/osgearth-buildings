@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "Building"
+#include "BuildingVisitor"
 
 #define LC "[Building] "
 
@@ -56,6 +57,12 @@ Building::build()
     }
 
     return true;
+}
+
+void
+Building::accept(BuildingVisitor& bv)
+{
+    bv.apply( this );
 }
 
 Config

@@ -20,6 +20,7 @@
 #include "Parapet"
 #include "Roof"
 #include "BuildingSymbol"
+#include "BuildingVisitor"
 
 #include <osgEarth/XmlUtils>
 #include <osgEarth/Containers>
@@ -79,20 +80,18 @@ BuildingCatalog::createBuildings(Feature*        feature,
                 osg::ref_ptr<Building> building = createBuildingTemplate( feature, footprint, session );
 
                 if ( building )
-                {                   
-                    //OE_INFO << "USING:\n" << building->getConfig().toJSON(true) << "\n\n\n";
-
+                {
                     // Install the reference frame of the footprint geometry:
                     building->setReferenceFrame( local2world );
 
                     // Do initial cleaning of the footprint and install is:
                     cleanPolygon( footprint );
 
-                    // Apply the symbology:
-                    applyStyle( feature, building.get(), session );
-
                     // Finally, build the internal structure from the footprint.
                     building->setFootprint( footprint );
+
+                    // Apply the symbology:
+                    applyStyle( feature, building.get(), session );
                 
                     if ( building->build() )
                     {
@@ -126,12 +125,64 @@ BuildingCatalog::cleanPolygon(Footprint* polygon) const
     // TODO: remove colinear points? for skeleton?
 }
 
+namespace
+{
+    // Resolves SkinSymbols into SkinResources.
+    struct ResolveSkins : public BuildingVisitor
+    {
+        const ResourceLibrary* _lib;
+        const osgDB::Options*  _dbo;
+        Random                 _prng;
+
+        ResolveSkins(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
+            : _lib(lib), _prng(seed), _dbo(dbo) { }
+
+        void apply(Elevation* elevation)
+        {
+            const SkinSymbol* symbol = elevation->getOrInheritSkinSymbol();
+            if ( symbol )
+            {
+                SkinResourceVector candidates;
+                _lib->getSkins(symbol, candidates, _dbo);
+                
+                if ( !candidates.empty() )
+                {
+                    unsigned index = _prng.next( candidates.size() );
+                    SkinResource* skin = candidates.at(index);
+                    elevation->setSkinResource( skin );
+                    
+                    unsigned numFloors = (unsigned)std::max(1.0f, osg::round(elevation->getHeight() / skin->imageHeight().get()));
+                    elevation->setNumFloors( numFloors );
+                }
+            }
+            traverse(elevation);
+        }
+
+        void apply(Roof* roof)
+        {
+            const SkinSymbol* symbol = roof->getSkinSymbol();
+            if ( symbol )
+            {
+                SkinResourceVector candidates;
+                _lib->getSkins(symbol, candidates, _dbo);
+                
+                if ( !candidates.empty() )
+                {
+                    unsigned index = _prng.next( candidates.size() );
+                    roof->setSkinResource( candidates.at(index) );
+                }
+            }
+            traverse(roof);
+        }
+    };
+}
+
 bool
 BuildingCatalog::applyStyle(Feature* feature, Building* building, Session* session) const
 {
     if ( !feature || !building || !session ) return false;
 
-    float height = 50.0f;
+    float    height    = 50.0f;
     unsigned numFloors = height/3.5f;
 
     const BuildingSymbol* sym = session->styles()->getDefaultStyle()->get<BuildingSymbol>();
@@ -156,6 +207,14 @@ BuildingCatalog::applyStyle(Feature* feature, Building* building, Session* sessi
 
     building->setHeight( height );
     //building->setNumFloors( numFloors );
+    
+    ResourceLibrary* reslib = session->styles()->getDefaultResourceLibrary();
+    if ( reslib )
+    {
+        ResolveSkins resolveSkins( reslib, feature->getFID(), session->getDBOptions() );
+        building->accept( resolveSkins );
+    }
+
     return true;
 }
 
@@ -190,13 +249,13 @@ BuildingCatalog::load(const URI& uri, const osgDB::Options* dbo, ProgressCallbac
     const Config* root = conf.find("buildings", true);
 
     if ( root )
-        return load( *root, progress );
+        return parseBuildings( *root, progress );
     else
         return false;
 }
 
 bool
-BuildingCatalog::load(const Config& conf, ProgressCallback* progress)
+BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
 {
     for(ConfigSet::const_iterator b = conf.children().begin(); b != conf.children().end(); ++b)
     {
@@ -205,14 +264,22 @@ BuildingCatalog::load(const Config& conf, ProgressCallback* progress)
 
         Building* building = new Building();
 
-        //building->setTags();
-
-        //building->setDefaultSkinTags();
+        SkinSymbol* skinSymbol = 0L;
+        if ( b->hasValue("skin") )
+        {
+            skinSymbol = new SkinSymbol();
+            skinSymbol->name()->setLiteral( b->value("skin") );
+        }
+        else if ( b->hasValue("skin_tags") )
+        {
+            skinSymbol = new SkinSymbol();
+            skinSymbol->addTags( b->value("skin_tags") );
+        }
 
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )
         {
-            parseElevations( *elevations, 0L, building->getElevations(), progress );
+            parseElevations( *elevations, 0L, building->getElevations(), skinSymbol, progress );
         }
 
         _buildingsTemplates.push_back( building );
@@ -223,15 +290,18 @@ BuildingCatalog::load(const Config& conf, ProgressCallback* progress)
     return true;
 }
 
-
 bool
-BuildingCatalog::parseElevations(const Config& conf, Elevation* parent, ElevationVector& output, ProgressCallback* progress)
+BuildingCatalog::parseElevations(const Config&     conf, 
+                                 Elevation*        parent, 
+                                 ElevationVector&  output,
+                                 SkinSymbol*       parentSkinSymbol,
+                                 ProgressCallback* progress)
 {            
     for(ConfigSet::const_iterator e = conf.children().begin();
         e != conf.children().end();
         ++e)
     {
-        Elevation* elevation = 0L;
+        Elevation* elevation = 0L;        
 
         if ( e->value("type") == "parapet" )
         {
@@ -246,7 +316,23 @@ BuildingCatalog::parseElevations(const Config& conf, Elevation* parent, Elevatio
 
         if ( parent )
             elevation->setParent( parent );
+        
+        // resolve the skin symbol for this Elevation.
+        SkinSymbol* skinSymbol = parseSkinSymbol( &(*e) );
+        if ( skinSymbol )
+        {
+            // set and use as new parent
+            elevation->setSkinSymbol( skinSymbol );
+        }
+        else
+        {
+            // use this parent as new parent for sub-elevations
+            skinSymbol = parentSkinSymbol;
+            if ( parent == 0L )
+                elevation->setSkinSymbol( parentSkinSymbol );
+        }
 
+        // resolve the height properties:
         optional<float> hp;
         if ( e->getIfSet( "height_percentage", hp) )
             elevation->setHeightPercentage( hp.get()*0.01f );
@@ -254,17 +340,17 @@ BuildingCatalog::parseElevations(const Config& conf, Elevation* parent, Elevatio
         if ( e->hasValue( "height" ) )
             elevation->setAbsoluteHeight( e->value("height", 15.0f) );
 
-        if ( e->hasChild("inset") )
-        {
-            elevation->setInset( e->value("inset", 0.0f) );
-        }
-
+        elevation->setInset( e->value("inset", 0.0f) );
         elevation->setXOffset( e->value("xoffset", 0.0f) );
         elevation->setYOffset( e->value("yoffset", 0.0f) );
 
+        // color:
+        if ( e->hasValue("color") )
+            elevation->setColor( Color(e->value("color")) );
+
         if ( e->hasChild("roof") )
         {
-            Roof* roof = parseRoof( e->child("roof"), progress );
+            Roof* roof = parseRoof( e->child_ptr("roof"), progress );
             if ( roof )
                 elevation->setRoof( roof );
         }
@@ -274,7 +360,7 @@ BuildingCatalog::parseElevations(const Config& conf, Elevation* parent, Elevatio
         const Config* children = e->child_ptr("elevations");
         if ( children )
         {
-            parseElevations( *children, elevation, elevation->getElevations(), progress );
+            parseElevations( *children, elevation, elevation->getElevations(), skinSymbol, progress );
         }
     }
 
@@ -282,9 +368,39 @@ BuildingCatalog::parseElevations(const Config& conf, Elevation* parent, Elevatio
 }
 
 Roof*
-BuildingCatalog::parseRoof(const Config& conf, ProgressCallback* progress) const
+BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
 {
     Roof* roof = new Roof();
+
     roof->setType( Roof::TYPE_FLAT );
+
+    SkinSymbol* skinSymbol = parseSkinSymbol( r );
+    if ( skinSymbol )
+    {
+        roof->setSkinSymbol( skinSymbol );
+    }
+
+    if ( r->hasValue("color") )
+        roof->setColor( Color(r->value("color")) );
+
     return roof;
+}
+
+SkinSymbol*
+BuildingCatalog::parseSkinSymbol(const Config* c) const
+{
+    SkinSymbol* skinSymbol = 0L;
+
+    if ( c->hasValue("skin_name") )
+    {
+        skinSymbol = new SkinSymbol();
+        skinSymbol->name() = c->value("skin_name");
+    }
+    else if ( c->hasValue("skin_tags") )
+    {
+        skinSymbol = new SkinSymbol();
+        skinSymbol->addTags( c->value("skin_tags") );
+    }
+
+    return skinSymbol;
 }

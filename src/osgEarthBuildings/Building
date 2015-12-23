@@ -29,6 +29,8 @@ namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Symbology;
 
+    class BuildingVisitor;
+
     /**
      * Building represents one complete structure, comprised of 
      * at least one elevation and a roof.
@@ -82,6 +84,11 @@ namespace osgEarth { namespace Buildings
          */
         bool build();
 
+        /**
+         * Visit this building.
+         */
+        void accept(BuildingVisitor& bv);
+
         virtual Config getConfig() const;
 
     protected:
@@ -95,7 +102,6 @@ namespace osgEarth { namespace Buildings
     };
 
     typedef std::vector< osg::ref_ptr<Building> > BuildingVector;
-
 } }
 
 #endif // OSGEARTH_BUILDINGS_BUILDING_H

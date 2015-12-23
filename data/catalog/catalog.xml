@@ -11,6 +11,38 @@
 		<texture_mode>modulate</texture_mode>
 	</skin>
     
+    <skin name="facade.commercial.2" tags="facade commercial">
+        <url>facade/1stTileCommercial1.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>5</image_height>
+		<texture_mode>modulate</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.3" tags="facade commercial">
+        <url>facade/3stTileCommercial.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>14</image_height>
+		<texture_mode>modulate</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.4" tags="facade commercial">
+        <url>facade/USUAE-2stTile_rep.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>8</image_height>
+		<texture_mode>modulate</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.5" tags="facade commercial">
+        <url>facade/USUAE-3stTile_rep.jpg</url>
+		<tiled>true</tiled>
+		<image_width>30</image_width>
+		<image_height>12</image_height>
+		<texture_mode>modulate</texture_mode>
+    </skin>
+    
     <!-- Roofs -->
     
     <skin name="roof.commercial.1" tags="roof commercial">
@@ -18,6 +50,22 @@
 		<tiled>true</tiled>
 		<image_width>10</image_width>
 		<image_height>10</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+    
+    <skin name="roof.commercial.2" tags="roof commercial">
+	    <url>roof/commercial2.jpg</url>
+		<tiled>true</tiled>
+		<image_width>10</image_width>
+		<image_height>10</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+    
+    <skin name="roof.commercial.3" tags="roof commercial">
+	    <url>roof/commercial3.jpg</url>
+		<tiled>true</tiled>
+		<image_width>2</image_width>
+		<image_height>2</image_height>
 		<texture_mode>modulate</texture_mode>
 	</skin>
 

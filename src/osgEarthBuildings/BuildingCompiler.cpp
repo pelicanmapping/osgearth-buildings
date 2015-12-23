@@ -148,6 +148,14 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
     {
         const Elevation* elevation = e->get();
         
+        // make sure there's something to build:
+        const Elevation::Walls& walls = elevation->getWalls();
+        if ( walls.size() == 0 )
+        {
+            OE_DEBUG << LC << "Elevation has no walls; skipping.\n";
+            continue;
+        }
+        
         SkinResource* skin = elevation->getSkinResource();
         bool useTexture = skin != 0L;
         float texWidth = 0.0f;
@@ -171,8 +179,8 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
             texLayer = skin->imageLayer().get();
         }
 
-        bool   genColors   = true;  // TODO (!wallSkin || wallSkin->texEnvMode() != osg::TexEnv::DECAL) && !_makeStencilVolume;
-        bool   genNormals  = false; // TODO
+        bool genColors  = false;
+        bool genNormals = false;
 
         //TODO
         Color upperWallColor = elevation->getColor();
@@ -188,8 +196,6 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
         {
             geom->setStateSet( stateSet.get() );
         }
-        
-        const Elevation::Walls& walls = elevation->getWalls();
 
         // Count the total number of verts.
         unsigned totalNumVerts = 0;
@@ -202,13 +208,13 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
         OE_DEBUG << LC << "Extrusion: total verts in elevation = " << totalNumVerts << "\n";
 
         // preallocate all attribute arrays.
-        osg::Vec3Array* verts = new osg::Vec3Array( totalNumVerts );
+        osg::Vec3Array* verts = new osg::Vec3Array();
         geom->setVertexArray( verts );
 
         osg::Vec4Array* colors = 0L;
         if ( genColors )
         {
-            colors = new osg::Vec4Array( totalNumVerts );
+            colors = new osg::Vec4Array();
             geom->setColorArray( colors );
             geom->setColorBinding( geom->BIND_PER_VERTEX );
         }
@@ -216,14 +222,14 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
         osg::Vec3Array* texCoords = 0L;
         if ( skin )
         {
-            texCoords = new osg::Vec3Array( totalNumVerts );
+            texCoords = new osg::Vec3Array();
             geom->setTexCoordArray( 0, texCoords );
         }
 
         osg::Vec3Array* normals = 0L;
         if ( genNormals )
         {
-            normals = new osg::Vec3Array( totalNumVerts );
+            normals = new osg::Vec3Array();
             geom->setNormalArray( normals );
             geom->setNormalBinding( geom->BIND_PER_VERTEX );
         }
@@ -239,7 +245,7 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
         for(Elevation::Walls::const_iterator wall = walls.begin(); wall != walls.end(); ++wall)
         {
             // 6 verts per face total (3 triangles) per floor
-            unsigned numWallVerts = 6 * wall->getNumPoints() * elevation->getNumFloors();
+            //unsigned numWallVerts = 6 * wall->getNumPoints() * elevation->getNumFloors();
 
             //osg::Vec4Array* anchors = 0L;    
             //// If GPU clamping is in effect, create clamping attributes.
@@ -257,7 +263,7 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
                                          (osg::DrawElements*) new osg::DrawElementsUByte ( GL_TRIANGLES );
 
             // pre-allocate for speed
-            de->reserveElements( numWallVerts );
+            //de->reserveElements( numWallVerts );
             geom->addPrimitiveSet( de );
 
             OE_DEBUG << LC << "..elevation has " << elevation->getNumFloors() << " floors\n";
@@ -269,7 +275,7 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
                 float lowerZ = (float)flr * floorHeight;
     
                 OE_DEBUG << LC << "...wall has " << wall->faces.size() << " faces\n";
-                for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 6)
+                for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 4) //+= 6)
                 {
                     osg::Vec3d Lvec = f->left.upper - f->left.lower; Lvec.normalize();
                     osg::Vec3d Rvec = f->right.upper - f->right.lower; Rvec.normalize();
@@ -281,13 +287,11 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
                     osg::Vec3d LR = (f->right.lower + Rvec*lowerZ) * frame;
                     osg::Vec3d UR = (f->right.lower + Rvec*upperZ) * frame;
 
-                    // set the 6 wall verts.
-                    (*verts)[vertPtr+0] = UL;
-                    (*verts)[vertPtr+1] = LL;
-                    (*verts)[vertPtr+2] = LR;
-                    (*verts)[vertPtr+3] = LR;
-                    (*verts)[vertPtr+4] = UR;
-                    (*verts)[vertPtr+5] = UL;
+                    // set the 6 wall verts. // TODO: optimize down to four.
+                    verts->push_back( UL );
+                    verts->push_back( LL );
+                    verts->push_back( LR );
+                    verts->push_back( UR );
            
     #if 0
                     if ( anchors )
@@ -305,14 +309,12 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
     #endif
 
                     // Assign wall polygon colors.
-                    if ( genColors )
+                    if ( colors )
                     {
-                        (*colors)[vertPtr+0] = upperWallColor;
-                        (*colors)[vertPtr+1] = lowerWallColor;
-                        (*colors)[vertPtr+2] = lowerWallColor;
-                        (*colors)[vertPtr+3] = lowerWallColor;
-                        (*colors)[vertPtr+4] = upperWallColor;
-                        (*colors)[vertPtr+5] = upperWallColor;
+                        colors->push_back( upperWallColor );
+                        colors->push_back( lowerWallColor );
+                        colors->push_back( lowerWallColor );
+                        colors->push_back( upperWallColor );
                     }
 
                     if ( texCoords )
@@ -337,18 +339,19 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
                         texLL = texBias + osg::componentMultiply(texLL, texScale);
                         texLR = texBias + osg::componentMultiply(texLR, texScale);
                         
-                        (*texCoords)[vertPtr+0].set( texUL.x(), texUL.y(), texLayer );
-                        (*texCoords)[vertPtr+1].set( texLL.x(), texLL.y(), texLayer );
-                        (*texCoords)[vertPtr+2].set( texLR.x(), texLR.y(), texLayer );
-                        (*texCoords)[vertPtr+3].set( texLR.x(), texLR.y(), texLayer );
-                        (*texCoords)[vertPtr+4].set( texUR.x(), texUR.y(), texLayer );
-                        (*texCoords)[vertPtr+5].set( texUL.x(), texUL.y(), texLayer );
+                        texCoords->push_back( osg::Vec3f(texUL.x(), texUL.y(), texLayer) );
+                        texCoords->push_back( osg::Vec3f(texLL.x(), texLL.y(), texLayer) );
+                        texCoords->push_back( osg::Vec3f(texLR.x(), texLR.y(), texLayer) );
+                        texCoords->push_back( osg::Vec3f(texUR.x(), texUR.y(), texLayer) );
                     }
 
-                    for(int i=0; i<6; ++i)
-                    {
-                        de->addElement( vertPtr+i );
-                    }
+                    // build the triangles.
+                    de->addElement( vertPtr+0 );
+                    de->addElement( vertPtr+1 );
+                    de->addElement( vertPtr+2 );
+                    de->addElement( vertPtr+0 );
+                    de->addElement( vertPtr+2 );
+                    de->addElement( vertPtr+3 );
 
                 } // faces loop
 
@@ -390,146 +393,143 @@ BuildingCompiler::addRoof(osg::Geode* geode, const Building* building, const Ele
     // prevent any precision loss during the transform.
     osg::Matrix frame = building->getReferenceFrame() * world2local;
 
-    //if ( elevation->getRoof() )
+    bool genColors = false;   // TODO
+
+    // find a texture:
+    SkinResource* skin = roof->getSkinResource();
+    osg::ref_ptr<osg::StateSet> stateSet;
+    if ( skin )
     {
-        bool genColors = true;   // TODO
-
-        // find a texture:
-        SkinResource* skin = roof->getSkinResource();
-        osg::ref_ptr<osg::StateSet> stateSet;
-        if ( skin )
+        if ( _session->getResourceCache() )
         {
-            if ( _session->getResourceCache() )
-            {
-                _session->getResourceCache()->getOrCreateStateSet(skin, stateSet);
-            }
+            _session->getResourceCache()->getOrCreateStateSet(skin, stateSet);
         }
-
-        // Build a flat roof.
-        osg::ref_ptr<osg::Geometry> geom = new osg::Geometry();
-        geom->setUseVertexBufferObjects( true );
-        geom->setUseDisplayList( false );
-
-        osg::Vec3Array* verts = new osg::Vec3Array();
-        geom->setVertexArray( verts );
-
-        osg::Vec4Array* colors = 0L;
-        if ( genColors )
-        {
-            colors = new osg::Vec4Array();
-            geom->setColorArray( colors );
-            geom->setColorBinding( geom->BIND_PER_VERTEX );
-        }
-
-        osg::Vec3Array* texCoords = 0L;
-        if ( stateSet.valid() )
-        {
-            texCoords = new osg::Vec3Array();
-            geom->setTexCoordArray( 0, texCoords );
-            geom->setStateSet( stateSet.get() );
-        }
-
-        //osg::Vec4Array* anchors = 0L;
-        //if ( _gpuClamping )
-        //{
-        //    // fake out the OSG tessellator. It does not preserve attrib arrays in the Tessellator.
-        //    // so we will put them in one of the texture arrays and copy them to an attrib array 
-        //    // after tessellation. #osghack
-        //    anchors = new osg::Vec4Array();
-        //    roof->setTexCoordArray(1, anchors);
-        //}
-
-        // Create a series of line loops that the tessellator can reorganize into polygons.
-        unsigned vertptr = 0;
-        for(Elevation::Walls::const_iterator wall = elevation->getWalls().begin();
-            wall != elevation->getWalls().end();
-            ++wall)
-        {
-            unsigned elevptr = vertptr;
-            for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f)
-            {
-                // Only use source verts; we skip interim verts inserted by the 
-                // structure building since they are co-linear anyway and thus we don't
-                // need them for the roof line.
-                if ( f->left.isFromSource )
-                {
-                    verts->push_back( f->left.upper );
-
-                    if ( colors )
-                    {
-                        colors->push_back( roof->getColor() );
-                    }
-
-                    if ( texCoords )
-                    {
-                        texCoords->push_back( osg::Vec3f(f->left.roofUV.x(), f->left.roofUV.y(), (float)0.0f) );
-                    }
-
-    #if 0
-                    if ( anchors )
-                    {
-                        float 
-                            x = structure.baseCentroid.x(),
-                            y = structure.baseCentroid.y(), 
-                            vo = structure.verticalOffset;
-
-                        if ( flatten )
-                        {
-                            anchors->push_back( osg::Vec4f(x, y, vo, Clamping::ClampToAnchor) );
-                        }
-                        else
-                        {
-                            anchors->push_back( osg::Vec4f(x, y, vo + f->left.height, Clamping::ClampToGround) );
-                        }
-                    }
-    #endif
-
-                    ++vertptr;
-                }
-            }
-            geom->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, elevptr, vertptr-elevptr) );
-        } 
-
-        osg::Vec3Array* normal = new osg::Vec3Array(verts->size());
-        geom->setNormalArray( normal );
-        geom->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
-        normal->assign( verts->size(), osg::Vec3(0,0,1) );
-    
-        // Tessellate the roof lines into polygons.
-        osgEarth::Tessellator oeTess;
-        if (!oeTess.tessellateGeometry(*geom))
-        {
-            //fallback to osg tessellator
-            OE_DEBUG << LC << "Falling back on OSG tessellator (" << geom->getName() << ")" << std::endl;
-
-            osgUtil::Tessellator tess;
-            tess.setTessellationType( osgUtil::Tessellator::TESS_TYPE_GEOMETRY );
-            tess.setWindingType( osgUtil::Tessellator::TESS_WINDING_ODD );
-            tess.retessellatePolygons( *geom );
-            MeshConsolidator::convertToTriangles( *geom );
-        }
-
-    #if 0
-        // Move the anchors to the correct place. :)
-        if ( _gpuClamping )
-        {
-            osg::Vec4Array* a = static_cast<osg::Vec4Array*>(roof->getTexCoordArray(1));
-            if ( a )
-            {
-                roof->setVertexAttribArray    ( Clamping::AnchorAttrLocation, a );
-                roof->setVertexAttribBinding  ( Clamping::AnchorAttrLocation, osg::Geometry::BIND_PER_VERTEX );
-                roof->setVertexAttribNormalize( Clamping::AnchorAttrLocation, false );
-                roof->setTexCoordArray(1, 0L);
-            }
-        }
-    #endif
-
-        // Transform into the final frame:
-        for(osg::Vec3Array::iterator v = verts->begin(); v != verts->end(); ++v)
-            (*v) = (*v) * frame;
-
-        geode->addDrawable( geom.get() );
     }
+
+    // Build a flat roof.
+    osg::ref_ptr<osg::Geometry> geom = new osg::Geometry();
+    geom->setUseVertexBufferObjects( true );
+    geom->setUseDisplayList( false );
+
+    osg::Vec3Array* verts = new osg::Vec3Array();
+    geom->setVertexArray( verts );
+
+    osg::Vec4Array* colors = 0L;
+    if ( genColors )
+    {
+        colors = new osg::Vec4Array();
+        geom->setColorArray( colors );
+        geom->setColorBinding( geom->BIND_PER_VERTEX );
+    }
+
+    osg::Vec3Array* texCoords = 0L;
+    if ( stateSet.valid() )
+    {
+        texCoords = new osg::Vec3Array();
+        geom->setTexCoordArray( 0, texCoords );
+        geom->setStateSet( stateSet.get() );
+    }
+
+    //osg::Vec4Array* anchors = 0L;
+    //if ( _gpuClamping )
+    //{
+    //    // fake out the OSG tessellator. It does not preserve attrib arrays in the Tessellator.
+    //    // so we will put them in one of the texture arrays and copy them to an attrib array 
+    //    // after tessellation. #osghack
+    //    anchors = new osg::Vec4Array();
+    //    roof->setTexCoordArray(1, anchors);
+    //}
+
+    // Create a series of line loops that the tessellator can reorganize into polygons.
+    unsigned vertptr = 0;
+    for(Elevation::Walls::const_iterator wall = elevation->getWalls().begin();
+        wall != elevation->getWalls().end();
+        ++wall)
+    {
+        unsigned elevptr = vertptr;
+        for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f)
+        {
+            // Only use source verts; we skip interim verts inserted by the 
+            // structure building since they are co-linear anyway and thus we don't
+            // need them for the roof line.
+            if ( f->left.isFromSource )
+            {
+                verts->push_back( f->left.upper );
+
+                if ( colors )
+                {
+                    colors->push_back( roof->getColor() );
+                }
+
+                if ( texCoords )
+                {
+                    texCoords->push_back( osg::Vec3f(f->left.roofUV.x(), f->left.roofUV.y(), (float)0.0f) );
+                }
+
+#if 0
+                if ( anchors )
+                {
+                    float 
+                        x = structure.baseCentroid.x(),
+                        y = structure.baseCentroid.y(), 
+                        vo = structure.verticalOffset;
+
+                    if ( flatten )
+                    {
+                        anchors->push_back( osg::Vec4f(x, y, vo, Clamping::ClampToAnchor) );
+                    }
+                    else
+                    {
+                        anchors->push_back( osg::Vec4f(x, y, vo + f->left.height, Clamping::ClampToGround) );
+                    }
+                }
+#endif
+
+                ++vertptr;
+            }
+        }
+        geom->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, elevptr, vertptr-elevptr) );
+    } 
+
+    osg::Vec3Array* normal = new osg::Vec3Array(verts->size());
+    geom->setNormalArray( normal );
+    geom->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
+    normal->assign( verts->size(), osg::Vec3(0,0,1) );
+    
+    // Tessellate the roof lines into polygons.
+    osgEarth::Tessellator oeTess;
+    if (!oeTess.tessellateGeometry(*geom))
+    {
+        //fallback to osg tessellator
+        OE_DEBUG << LC << "Falling back on OSG tessellator (" << geom->getName() << ")" << std::endl;
+
+        osgUtil::Tessellator tess;
+        tess.setTessellationType( osgUtil::Tessellator::TESS_TYPE_GEOMETRY );
+        tess.setWindingType( osgUtil::Tessellator::TESS_WINDING_ODD );
+        tess.retessellatePolygons( *geom );
+        MeshConsolidator::convertToTriangles( *geom );
+    }
+
+#if 0
+    // Move the anchors to the correct place. :)
+    if ( _gpuClamping )
+    {
+        osg::Vec4Array* a = static_cast<osg::Vec4Array*>(roof->getTexCoordArray(1));
+        if ( a )
+        {
+            roof->setVertexAttribArray    ( Clamping::AnchorAttrLocation, a );
+            roof->setVertexAttribBinding  ( Clamping::AnchorAttrLocation, osg::Geometry::BIND_PER_VERTEX );
+            roof->setVertexAttribNormalize( Clamping::AnchorAttrLocation, false );
+            roof->setTexCoordArray(1, 0L);
+        }
+    }
+#endif
+
+    // Transform into the final frame:
+    for(osg::Vec3Array::iterator v = verts->begin(); v != verts->end(); ++v)
+        (*v) = (*v) * frame;
+
+    geode->addDrawable( geom.get() );
 
     return true;
 }

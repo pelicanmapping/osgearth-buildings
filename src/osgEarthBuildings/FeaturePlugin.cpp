@@ -22,9 +22,11 @@
 
 #include <osgDB/FileNameUtils>
 #include <osgDB/Registry>
+#include <osgDB/WriteFile>
 #include <osgUtil/Optimizer>
 
 #include <osgEarth/Registry>
+#include <osgEarth/Utils>
 #include <osgEarthFeatures/FeatureSource>
 #include <osgEarthDrivers/feature_ogr/OGRFeatureOptions>
 
@@ -90,7 +92,7 @@ namespace osgEarth { namespace Buildings
             OE_INFO << LC << "Loaded feature data from " << inputFile << "\n";
 
             // Load a resource catalog.
-            ResourceLibrary* reslib = new ResourceLibrary("", "repo/data/catalog/catalog.xml");
+            osg::ref_ptr<ResourceLibrary> reslib = new ResourceLibrary("", "repo/data/catalog/catalog.xml");
             if ( !reslib->initialize( options ) )
             {
                 OE_WARN << LC << "Failed to load a resource library\n";
@@ -100,10 +102,10 @@ namespace osgEarth { namespace Buildings
             sheet->addResourceLibrary( reslib );
 
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
-            //sym->height() = NumericExpression("max(5.0,[story_ht_]*3.5)");
-            sym->height() = NumericExpression("max(5.0, [HEIGHT])");
+            sym->height() = NumericExpression("max(5.0,[story_ht_]*3.5)");
+            //sym->height() = NumericExpression("max(5.0, [HEIGHT])");
 
-            Session* session = new Session(0L);
+            osg::ref_ptr<Session> session = new Session(0L);
             session->setStyles( sheet );
             session->setResourceCache( new ResourceCache(options) );
 
@@ -115,6 +117,7 @@ namespace osgEarth { namespace Buildings
                 cat = 0L;
             }
 
+#if 1
             // Create building data model from features:
             osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
             factory->setCatalog( cat.get() );
@@ -137,19 +140,53 @@ namespace osgEarth { namespace Buildings
             {
                 OE_START_TIMER(optimize);
 
+#if 1
+                osgUtil::Optimizer o;
+                o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
+                
+                node->setDataVariance( node->DYNAMIC ); // keeps the OSG optimizer from 
+#else
                 osgUtil::Optimizer::MergeGeometryVisitor mgv;
                 mgv.setTargetMaximumNumberOfVertices(1024000);
                 node->accept( mgv );
+                node->setDataVariance( node->DYNAMIC );
+#endif
 
                 OE_INFO << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
 
                 OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
+
+                // assign overall colors.
+
+                
+                GeometryValidator gv;
+                node->accept( gv );
+
                 return node;
             }
             else
             {
                 return ReadResult::ERROR_IN_READING_FILE;
             }
+#else
+            osg::Group* group = new osg::Group();
+            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
+            while(cursor->hasMore())
+            {
+                BuildingVector buildings;
+                Feature* f = cursor->nextFeature();
+                if (cat->createBuildings(f, session.get(), buildings))
+                {
+                    osg::Node* node = compiler->compile(buildings, 0L);
+                    if ( node )
+                    {
+                        group->addChild( node );
+                    }
+                }
+            }
+
+            return group;    
+#endif
         }
     };
 

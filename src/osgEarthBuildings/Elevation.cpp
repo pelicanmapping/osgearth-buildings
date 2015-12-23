@@ -31,7 +31,11 @@ _heightPercentage  ( 1.0f ),
 _numFloors         ( _height.get()/3.5f ),
 _inset             ( 0.0f ),
 _xoffset           ( 0.0f ),
-_yoffset           ( 0.0f )
+_yoffset           ( 0.0f ),
+_cosR              ( 1.0f ),
+_sinR              ( 0.0f ),
+_color             ( Color::White ),
+_parent            ( 0L )
 {
     //nop
 }
@@ -42,10 +46,18 @@ _heightPercentage( rhs._heightPercentage ),
 _numFloors       ( rhs._numFloors ),
 _inset           ( rhs._inset ),
 _xoffset         ( rhs._xoffset ),
-_yoffset         ( rhs._yoffset )
+_yoffset         ( rhs._yoffset ),
+_cosR            ( rhs._cosR ),
+_sinR            ( rhs._sinR ),
+_skinSymbol      ( rhs._skinSymbol.get() ),
+_skinResource    ( rhs._skinResource.get() ),
+_color           ( rhs._color ),
+_parent          ( rhs._parent )
 {
     if ( rhs.getRoof() )
+    {
         setRoof( new Roof(*rhs.getRoof()) );
+    }
 
     for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e) 
     {
@@ -61,8 +73,8 @@ Elevation::clone() const
     return new Elevation( *this );
 }
 
-float
-Elevation::getRotation(const Footprint* footprint) const
+void
+Elevation::setRotation(const Footprint* footprint)
 {
     // looks for the longest segment in the footprint and
     // returns the angle of that segment relative to north.
@@ -83,7 +95,9 @@ Elevation::getRotation(const Footprint* footprint) const
     const osg::Vec3d& p1 = n.first.x() < n.second.x() ? n.first : n.second;
     const osg::Vec3d& p2 = n.first.x() < n.second.x() ? n.second : n.first;
 
-    return atan2( p2.x()-p1.x(), p2.y()-p1.y() );
+    float r = atan2( p2.x()-p1.x(), p2.y()-p1.y() );
+    _sinR = sinf( r );
+    _cosR = cosf( r );
 }
 
 void
@@ -101,7 +115,7 @@ Elevation::setHeight(float height)
         _height.init( newHeight );
     }
 
-    _numFloors = (unsigned)std::max(1.0f, _height.get()/3.5f);
+    //_numFloors = (unsigned)std::max(1.0f, _height.get()/3.5f);
 
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
@@ -118,7 +132,7 @@ Elevation::setAbsoluteHeight(float height)
 float
 Elevation::getBottom() const
 {
-    return _parent.valid() ? _parent->getTop() : 0.0f;
+    return _parent ? _parent->getTop() : 0.0f;
 }
 
 float
@@ -134,10 +148,6 @@ Elevation::build(const Footprint* in_footprint)
 
     _walls.clear();
 
-    float rotation = getRotation( in_footprint );
-    float sinR = sinf(rotation);
-    float cosR = cosf(rotation);
-
     // Buffer the footprint if necessary to apply the inset:
     const Footprint* footprint = in_footprint;
     osg::ref_ptr<Geometry> copy;
@@ -148,14 +158,23 @@ Elevation::build(const Footprint* in_footprint)
             footprint = dynamic_cast<Polygon*>(copy.get());
     }
 
+    if ( !footprint || !footprint->isValid() )
+    {
+        OE_DEBUG << LC << "Discarding invalid footprint.\n";
+        return false;
+    }
+
+    /** calculates the rotation based on the footprint */
+    setRotation(in_footprint);
+
     // offsets: shift the coordinates relative to the dominant rotation angle:
     if ( getXOffset() != 0.0f || getYOffset() != 0.0f )
     {
         if ( !copy.valid() )
             copy = footprint->clone();
 
-        float dx = cosR*getXOffset() - sinR*getYOffset();
-        float dy = sinR*getXOffset() + cosR*getYOffset();
+        float dx = getXOffset(), dy = getYOffset();
+        rotate( dx, dy );
         
         GeometryIterator gi( copy.get() );
         while( gi.hasMore() ) {
@@ -167,9 +186,6 @@ Elevation::build(const Footprint* in_footprint)
         }
         footprint = dynamic_cast<Polygon*>(copy.get());
     }
-
-    if ( !footprint )
-        return false;
 
     // prep for wall texture coordinate generation.
     float texWidthM  = _skinResource.valid() ? _skinResource->imageWidth().get()  : 0.0f;
@@ -225,8 +241,10 @@ Elevation::build(const Footprint* in_footprint)
             if ( roofSkin )
             {
                 float xr = corner->upper.x() - bounds.xMin();
-                float yr = corner->upper.y() - bounds.yMin();            
-                corner->roofUV.set((cosR*xr - sinR*yr) / roofTexSpan.x(), (sinR*xr + cosR*yr) / roofTexSpan.y());
+                float yr = corner->upper.y() - bounds.yMin();
+                rotate(xr, yr);
+
+                corner->roofUV.set( xr/roofTexSpan.x(), yr/roofTexSpan.y() );
             }
 
             // cache the length for later use.
