@@ -14,7 +14,8 @@
             <elevation height_percentage="100" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
-                    <elevation type="parapet"  height="1.2" width="0.5" skin_name="roof.commercial.3">
+                    <elevation type="parapet"  height="1.2" width="0.5" skin_name="parapet.concrete">
+                        <roof type="flat" skin_name="parapet.concrete"/>
                     </elevation>
                 </elevations>
             </elevation>
@@ -30,8 +31,8 @@
                     <elevation height="5" inset="3">
                         <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>
-                            <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="roof.commercial.3">
-                                <roof type="flat" skin_tags="roof"/>
+                            <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.concrete">
+                                <roof type="flat" skin_name="parapet.concrete"/>
                             </elevation>
                         </elevations>
                     </elevation>

@@ -69,7 +69,9 @@
 		<texture_mode>modulate</texture_mode>
 	</skin>
     
-    <skin name="roof.commercial.3" tags="roof commercial">
+    <!-- Parapets -->
+    
+    <skin name="parapet.concrete" tags="parapet commercial">
 	    <url>roof/commercial3.jpg</url>
 		<tiled>true</tiled>
 		<image_width>2</image_width>
