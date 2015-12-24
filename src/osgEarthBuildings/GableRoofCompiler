@@ -34,7 +34,7 @@ namespace osgEarth { namespace Buildings
     class OSGEARTHBUILDINGS_EXPORT GableRoofCompiler : public osg::Referenced
     {
     public:
-        GableRoofCompiler(Session* session) : _session(session) { }
+        GableRoofCompiler(Session* session);
 
     public:
         virtual bool compile(
@@ -45,6 +45,8 @@ namespace osgEarth { namespace Buildings
 
     protected:
         Session* _session;
+        osg::ref_ptr<osg::Vec3Array> _verts;
+        osg::ref_ptr<osg::Vec3Array> _texCoords;
     };
 } }
 
