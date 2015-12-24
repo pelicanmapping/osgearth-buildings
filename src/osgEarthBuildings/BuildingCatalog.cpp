@@ -380,7 +380,10 @@ BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
 {
     Roof* roof = new Roof();
 
-    roof->setType( Roof::TYPE_FLAT );
+    if ( r->value("type") == "gable" )
+        roof->setType( Roof::TYPE_GABLE );
+    else
+        roof->setType( Roof::TYPE_FLAT );
 
     SkinSymbol* skinSymbol = parseSkinSymbol( r );
     if ( skinSymbol )

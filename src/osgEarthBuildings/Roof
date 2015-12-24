@@ -52,6 +52,12 @@ namespace osgEarth { namespace Buildings
         const Type& getType() const    { return _type; }
 
         /**
+         * Parent elevation.
+         */
+        void setParent(Elevation* elevation) { _parent = elevation; }
+        Elevation* getParent() const         { return _parent; }
+
+        /**
          * Roof color. If there is a skin, it will be modulated
          * by this color.
          */
@@ -81,9 +87,11 @@ namespace osgEarth { namespace Buildings
         virtual ~Roof() { }
 
         Type                       _type;
+        Elevation*                 _parent;
         Color                      _color;
         osg::ref_ptr<SkinSymbol>   _skinSymbol;
         osg::ref_ptr<SkinResource> _skinResource;
+        osg::BoundingBox           _aabb;
     };
 } }
 

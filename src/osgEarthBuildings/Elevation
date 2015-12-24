@@ -22,6 +22,7 @@
 #include "Common"
 #include "Footprint"
 #include "Roof"
+#include <osg/BoundingBox>
 #include <osg/Vec3d>
 #include <osg/Texture>
 #include <osgEarthSymbology/Skins>
@@ -114,7 +115,7 @@ namespace osgEarth { namespace Buildings
         /**
          * The roof.
          */
-        void setRoof(Roof* roof) { _roof = roof; }
+        void setRoof(Roof* roof);
         Roof* getRoof() const    { return _roof.get(); }
 
         /**
@@ -135,6 +136,11 @@ namespace osgEarth { namespace Buildings
          */
         void setSkinSymbol(SkinSymbol* sym) { _skinSymbol = sym; }
         SkinSymbol* getSkinSymbol() const    { return _skinSymbol.get(); }
+
+        /**
+         * The axis-aligned (rotated) bounding box of the roof
+         */
+        const osg::BoundingBox& getAxisAlignedBoundingBox() const { return _aabb; }
 
         /**
          * Builds an internal structure for this elevation. If this returns
@@ -194,6 +200,7 @@ namespace osgEarth { namespace Buildings
         Color              _color;
         osg::ref_ptr<Roof> _roof;
         Vector             _elevations;
+        osg::BoundingBox   _aabb;
 
         osg::ref_ptr<SkinResource> _skinResource;
         osg::ref_ptr<SkinSymbol>   _skinSymbol;
@@ -211,6 +218,8 @@ namespace osgEarth { namespace Buildings
          */
         void setRotation(const Footprint*);
 
+    public:
+
         /** rotates a 2D point based on the calculated rotation */
         inline void rotate(float& x, float& y) const {
             float x2 = _cosR*x - _sinR*y, y2 = _sinR*x + _cosR*y;
@@ -222,6 +231,17 @@ namespace osgEarth { namespace Buildings
         inline void rotate(osg::Vec3f& v) const {
             rotate(v.x(), v.y());
         }
+        inline void unrotate(float& x, float& y) const {
+            float x2 = _cosR*x + _sinR*y, y2 = - _sinR*x + _cosR*y;
+            x = x2, y = y2;
+        }
+        inline void unrotate(osg::Vec2f& v) const {
+            unrotate(v.x(), v.y());
+        }
+        inline void unrotate(osg::Vec3f& v) const {
+            unrotate(v.x(), v.y());
+        }
+            
     };
 
     typedef Elevation::Vector ElevationVector;

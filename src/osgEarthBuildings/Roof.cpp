@@ -17,13 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "Roof"
+#include "Elevation"
 #include <osgEarthSymbology/Geometry>
 
 using namespace osgEarth;
 using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
-Roof::Roof()
+Roof::Roof() :
+_parent( 0L )
 {
     //nop
 }

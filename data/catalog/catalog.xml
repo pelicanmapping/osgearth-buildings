@@ -1,7 +1,24 @@
 <?xml version="1.0" ?>
 <resources name="osgearth-buildings">
 
-    <!-- Facades -->
+    <!-- Facades: residential -->
+    <skin name="facade.residential.sf.1" tags="facade residential singlefamily">
+	    <url>facade/house-colonial.jpg</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>12</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+    
+    <skin name="facade.residential.sf.2" tags="facade residential singlefamily">
+	    <url>facade/house-victorian.jpg</url>
+		<tiled>true</tiled>
+		<image_width>12</image_width>
+		<image_height>12</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
+    
+    <!-- Facades: commercial -->
     
     <skin name="facade.commercial.1" tags="facade commercial">
 	    <url>facade/commercial1.jpg</url>

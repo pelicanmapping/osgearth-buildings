@@ -20,6 +20,8 @@ set(LIB_PUBLIC_HEADERS
     Elevation
     Export
     Footprint
+    FlatRoofCompiler
+    GableRoofCompiler
     Parapet
     Roof
     Zoning
@@ -35,6 +37,8 @@ set(LIB_COMMON_FILES
     Elevation.cpp
     FeaturePlugin.cpp
     Footprint.cpp
+    FlatRoofCompiler.cpp
+    GableRoofCompiler.cpp
     Parapet.cpp
     Roof.cpp
 )

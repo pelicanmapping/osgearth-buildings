@@ -74,6 +74,14 @@ Elevation::clone() const
 }
 
 void
+Elevation::setRoof(Roof* roof)
+{
+    _roof = roof;
+    if ( roof )
+        roof->setParent( this );
+}
+
+void
 Elevation::setRotation(const Footprint* footprint)
 {
     // looks for the longest segment in the footprint and
@@ -183,6 +191,15 @@ Elevation::build(const Footprint* in_footprint)
             }
         }
         footprint = dynamic_cast<Polygon*>(copy.get());
+    }
+
+    // compute the axis-aligned bbox
+    _aabb.init();
+    for(Footprint::const_iterator i = footprint->begin(); i != footprint->end(); ++i)
+    {
+        osg::Vec3f v(i->x(), i->y(), getTop());
+        rotate( v );
+        _aabb.expandBy( v );
     }
 
     // prep for wall texture coordinate generation.

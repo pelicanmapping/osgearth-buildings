@@ -95,7 +95,7 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
         world2local.invert( local2world );
 
         // Transform feature geometry into the local frame. This way we can do all our
-        // building creation in cartesian space.
+        // building creation in cartesian, single-precision space.
         GeometryIterator iter(geometry, true);
         while(iter.hasMore())
         {
