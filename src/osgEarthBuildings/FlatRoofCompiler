@@ -19,7 +19,7 @@
 #ifndef OSGEARTH_BUILDINGS_FLAT_ROOF_COMPILER_H
 #define OSGEARTH_BUILDINGS_FLAT_ROOF_COMPILER_H
 
-#include "Common"
+#include "Compiler"
 #include "Building"
 #include <osgEarthFeatures/Session>
 #include <osg/Geode>
@@ -31,7 +31,7 @@ namespace osgEarth { namespace Buildings
     /**
      * Buildings a flat roof as OSG geometry.
      */
-    class OSGEARTHBUILDINGS_EXPORT FlatRoofCompiler : public osg::Referenced
+    class OSGEARTHBUILDINGS_EXPORT FlatRoofCompiler : public Compiler
     {
     public:
         FlatRoofCompiler(Session* session) : _session(session) { }

@@ -17,6 +17,7 @@ set(LIB_PUBLIC_HEADERS
     BuildingSymbol
     BuildingVisitor
     Common
+    Compiler
     Elevation
     Export
     Footprint
@@ -34,6 +35,7 @@ set(LIB_COMMON_FILES
     BuildingFactory.cpp
     BuildingSymbol.cpp
     BuildingVisitor.cpp
+    Compiler.cpp
     Elevation.cpp
     FeaturePlugin.cpp
     Footprint.cpp

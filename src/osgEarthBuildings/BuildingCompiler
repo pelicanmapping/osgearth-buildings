@@ -19,7 +19,7 @@
 #ifndef OSGEARTH_BUILDINGS_BUILDING_COMPILER_H
 #define OSGEARTH_BUILDINGS_BUILDING_COMPILER_H
 
-#include "Common"
+#include "Compiler"
 #include "Building"
 #include "FlatRoofCompiler"
 #include "GableRoofCompiler"
@@ -34,7 +34,7 @@ namespace osgEarth { namespace Buildings
     /** 
      * Created an OSG graph from one or more Building objects.
      */
-    class OSGEARTHBUILDINGS_EXPORT BuildingCompiler : public osg::Referenced
+    class OSGEARTHBUILDINGS_EXPORT BuildingCompiler : public Compiler
     {
     public:
         /** Constructor */
