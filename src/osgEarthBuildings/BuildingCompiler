@@ -21,6 +21,7 @@
 
 #include "Compiler"
 #include "Building"
+#include "ElevationCompiler"
 #include "FlatRoofCompiler"
 #include "GableRoofCompiler"
 
@@ -81,6 +82,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
         osg::ref_ptr<Session>           _session;
+        osg::ref_ptr<ElevationCompiler> _elevationCompiler;
         osg::ref_ptr<FlatRoofCompiler>  _flatRoofCompiler;
         osg::ref_ptr<GableRoofCompiler> _gableRoofCompiler;
     };

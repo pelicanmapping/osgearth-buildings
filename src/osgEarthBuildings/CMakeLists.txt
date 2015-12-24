@@ -19,6 +19,7 @@ set(LIB_PUBLIC_HEADERS
     Common
     Compiler
     Elevation
+    ElevationCompiler
     Export
     Footprint
     FlatRoofCompiler
@@ -37,6 +38,7 @@ set(LIB_COMMON_FILES
     BuildingVisitor.cpp
     Compiler.cpp
     Elevation.cpp
+    ElevationCompiler.cpp
     FeaturePlugin.cpp
     Footprint.cpp
     FlatRoofCompiler.cpp
