@@ -8,7 +8,7 @@
         
             <features driver="ogr"
                       build_spatial_index="true"
-                      url="H:/devel/osgearth/repo/data/boston_buildings_utm19.shp">
+                      url="../data/boston_buildings.zip/boston_buildings_utm19.shp">
             </features>
             
             <building_catalog>../data/buildings.xml</building_catalog>
