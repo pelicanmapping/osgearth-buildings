@@ -168,7 +168,12 @@ BuildingCatalog::createBuildings(Feature*        feature,
 
                     // Apply the symbology:
                     building->setHeight( height );
-                    ResourceLibrary* reslib = session->styles()->getDefaultResourceLibrary();
+                    ResourceLibrary* reslib = 0L;
+                    if (sym && sym->library().isSet())
+                        reslib = session->styles()->getResourceLibrary(sym->library().get());
+                    if ( !reslib )
+                        reslib = session->styles()->getDefaultResourceLibrary();
+
                     if ( reslib )
                     {
                         ResolveSkins resolveSkins( reslib, building->getUID(), session->getDBOptions() );

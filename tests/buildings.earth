@@ -1,0 +1,38 @@
+<map>
+    <image driver="tms" url="http://readymap.org/readymap/tiles/1.0.0/7/">
+    </image>
+    
+    <extensions>
+    
+        <buildings>
+        
+            <features driver="ogr"
+                      build_spatial_index="true"
+                      url="H:/devel/osgearth/repo/data/boston_buildings_utm19.shp">
+            </features>
+            
+            <building_catalog>../data/buildings.xml</building_catalog>
+            
+            <styles>
+                <library name="buildings">
+                    <url>../data/catalog/catalog.xml</url>
+                </library>
+                <style type="text/css">
+                    default {
+                        building-height:  max(5.0,[story_ht_]*3.5);
+                        building-library: buildings;
+                    }
+                </style>
+            </styles>
+            
+        </buildings>
+        
+        <viewpoints>
+            <viewpoint name="Boston Overview" heading="24.261" height="0" lat="42.34425" long="-71.076262" pitch="-21.6" range="3450"/>
+            <viewpoint name="Boston Downtown 1" heading="117" lat="42.3568" long="-71.0585" height="0" pitch="-20.4" range="1500" />
+            <viewpoint name="Boston Downtown 2" heading="-128.5" lat="42.3582" long="-71.0546" height="0" pitch="-19" range="1620" />
+            <viewpoint name="Boston Street Level" heading="-145.64081" lat="42.364015" long="-71.054149" pitch="-9.701" range="144.95"/>
+        </viewpoints>
+        
+    </extensions>
+</map>

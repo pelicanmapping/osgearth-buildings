@@ -92,7 +92,7 @@ namespace osgEarth { namespace Buildings
             OE_INFO << LC << "Loaded feature data from " << inputFile << "\n";
 
             // Load a resource catalog.
-            osg::ref_ptr<ResourceLibrary> reslib = new ResourceLibrary("", "repo/data/catalog/catalog.xml");
+            osg::ref_ptr<ResourceLibrary> reslib = new ResourceLibrary("", "../data/catalog/catalog.xml");
             if ( !reslib->initialize( options ) )
             {
                 OE_WARN << LC << "Failed to load a resource library\n";
@@ -102,9 +102,7 @@ namespace osgEarth { namespace Buildings
             sheet->addResourceLibrary( reslib );
 
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
-            //sym->height() = NumericExpression("max(5.0,[maxheight])");
-            sym->height() = NumericExpression("max(5.0,[story_ht_]*3.5)");
-            //sym->height() = NumericExpression("max(5.0, [HEIGHT])");
+            sym->height() = NumericExpression("max(5.0, [HEIGHT])");
 
             osg::ref_ptr<Session> session = new Session(0L);
             session->setStyles( sheet );
@@ -112,7 +110,7 @@ namespace osgEarth { namespace Buildings
 
             // Load the building catalog:
             osg::ref_ptr<BuildingCatalog> cat = new BuildingCatalog();
-            if ( !cat->load( URI("repo/data/buildings.xml"), options, 0L ) )
+            if ( !cat->load( URI("../data/buildings.xml"), options, 0L ) )
             {
                 OE_WARN << LC << "Failed to load the buildings catalog\n";
                 cat = 0L;

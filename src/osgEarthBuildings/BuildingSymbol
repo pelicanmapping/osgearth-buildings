@@ -47,6 +47,10 @@ namespace osgEarth { namespace Buildings
         optional<NumericExpression>& height() { return _heightExpr; }
         const optional<NumericExpression>& height() const { return _heightExpr; }
 
+        /** Resource library name */
+        optional<std::string>& library() { return _libraryName; }
+        const optional<std::string>& library() const { return _libraryName; }
+
     public: // serialization support
         virtual Config getConfig() const;
         virtual void mergeConfig( const Config& conf );
@@ -55,6 +59,7 @@ namespace osgEarth { namespace Buildings
     protected:
         optional<float>             _floorHeight;
         optional<NumericExpression> _heightExpr;
+        optional<std::string>       _libraryName;
     };
 } }
 

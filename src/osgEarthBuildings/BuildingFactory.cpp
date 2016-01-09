@@ -54,6 +54,8 @@ BuildingFactory::create(FeatureCursor*    input,
         Feature* feature = input->nextFeature();
         if ( feature )
         {
+            feature->transform(feature->getSRS()->getGeographicSRS());
+
             if ( _catalog.valid() )
             {
                 _catalog->createBuildings(feature, _session.get(), output);
