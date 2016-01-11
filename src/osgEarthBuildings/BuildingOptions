@@ -1,0 +1,94 @@
+/* -*-c++-*- */
+/* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
+ * Copyright 2008-2016 Pelican Mapping
+ * http://osgearth.org
+ *
+ * osgEarth is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+#ifndef OSGEARTH_BUILDINGS_BUILDING_OPTIONS_H
+#define OSGEARTH_BUILDINGS_BUILDING_OPTIONS_H
+
+#include "Common"
+#include <osgEarthFeatures/FeatureSource>
+#include <osgEarthSymbology/StyleSheet>
+
+namespace osgEarth { namespace Buildings 
+{
+    using namespace osgEarth::Features;
+    using namespace osgEarth::Symbology;
+
+    class BuildingOptions : public ConfigOptions
+    {
+    public:
+        /** Feature source for building data */
+        optional<FeatureSourceOptions>& featureOptions() { return _featureSourceOptions; }
+        const optional<FeatureSourceOptions>& featureOptions() const { return _featureSourceOptions; }
+
+        /** Location of the building template catalog */
+        optional<URI>& buildingCatalog() { return _buildingCatalogURI; }
+        const optional<URI>& buildingCatalog() const { return _buildingCatalogURI; }
+
+        /** Building styles */
+        osg::ref_ptr<StyleSheet>& styles() { return _styles; }
+        const osg::ref_ptr<StyleSheet>& styles() const { return _styles; }
+
+        /** Building LOD */
+        optional<unsigned>& lod() { return _lod; }
+        const optional<unsigned>& lod() const { return _lod; }
+
+        /** Optional caching policy */
+        optional<CachePolicy>& cachePolicy() { return _cachePolicy; }
+        const optional<CachePolicy>& cachePolicy() const { return _cachePolicy; }
+
+    public:
+        BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
+            _lod.init( 13u );
+            fromConfig( _conf );
+        }
+
+    public:
+        Config getConfig() const {
+            Config conf = ConfigOptions::getConfig();
+            conf.updateObjIfSet("features",         _featureSourceOptions);
+            conf.updateIfSet   ("building_catalog", _buildingCatalogURI);
+            conf.updateObjIfSet("styles",           _styles);
+            conf.updateIfSet   ("lod",              _lod);
+            conf.updateObjIfSet("cache_policy",     _cachePolicy);
+            return conf;
+        }
+
+    protected:
+        void mergeConfig(const Config& conf) {
+            ConfigOptions::mergeConfig( conf );
+            fromConfig( conf );
+        }
+
+    private:
+        void fromConfig(const Config& conf) {
+            conf.getObjIfSet("features",         _featureSourceOptions);
+            conf.getIfSet   ("building_catalog", _buildingCatalogURI);
+            conf.getObjIfSet("styles",           _styles);
+            conf.getIfSet   ("lod",              _lod);
+            conf.getObjIfSet("cache_policy",     _cachePolicy);
+        }
+
+        optional<FeatureSourceOptions> _featureSourceOptions;
+        optional<URI> _buildingCatalogURI;
+        osg::ref_ptr<StyleSheet> _styles;
+        optional<unsigned> _lod;
+        optional<CachePolicy> _cachePolicy;
+    };
+} }
+
+#endif // OSGEARTH_BUILDINGS_BUILDING_OPTIONS_H
