@@ -20,11 +20,11 @@
 #include "BuildingCatalog"
 #include "BuildingFactory"
 #include "BuildingCompiler"
+#include "BuildingPager"
 
-#include <osgEarth/Registry>
-#include <osgEarth/ShaderGenerator>
-
-#include <osgUtil/Optimizer>
+//#include <osgEarth/Registry>
+//#include <osgEarth/ShaderGenerator>
+//#include <osgUtil/Optimizer>
 
 using namespace osgEarth;
 using namespace osgEarth::Buildings;
@@ -75,14 +75,6 @@ BuildingExtension::connect(MapNode* mapNode)
     // fire it up
     features->initialize(_dbo.get());
 
-    // Create a cursor to iterator over the feature data:
-    osg::ref_ptr<FeatureCursor> cursor = features->createFeatureCursor();
-    if ( !cursor.valid() )
-    {
-        OE_WARN << LC << "Failed to open a cursor from input file\n";
-        return false;
-    }
-
     // Set up a feature session with a cache:
     osg::ref_ptr<Session> session = new Session(0L);
     session->setStyles( _options.styles().get() );
@@ -99,48 +91,19 @@ BuildingExtension::connect(MapNode* mapNode)
     // Create building data model from features:
     osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
     factory->setCatalog( cat.get() );
+    factory->setOutputSRS( mapNode->getMapSRS() );
 
-    BuildingVector buildings;
-    if ( !factory->create(cursor.get(), buildings) )
-    {
-        OE_WARN << LC << "Failed to create building data model\n";
-        return false;
-    }
-    OE_INFO << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(start) << "s" << std::endl;
-
-    // Create OSG model from buildings.
-    OE_START_TIMER(compile);
+    // Create a compiler that converts building models into nodes:
     osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
-    osg::ref_ptr<osg::Node> node = compiler->compile(buildings);            
-    OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
-    
-    if ( !node.valid() )
-    {
-        OE_WARN << LC << "Failed to compile node\n";
-        return false;
-    }
 
-    OE_START_TIMER(optimize);
-#if 1
-    // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
-    osgUtil::Optimizer o;
-    o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
-                
-    node->setDataVariance( node->DYNAMIC ); // keeps the OSG optimizer from 
-#else
-    osgUtil::Optimizer::MergeGeometryVisitor mgv;
-    mgv.setTargetMaximumNumberOfVertices(1024000);
-    node->accept( mgv );
-    node->setDataVariance( node->DYNAMIC );
-#endif
+    BuildingPager* pager = new BuildingPager( mapNode->getMap()->getProfile() );
+    pager->setFeatureSource( features.get() );
+    pager->setFactory      ( factory.get() );
+    pager->setCompiler     ( compiler.get() );
+    pager->setLOD          ( _options.lod().get() );
+    pager->build();
 
-    OE_INFO << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
-    OE_INFO << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
-
-    Registry::instance()->shaderGenerator().run( node.get() );
-
-    _root = new osg::Group();
-    mapNode->addChild( node.get() );
+    mapNode->addChild( pager );
     return true;
 }
 

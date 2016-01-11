@@ -16,6 +16,7 @@ set(LIB_PUBLIC_HEADERS
     BuildingExtension
     BuildingFactory
     BuildingOptions
+    BuildingPager
     BuildingSymbol
     BuildingVisitor
     Common
@@ -37,6 +38,7 @@ set(LIB_COMMON_FILES
     BuildingCompiler.cpp
     BuildingExtension.cpp
     BuildingFactory.cpp
+    BuildingPager.cpp
     BuildingSymbol.cpp
     BuildingVisitor.cpp
     Compiler.cpp
