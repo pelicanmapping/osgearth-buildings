@@ -61,13 +61,17 @@ namespace osgEarth { namespace Buildings
          * Given a feature, create one or more Building instances.
          * @param[in ] feature Feature for which to create a building
          * @param[in ] session Session for processing features
+         * @param[in ] style   Style to use when creating buildings
          * @param[out] output  Vector to push building instances to
+         * @param[in ] progres Progress/error tracker
          * @return     true=success, false=failure
          */
         bool createBuildings(
-            Feature*        feature,
-            Session*        session,
-            BuildingVector& output) const;
+            Feature*          feature,
+            Session*          session,
+            const Style*      style,
+            BuildingVector&   output,
+            ProgressCallback* progress) const;
 
     protected:
 

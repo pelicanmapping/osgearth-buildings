@@ -23,6 +23,7 @@
 #include "BuildingOptions"
 #include <osgEarth/Extension>
 #include <osgEarth/MapNode>
+#include <osgEarth/CacheBin>
 
 namespace osgEarth { namespace Buildings 
 {
@@ -57,6 +58,10 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<osg::Group> _root;
         osg::ref_ptr<const osgDB::Options> _dbo;
         const BuildingOptions              _options;
+
+        osg::ref_ptr<CacheBin> _cacheBin;
+        optional<CachePolicy>  _cachePolicy;
+        void initializeCaching();
         
     protected: // Object
         BuildingExtension(const BuildingExtension& rhs, const osg::CopyOp& op) { }

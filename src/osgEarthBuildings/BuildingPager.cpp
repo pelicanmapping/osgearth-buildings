@@ -31,7 +31,8 @@ using namespace osgEarth::Symbology;
 
 
 BuildingPager::BuildingPager(const Profile* profile) :
-SimplePager( profile )
+SimplePager( profile ),
+_style     ( 0L )
 {
     _stateSetCache = new StateSetCache();
     setAdditive( false );
@@ -45,38 +46,49 @@ BuildingPager::setLOD(unsigned lod)
 }
 
 void
+BuildingPager::setSession(Session* session)
+{
+    _session = session;
+
+    if ( session )
+    {
+        _compiler = new BuildingCompiler(session);
+        _style = session->styles() ? session->styles()->getDefaultStyle() : 0L;
+    }
+}
+
+void
 BuildingPager::setFeatureSource(FeatureSource* features)
 {
     _features = features;
 }
 
 void
-BuildingPager::setFactory(BuildingFactory* factory)
+BuildingPager::setCatalog(BuildingCatalog* catalog)
 {
-    _factory = factory;
+    _catalog = catalog;
 }
 
 void
-BuildingPager::setCompiler(BuildingCompiler* compiler)
+BuildingPager::setCacheBin(CacheBin* cacheBin, const CachePolicy& cp)
 {
-    _compiler = compiler;
+    _cacheBin = cacheBin;
+    _cachePolicy = cp;
 }
 
 osg::Node*
 BuildingPager::createNode(const TileKey& tileKey)
 {
-    if ( !_factory.valid() || !_compiler.valid() || !_features.valid() )
+    if ( !_session.valid() || !_compiler.valid() || !_features.valid() )
     {
-        OE_WARN << LC << "Misconfiguration error; something is not set\n";
+        OE_WARN << LC << "Misconfiguration error; make sure Session and FeatureSource are set\n";
         return 0L;
     }
-
-    OE_TEST << LC << "createNode(" << tileKey.str() << ")\n";
-
-    osg::ref_ptr<osg::Node> node;
-
+    
     OE_START_TIMER(start);
 
+    OE_TEST << LC << "createNode(" << tileKey.str() << ")\n";
+    
     // Create a cursor to iterator over the feature data:
     Query query;
     query.tileKey() = tileKey;
@@ -88,8 +100,17 @@ BuildingPager::createNode(const TileKey& tileKey)
     }
     
     OE_START_TIMER(factory_create);
+
+    osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+    factory->setSession( _session.get() );
+    factory->setCatalog( _catalog.get() );
+    factory->setOutputSRS( getProfile()->getSRS() );
+
+    const Style* style =
+        _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
+
     BuildingVector buildings;
-    if ( !_factory->create(cursor.get(), buildings) )
+    if ( !factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
     {
         OE_WARN << LC << "Failed to create building data model\n";
         return 0L;
@@ -98,7 +119,9 @@ BuildingPager::createNode(const TileKey& tileKey)
 
     // Create OSG model from buildings.
     OE_START_TIMER(compile);
-    node = _compiler->compile(buildings);            
+
+    osg::ref_ptr<osg::Node> node = _compiler->compile(buildings);   
+
     OE_TEST << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
     
     if ( !node.valid() )
@@ -112,7 +135,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     osgUtil::Optimizer o;
     o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
     OE_TEST << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
-   
+    
     Registry::instance()->shaderGenerator().run( node.get(), "Buildings", _stateSetCache.get() );
    
     OE_TEST << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;

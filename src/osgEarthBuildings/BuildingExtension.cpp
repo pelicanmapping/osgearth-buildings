@@ -22,9 +22,7 @@
 #include "BuildingCompiler"
 #include "BuildingPager"
 
-//#include <osgEarth/Registry>
-//#include <osgEarth/ShaderGenerator>
-//#include <osgUtil/Optimizer>
+#include <osgEarth/Registry>
 
 using namespace osgEarth;
 using namespace osgEarth::Buildings;
@@ -76,34 +74,32 @@ BuildingExtension::connect(MapNode* mapNode)
     features->initialize(_dbo.get());
 
     // Set up a feature session with a cache:
-    osg::ref_ptr<Session> session = new Session(0L);
-    session->setStyles( _options.styles().get() );
+    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), _options.styles().get(), features, _dbo.get() );
     session->setResourceCache( new ResourceCache(_dbo.get()) );
 
     // Load the building catalog:
-    osg::ref_ptr<BuildingCatalog> cat = new BuildingCatalog();
-    if ( !cat->load(_options.buildingCatalog().get(), _dbo.get(), 0L) )
+    osg::ref_ptr<BuildingCatalog> catalog = new BuildingCatalog();
+    if ( !catalog->load(_options.buildingCatalog().get(), _dbo.get(), 0L) )
     {
         OE_WARN << LC << "Failed to load the buildings catalog\n";
-        cat = 0L;
+        catalog = 0L;
     }
-
-    // Create building data model from features:
-    osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
-    factory->setCatalog( cat.get() );
-    factory->setOutputSRS( mapNode->getMapSRS() );
 
     // Create a compiler that converts building models into nodes:
     osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
 
+    // Open a cache bin, if a cache is active.
+    initializeCaching();
+
     BuildingPager* pager = new BuildingPager( mapNode->getMap()->getProfile() );
+    pager->setSession      ( session.get() );
     pager->setFeatureSource( features.get() );
-    pager->setFactory      ( factory.get() );
-    pager->setCompiler     ( compiler.get() );
+    pager->setCatalog      ( catalog.get() );
     pager->setLOD          ( _options.lod().get() );
+    pager->setCacheBin     ( _cacheBin.get(), _cachePolicy.get() );
     pager->build();
 
-    mapNode->addChild( pager );
+    mapNode->addChild( pager );    
     return true;
 }
 
@@ -114,6 +110,42 @@ BuildingExtension::disconnect(MapNode* mapNode)
         mapNode->removeChild( _root.get() );
     return true;
 }
+
+void
+BuildingExtension::initializeCaching()
+{
+    if ( _dbo.valid() )
+    {
+        // check for an incoming cache policy:
+        CachePolicy::fromOptions(_dbo.get(), _cachePolicy);
+
+        // check for an overriding cache policy in this extension:
+        if ( _options.cachePolicy().isSet() )
+        {
+            _cachePolicy->mergeAndOverride( _options.cachePolicy() );
+        }
+
+        // finally resolve with global overrides:
+        Registry::instance()->resolveCachePolicy( _cachePolicy );
+
+        if ( _cachePolicy != CachePolicy::NO_CACHE )
+        {
+            Cache* cache = Cache::get(_dbo.get());
+            if ( cache )
+            {
+                Config conf = _options.getConfig();
+                conf.remove( "cache_policy" );
+                std::string hash = Stringify() << "buildings." << hashString(conf.toJSON(false));
+                _cacheBin = cache->addBin( hash );
+            }
+        }                
+    }
+    else
+    {
+        OE_WARN << LC << "DBO not set; no caching\n";
+    }
+}
+
 
 //.........................................................
 

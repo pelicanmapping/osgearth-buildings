@@ -18,7 +18,9 @@
  */
 #include "BuildingFactory"
 #include "BuildingSymbol"
+#include "BuildingVisitor"
 #include "Parapet"
+#include <osgEarthFeatures/AltitudeFilter>
 #include <osgEarthSymbology/Geometry>
 
 using namespace osgEarth;
@@ -33,43 +35,138 @@ BuildingFactory::BuildingFactory()
     _session = new Session(0L);
 }
 
-BuildingFactory::BuildingFactory(Session* session) :
-_session( session )
+void
+BuildingFactory::setSession(Session* session)
 {
-    //nop
+    _session = session;
+    if ( session )
+    {
+        _eq.setMapFrame( session->createMapFrame() );
+        _eq.setFallBackOnNoData( true );
+    }
+}
+
+bool
+BuildingFactory::cropToCentroid(const Feature* feature, const GeoExtent& extent) const
+{
+    if ( !extent.isValid() )
+        return true;
+
+    // make sure the centroid is in the crop-to extent: 
+    GeoPoint centroid( feature->getSRS(), feature->getGeometry()->getBounds().center() );
+    return extent.contains(centroid);
+}
+
+namespace
+{
+    struct BuildingClamper : public BuildingVisitor
+    {
+        float _min, _max;
+        BuildingClamper(float min, float max) : _min(min), _max(max) { }
+
+        void apply(Elevation* elev) {
+            Elevation::Walls& walls = elev->getWalls();
+            for(Elevation::Walls::iterator w = walls.begin(); w != walls.end(); ++w) {
+                for(Elevation::Faces::iterator f = w->faces.begin(); f != w->faces.end(); ++f) {
+                    f->left.lower.z()  += _min;
+                    f->left.upper.z()  += _min;
+                    f->right.lower.z() += _min;
+                    f->right.upper.z() += _min;
+                }
+            }
+            traverse(elev);
+        }
+    };
+}
+
+void
+BuildingFactory::clamp(Feature* feature, float& min, float& max)
+{
+    if ( !feature || !feature->getGeometry() )
+        return;
+
+    float maxRes = 0.0f;
+
+    GeometryIterator gi(feature->getGeometry(), false);
+    while(gi.hasMore())
+    {
+        Geometry* part = gi.next();
+        std::vector<double> elevations;
+        elevations.reserve( part->size() );
+        if ( _eq.getElevations(part->asVector(), feature->getSRS(), elevations, maxRes) )
+        {
+            for(unsigned i=0; i<elevations.size(); ++i)
+            {
+                float e = elevations[i];
+                if ( e < min ) min = e;
+                if ( e > max ) max = e;
+            }
+        }
+    }
 }
 
 bool
 BuildingFactory::create(FeatureCursor*    input,
+                        const GeoExtent&  cropTo,
+                        const Style*      style,
                         BuildingVector&   output,
                         ProgressCallback* progress)
 {
     if ( !input )
         return false;
 
+    bool needToClamp = 
+        style &&
+        style->has<AltitudeSymbol>() &&
+        style->get<AltitudeSymbol>()->clamping() != AltitudeSymbol::CLAMP_NONE;
+
     // iterate over all the input features
     while( input->hasMore() )
     {
         // for each feature, check that it's a polygon
         Feature* feature = input->nextFeature();
-        if ( feature )
+        if ( feature && feature->getGeometry() )
         {
             if ( _outSRS.valid() )
             {
                 feature->transform( _outSRS.get() );
             }
 
+            // make sure the feature's centroid falls within the extent:
+            if ( !cropToCentroid(feature, cropTo) )
+            {
+                continue;
+            }
+
+            // clamp to the terrain.
+            float min = FLT_MAX, max = -FLT_MAX;
+            if ( needToClamp )
+            {
+                clamp(feature, min, max);
+            }
+
+            unsigned offset = output.size();
+
             if ( _catalog.valid() )
             {
-                _catalog->createBuildings(feature, _session.get(), output);
+                _catalog->createBuildings(feature, _session.get(), style, output, progress);
             }
 
             else
             {
-                Building* building = createBuilding(feature);
+                Building* building = createBuilding(feature, progress);
                 if ( building )
                 {
                     output.push_back( building );
+                }
+            }
+
+            if ( min < FLT_MAX && max > -FLT_MAX )
+            {
+                BuildingClamper clamper(min, max);
+                for(unsigned i=offset; i<output.size(); ++i)
+                {
+                    output[i]->accept( clamper );
                 }
             }
         }
@@ -90,7 +187,6 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
 
     if ( geometry && geometry->getComponentType() == Geometry::TYPE_POLYGON && geometry->isValid() )
     {
-        // TODO: validate the 
         // Calculate a local reference frame for this building:
         osg::Vec2d center2d = geometry->getBounds().center2d();
         GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), 0.0, ALTMODE_ABSOLUTE );

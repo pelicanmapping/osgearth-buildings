@@ -188,6 +188,7 @@ namespace osgEarth { namespace Buildings
         /**
          * The structure of the elevation that was created by buildStructure.
          */
+        Walls& getWalls() { return _walls; }
         const Walls& getWalls() const { return _walls; }
 
     protected:

@@ -102,10 +102,15 @@ BuildingCatalog::BuildingCatalog()
 }
 
 bool
-BuildingCatalog::createBuildings(Feature*        feature,
-                                 Session*        session,
-                                 BuildingVector& output) const
+BuildingCatalog::createBuildings(Feature*          feature,
+                                 Session*          session,
+                                 const Style*      style,
+                                 BuildingVector&   output,
+                                 ProgressCallback* progress) const
 {
+    if ( !feature || !session )
+        return false;
+
     Geometry* geometry = feature->getGeometry();
 
     if ( geometry && geometry->getComponentType() == Geometry::TYPE_POLYGON && geometry->isValid() )
@@ -133,18 +138,21 @@ BuildingCatalog::createBuildings(Feature*        feature,
             }
         }
 
+        const BuildingSymbol* sym =
+            style ? style->get<BuildingSymbol>() :
+            session->styles() ? session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
+            0L;
+
         // Next, iterate over the polygons and set up the Building object.
         GeometryIterator iter2( geometry, false );
         while(iter2.hasMore())
         {
             Polygon* footprint = dynamic_cast<Polygon*>(iter2.next());
             if ( footprint && footprint->isValid() )
-            {
+            {        
+                // resolve the height:
                 float    height    = 0.0f;
                 unsigned numFloors = 0u;
-
-                // resolve the height:
-                const BuildingSymbol* sym = session->styles()->getDefaultStyle()->get<BuildingSymbol>();
                 if ( sym )
                 {
                     NumericExpression heightExpr = sym->height().get();

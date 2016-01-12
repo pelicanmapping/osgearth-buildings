@@ -125,11 +125,14 @@ GableRoofCompiler::compile(const Building*    building,
     geom->setNormalArray( normals );
     geom->setNormalBinding( geom->BIND_PER_VERTEX );
 
+    // highest point (this data is guaranteed to exist)
+    float roofZ = elevation->getWalls().begin()->faces.begin()->left.upper.z();
+
     // the AABB gives us the information to scale+bias the unit template 
     // to the proper size and shape:
     const osg::BoundingBox& aabb = elevation->getAxisAlignedBoundingBox();
     osg::Vec3f scale(aabb.xMax()-aabb.xMin(), aabb.yMax()-aabb.yMin(), 1.0f);
-    osg::Vec3f bias (aabb.xMin(), aabb.yMin(), aabb.zMin());
+    osg::Vec3f bias (aabb.xMin(), aabb.yMin(), roofZ);
 
     // scale and bias the geometry, rotate it back to its actual location,
     // and transform into the final coordinate frame.

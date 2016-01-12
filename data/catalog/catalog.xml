@@ -95,5 +95,13 @@
 		<image_height>2</image_height>
 		<texture_mode>modulate</texture_mode>
 	</skin>
+    
+    <skin name="parapet.poured" tags="parapet commercial">
+	    <url>roof/parapet1.jpg</url>
+		<tiled>true</tiled>
+		<image_width>8</image_width>
+		<image_height>2</image_height>
+		<texture_mode>modulate</texture_mode>
+	</skin>
 
 </resources>

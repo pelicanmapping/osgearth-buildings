@@ -3,6 +3,10 @@
            url="http://readymap.org/readymap/tiles/1.0.0/22/">
     </image>
     
+    <elevation driver="tms"
+           url="http://readymap.org/readymap/tiles/1.0.0/116/">
+    </elevation>
+    
     <extensions>
     
         <buildings lod="14">
@@ -22,9 +26,12 @@
                     default {
                         building-height:  max(5.0,[story_ht_]*3.5);
                         building-library: buildings;
+                        altitude-clamping: terrain;
                     }
                 </style>
             </styles>
+            
+            <cache_policy max_age="0"/>
             
         </buildings>
         

@@ -116,13 +116,13 @@ namespace osgEarth { namespace Buildings
                 cat = 0L;
             }
 
-#if 1
             // Create building data model from features:
-            osg::ref_ptr<BuildingFactory> factory = new BuildingFactory( session );
+            osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+            factory->setSession( session.get() );
             factory->setCatalog( cat.get() );
 
             BuildingVector buildings;
-            if ( !factory->create(cursor.get(), buildings) )
+            if ( !factory->create(cursor.get(), GeoExtent::INVALID, 0L, buildings) )
             {
                 OE_WARN << LC << "Failed to create building data model\n";
                 return ReadResult::ERROR_IN_READING_FILE;
@@ -168,25 +168,6 @@ namespace osgEarth { namespace Buildings
             {
                 return ReadResult::ERROR_IN_READING_FILE;
             }
-#else
-            osg::Group* group = new osg::Group();
-            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
-            while(cursor->hasMore())
-            {
-                BuildingVector buildings;
-                Feature* f = cursor->nextFeature();
-                if (cat->createBuildings(f, session.get(), buildings))
-                {
-                    osg::Node* node = compiler->compile(buildings, 0L);
-                    if ( node )
-                    {
-                        group->addChild( node );
-                    }
-                }
-            }
-
-            return group;    
-#endif
         }
     };
 

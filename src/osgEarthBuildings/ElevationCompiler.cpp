@@ -138,23 +138,10 @@ ElevationCompiler::compile(const Building*    building,
     // zero or more inner walls (where there were holes in the original footprint).
     for(Elevation::Walls::const_iterator wall = walls.begin(); wall != walls.end(); ++wall)
     {
-        // 6 verts per face total (3 triangles) per floor
-        //unsigned numWallVerts = 6 * wall->getNumPoints() * elevation->getNumFloors();
-
-        //osg::Vec4Array* anchors = 0L;    
-        //// If GPU clamping is in effect, create clamping attributes.
-        //if ( _gpuClamping )
-        //{
-        //    anchors = new osg::Vec4Array( numWallVerts );
-        //    walls->setVertexAttribArray    ( Clamping::AnchorAttrLocation, anchors );
-        //    walls->setVertexAttribBinding  ( Clamping::AnchorAttrLocation, osg::Geometry::BIND_PER_VERTEX );
-        //    walls->setVertexAttribNormalize( Clamping::AnchorAttrLocation, false );
-        //}
-
         osg::DrawElements* de = 
             totalNumVerts > 0xFFFF ? (osg::DrawElements*) new osg::DrawElementsUInt  ( GL_TRIANGLES ) :
             totalNumVerts > 0xFF   ? (osg::DrawElements*) new osg::DrawElementsUShort( GL_TRIANGLES ) :
-                                        (osg::DrawElements*) new osg::DrawElementsUByte ( GL_TRIANGLES );
+                                     (osg::DrawElements*) new osg::DrawElementsUByte ( GL_TRIANGLES );
 
         // pre-allocate for speed
         //de->reserveElements( numWallVerts );
@@ -169,7 +156,7 @@ ElevationCompiler::compile(const Building*    building,
             float lowerZ = (float)flr * floorHeight;
     
             OE_DEBUG << LC << "...wall has " << wall->faces.size() << " faces\n";
-            for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 4) //+= 6)
+            for(Elevation::Faces::const_iterator f = wall->faces.begin(); f != wall->faces.end(); ++f, vertPtr += 4)
             {
                 osg::Vec3d Lvec = f->left.upper - f->left.lower; Lvec.normalize();
                 osg::Vec3d Rvec = f->right.upper - f->right.lower; Rvec.normalize();
@@ -181,7 +168,6 @@ ElevationCompiler::compile(const Building*    building,
                 osg::Vec3d LR = (f->right.lower + Rvec*lowerZ) * frame;
                 osg::Vec3d UR = (f->right.lower + Rvec*upperZ) * frame;
 
-                // set the 6 wall verts. // TODO: optimize down to four.
                 verts->push_back( UL );
                 verts->push_back( LL );
                 verts->push_back( LR );

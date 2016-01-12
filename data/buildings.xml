@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
+
 <buildings>
 
-    <building name="Single-family home" tags="residential singlefamily" max_height="12">
+    <building name="Single-family home" tags="residential singlefamily" max_height="15">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade residential singlefamily">
                 <roof type="gable" skin_tags="roof commercial"/>
@@ -72,32 +73,5 @@
             </elevation>
         </elevations>
    </building>
-
-   <!--
-   <building tags="commercial 3tier multi" min_floors="20">
-        <skin_tags>commercial facade</skin_tags>
-        <elevations>
-            <elevation height_percentage="30">
-                <roof type="flat" skin_tags="commercial roof"/>
-                <elevations>
-                    <elevation height_percentage="50" inset="5" xoffset="3" yoffset="0">
-                        <roof type="flat" skin_tags="commercial roof"/>
-                        <elevations>
-                            <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3">
-                            </elevation>
-                        </elevations>
-                    </elevation>
-                    <elevation height_percentage="70" inset="5" xoffset="-3" yoffset="-3">
-                        <roof type="flat" skin_tags="commercial roof"/>
-                        <elevations>
-                            <elevation type="parapet" width="1" height="2" skin_name="roof.commercial.3">
-                            </elevation>
-                        </elevations>
-                    </elevation>
-                </elevations>
-            </elevation>           
-        </elevations>
-   </building>
-   -->
 
 </buildings>
