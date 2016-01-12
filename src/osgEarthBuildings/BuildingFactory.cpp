@@ -126,15 +126,15 @@ BuildingFactory::create(FeatureCursor*    input,
         // for each feature, check that it's a polygon
         Feature* feature = input->nextFeature();
         if ( feature && feature->getGeometry() )
-        {
-            if ( !cropToCentroid(feature, cropTo) )
-            {
-                continue;
-            }
-
+        {          
             if ( _outSRS.valid() )
             {
                 feature->transform( _outSRS.get() );
+            }
+
+            if ( !cropToCentroid(feature, cropTo) )
+            {
+                continue;
             }
 
 
