@@ -85,9 +85,6 @@ BuildingExtension::connect(MapNode* mapNode)
         catalog = 0L;
     }
 
-    // Create a compiler that converts building models into nodes:
-    osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
-
     // Open a cache bin, if a cache is active.
     initializeCaching();
 
@@ -106,6 +103,7 @@ BuildingExtension::connect(MapNode* mapNode)
 bool
 BuildingExtension::disconnect(MapNode* mapNode)
 {
+    //TODO, fix me.
     if ( mapNode && _root.valid() )
         mapNode->removeChild( _root.get() );
     return true;
