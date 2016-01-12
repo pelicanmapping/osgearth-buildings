@@ -191,6 +191,9 @@ namespace osgEarth { namespace Buildings
         Walls& getWalls() { return _walls; }
         const Walls& getWalls() const { return _walls; }
 
+        const osg::Vec3d& getLongEdgeRotatedMidpoint() const { return _longEdgeRotatedMidpoint; }
+        const osg::Vec3d& getLongEdgeRotatedInsideNormal() const { return _longEdgeRotatedInsideNormal; }
+
     protected:
         optional<float>    _height;
         optional<float>    _heightPercentage;
@@ -210,6 +213,8 @@ namespace osgEarth { namespace Buildings
         Walls _walls;
         
         float _cosR, _sinR;
+        osg::Vec3d _longEdgeRotatedMidpoint;
+        osg::Vec3d _longEdgeRotatedInsideNormal;
 
     protected:
         virtual ~Elevation() { }
@@ -231,6 +236,9 @@ namespace osgEarth { namespace Buildings
         }
         inline void rotate(osg::Vec3f& v) const {
             rotate(v.x(), v.y());
+        }
+        inline void rotate(osg::Vec3d& v) const {
+            rotate((float&)v.x(), (float&)v.y());
         }
         inline void unrotate(float& x, float& y) const {
             float x2 = _cosR*x + _sinR*y, y2 = - _sinR*x + _cosR*y;

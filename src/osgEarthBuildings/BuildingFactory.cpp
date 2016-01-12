@@ -127,16 +127,16 @@ BuildingFactory::create(FeatureCursor*    input,
         Feature* feature = input->nextFeature();
         if ( feature && feature->getGeometry() )
         {
+            if ( !cropToCentroid(feature, cropTo) )
+            {
+                continue;
+            }
+
             if ( _outSRS.valid() )
             {
                 feature->transform( _outSRS.get() );
             }
 
-            // make sure the feature's centroid falls within the extent:
-            if ( !cropToCentroid(feature, cropTo) )
-            {
-                continue;
-            }
 
             // clamp to the terrain.
             float min = FLT_MAX, max = -FLT_MAX;

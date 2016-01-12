@@ -93,7 +93,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
     if ( !cursor.valid() || !cursor->hasMore() )
     {
-        //OE_WARN << LC << "Invalid or empty cursor for tile key (" << tileKey.str() << ")\n";
+        OE_WARN << LC << "Invalid or empty cursor for tile key (" << tileKey.str() << ")\n";
         return 0L;
     }
     
@@ -102,7 +102,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
     factory->setSession( _session.get() );
     factory->setCatalog( _catalog.get() );
-    factory->setOutputSRS( getProfile()->getSRS() );
+    factory->setOutputSRS( _session->getMapSRS() );
 
     const Style* style =
         _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
@@ -113,7 +113,7 @@ BuildingPager::createNode(const TileKey& tileKey)
         OE_WARN << LC << "Failed to create building data model\n";
         return 0L;
     }
-    OE_TEST << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
+    OE_NOTICE << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
 
     // Create OSG model from buildings.
     OE_START_TIMER(compile);

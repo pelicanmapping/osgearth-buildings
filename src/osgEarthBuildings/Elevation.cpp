@@ -106,6 +106,13 @@ Elevation::setRotation(const Footprint* footprint)
     float r = atan2( p2.x()-p1.x(), p2.y()-p1.y() );
     _sinR = sinf( r );
     _cosR = cosf( r );
+
+    osg::Vec3d r1 = n.first;  rotate(r1);
+    osg::Vec3d r2 = n.second; rotate(r2);
+
+    _longEdgeRotatedMidpoint = (r1+r2)/2.0;
+    _longEdgeRotatedInsideNormal = (r2-r1)^osg::Vec3d(0,0,1);
+    _longEdgeRotatedInsideNormal.normalize();
 }
 
 void

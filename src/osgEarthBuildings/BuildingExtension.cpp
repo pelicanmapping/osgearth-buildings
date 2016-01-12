@@ -88,7 +88,7 @@ BuildingExtension::connect(MapNode* mapNode)
     // Open a cache bin, if a cache is active.
     initializeCaching();
 
-    BuildingPager* pager = new BuildingPager( mapNode->getMap()->getProfile() );
+    BuildingPager* pager = new BuildingPager( features->getFeatureProfile()->getProfile() );
     pager->setSession      ( session.get() );
     pager->setFeatureSource( features.get() );
     pager->setCatalog      ( catalog.get() );

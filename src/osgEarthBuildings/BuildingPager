@@ -70,6 +70,8 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<CacheBin>         _cacheBin;
         CachePolicy                    _cachePolicy;
         osg::ref_ptr<BuildingCompiler> _compiler;
+
+        OpenThreads::Mutex             _mutex;
     };
 
 } } // namespace
