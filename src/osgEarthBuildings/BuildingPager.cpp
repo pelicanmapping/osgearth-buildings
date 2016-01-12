@@ -31,8 +31,7 @@ using namespace osgEarth::Symbology;
 
 
 BuildingPager::BuildingPager(const Profile* profile) :
-SimplePager( profile ),
-_style     ( 0L )
+SimplePager( profile )
 {
     _stateSetCache = new StateSetCache();
     setAdditive( false );
@@ -53,7 +52,6 @@ BuildingPager::setSession(Session* session)
     if ( session )
     {
         _compiler = new BuildingCompiler(session);
-        _style = session->styles() ? session->styles()->getDefaultStyle() : 0L;
     }
 }
 
