@@ -41,6 +41,7 @@ namespace osgEarth { namespace Buildings
             const Building*    building,
             const Elevation*   elevation, 
             osg::Geode*        geode,
+            osg::Group*        models,
             const osg::Matrix& world2local) const;
 
     protected:

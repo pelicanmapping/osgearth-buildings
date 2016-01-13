@@ -90,6 +90,16 @@ namespace
                     roof->setSkinResource( candidates.at(index) );
                 }
             }
+
+            if ( true ) // roof->getModelSymbol()
+            {
+                ModelResource* model = dynamic_cast<ModelResource*>(_lib->getInstance("roof.flag", _dbo));
+                if ( model )
+                {
+                    roof->setModelResource( model );
+                }
+            }
+
             traverse(roof);
         }
     };

@@ -25,6 +25,7 @@
 #include <osgUtil/Tessellator>
 #include <osgEarth/Tessellator>
 #include <osgEarthSymbology/MeshConsolidator>
+#include <osgEarth/ShaderGenerator>
 
 #define LC "[BuildingCompiler] "
 
@@ -76,11 +77,16 @@ BuildingCompiler::compile(const BuildingVector& input,
     osg::Geode* geode = new osg::Geode();
     root->addChild( geode );
 
+    osg::Group* models = new osg::Group();
+    models->setDataVariance( models->DYNAMIC ); // stop the optimizer
+    ShaderGenerator::setIgnoreHint( models, true ); // stop the shader generator
+    root->addChild( models );
+
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
         Building* building = i->get();
         //addSimpleFootprint( geode, building, world2local );
-        addElevations( geode, building, building->getElevations(), world2local );
+        addElevations( geode, models, building, building->getElevations(), world2local );
     }
 
     return root.release();
@@ -128,6 +134,7 @@ BuildingCompiler::addSimpleFootprint(osg::Geode*        geode,
 
 bool
 BuildingCompiler::addElevations(osg::Geode*            geode,
+                                osg::Group*            models,
                                 const Building*        building,
                                 const ElevationVector& elevations,
                                 const osg::Matrix&     world2local) const
@@ -146,12 +153,12 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
 
         if ( elevation->getRoof() )
         {
-            addRoof( geode, building, elevation, world2local );
+            addRoof( geode, models, building, elevation, world2local );
         }
 
         if ( !elevation->getElevations().empty() )
         {
-            addElevations( geode, building, elevation->getElevations(), world2local );
+            addElevations( geode, models, building, elevation->getElevations(), world2local );
         }
 
     } // elevations loop
@@ -160,7 +167,7 @@ BuildingCompiler::addElevations(osg::Geode*            geode,
 }
 
 bool
-BuildingCompiler::addRoof(osg::Geode* geode, const Building* building, const Elevation* elevation, const osg::Matrix& world2local) const
+BuildingCompiler::addRoof(osg::Geode* geode, osg::Group* models, const Building* building, const Elevation* elevation, const osg::Matrix& world2local) const
 {
     if ( elevation && elevation->getRoof() )
     {
@@ -168,11 +175,11 @@ BuildingCompiler::addRoof(osg::Geode* geode, const Building* building, const Ele
         {
             if ( elevation->getAxisAlignedBoundingBox().radius() < 20.0f )
             {
-                return _gableRoofCompiler->compile(building, elevation, geode, world2local);
+                return _gableRoofCompiler->compile(building, elevation, geode, models, world2local);
             }
         }
 
-        return _flatRoofCompiler->compile(building, elevation, geode, world2local);
+        return _flatRoofCompiler->compile(building, elevation, geode, models, world2local);
     }
     return false;
 }

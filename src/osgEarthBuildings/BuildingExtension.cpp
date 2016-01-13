@@ -88,7 +88,14 @@ BuildingExtension::connect(MapNode* mapNode)
     // Open a cache bin, if a cache is active.
     initializeCaching();
 
-    BuildingPager* pager = new BuildingPager( features->getFeatureProfile()->getProfile() );
+    // Try to page against the feature profile, otherwise fallback to the map
+    const Profile* featureProfile = features->getFeatureProfile()->getProfile();
+    if (!featureProfile)
+    {
+        featureProfile = mapNode->getMap()->getProfile();
+    }
+
+    BuildingPager* pager = new BuildingPager( featureProfile );
     pager->setSession      ( session.get() );
     pager->setFeatureSource( features.get() );
     pager->setCatalog      ( catalog.get() );

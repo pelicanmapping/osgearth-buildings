@@ -93,7 +93,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
     if ( !cursor.valid() || !cursor->hasMore() )
     {
-        OE_WARN << LC << "Invalid or empty cursor for tile key (" << tileKey.str() << ")\n";
+        OE_DEBUG << LC << "Invalid or empty cursor for tile key (" << tileKey.str() << ")\n";
         return 0L;
     }
     

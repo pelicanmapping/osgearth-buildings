@@ -25,7 +25,8 @@ using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 Roof::Roof() :
-_parent( 0L )
+_parent     ( 0L ),
+_hasModelBox( false )
 {
     //nop
 }
@@ -37,111 +38,198 @@ Roof::getConfig() const
     return conf;
 }
 
+bool
+Roof::build(const Footprint* footprint)
+{
+    // calculate a 4-point boundary suitable for placing rooftop models.
+    _hasModelBox = findRectangle( footprint, _modelBox );
+    return true;
+}
+
 namespace
 {
     struct Line
     {
-        bool intersectRaysXY(
-            const osg::Vec3d& p0, const osg::Vec3d& d0,
-            const osg::Vec3d& p1, const osg::Vec3d& d1,
-            osg::Vec3d& out_p,
-            double&     out_u,
-            double&     out_v) const
-        {
-            static const double epsilon = 0.001;
-
-            double det = d0.y()*d1.x() - d0.x()*d1.y();
-            if ( osg::equivalent(det, 0.0, epsilon) )
-                return false; // parallel
-
-            out_u = (d1.x()*(p1.y()-p0.y())+d1.y()*(p0.x()-p1.x()))/det;
-            out_v = (d0.x()*(p1.y()-p0.y())+d0.y()*(p0.x()-p1.x()))/det;
-            out_p = p0 + d0*out_u;
-            return true;
-        }
-
         osg::Vec3d _a, _b;
 
         Line(const osg::Vec3d& p0, const osg::Vec3d& p1) : _a(p0), _b(p1) { }
 
-        bool intersectLine(const Line& rhs, osg::Vec3d& out) const {
-            double u, v;
-            osg::Vec3d temp;
-            bool ok = intersectRaysXY(_a, (_b-_a), rhs._a, (rhs._b-rhs._a), temp, u, v);
-            out.set( temp.x(), temp.y(), temp.z() );
-            return ok;
+        // intersect this (as a line) with a line segment.
+        bool intersectLineSeg(const Line& rhs, osg::Vec3d& out) const {
+            double p0_x = _a.x(), p0_y = _a.y(), p1_x = _b.x(), p1_y = _b.y();
+            double p2_x = rhs._a.x(), p2_y = rhs._a.y(), p3_x = rhs._b.x(), p3_y = rhs._b.y();
+            
+            double s1_x, s1_y, s2_x, s2_y;
+            s1_x = p1_x - p0_x;     s1_y = p1_y - p0_y; 
+            s2_x = p3_x - p2_x;     s2_y = p3_y - p2_y;
+            
+            double s, t, d;
+            d = -s2_x * s1_y + s1_x * s2_y;
+            if ( osg::equivalent(d, 0) )
+                return false;
+
+            s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / d;
+            t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / d;
+
+            if ( s >= 0 && s <= 1 ) //&& t >= 0 && t <= 1)
+            {
+                out.x() = p0_x + (t * s1_x);
+                out.y() = p0_y + (t * s1_y);
+                return true;
+            }
+
+            return false;
         }
 
-        bool intersectSegment(const Line& rhs, osg::Vec3d& out) const {
-            double u, v;
-            osg::Vec3d temp;
-            bool ok = intersectRaysXY(_a, (_b-_a), rhs._a, (rhs._b-rhs._a), temp, u, v);
-            out.set( temp.x(), temp.y(), temp.z() );
-            return ok && u >= 0.0 && u <= 1.0 && v >= 0.0 && v <= 1.0;
-        }
-        bool intersect(const Line& rhs, osg::Vec3d& out) const {
-            double u, v;
-            return intersectRaysXY(_a, (_b-_a), rhs._a, (rhs._b-rhs._a), out, u, v);
+        // intersect this (as a segment) with another segment.
+        bool intersectSegSeg(const Line& rhs, osg::Vec3d& out) const {
+            double p0_x = _a.x(), p0_y = _a.y(), p1_x = _b.x(), p1_y = _b.y();
+            double p2_x = rhs._a.x(), p2_y = rhs._a.y(), p3_x = rhs._b.x(), p3_y = rhs._b.y();
+            
+            double s1_x, s1_y, s2_x, s2_y;
+            s1_x = p1_x - p0_x;     s1_y = p1_y - p0_y; 
+            s2_x = p3_x - p2_x;     s2_y = p3_y - p2_y;
+            
+            double s, t, d;
+            d = -s2_x * s1_y + s1_x * s2_y;
+            if ( osg::equivalent(d, 0) )
+                return false;
+
+            s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / d;
+            t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / d;
+
+            if ( s >= 0 && s <= 1 && t >= 0 && t <= 1)
+            {
+                out.x() = p0_x + (t * s1_x);
+                out.y() = p0_y + (t * s1_y);
+                return true;
+            }
+
+            return false;
         }
     };
+
+    // True is the polygon/ring fully contains the 4-corner box.
+    bool polyContainsBox(const Ring* poly, const osg::Vec3d* box)
+    {
+        for(int i=0; i<4; ++i) 
+        {
+            if ( !poly->contains2D(box[i].x(), box[i].y()) )
+                return false;
+        }
+        
+        Line a(box[0], box[1]), b(box[1], box[2]), c(box[2], box[3]), d(box[3], box[1]);
+        
+        osg::Vec3d unused;
+        ConstSegmentIterator si(poly, true);
+        while(si.hasMore())
+        {
+            Segment seg = si.next();
+            Line s(seg.first, seg.second);
+            if ( s.intersectSegSeg(a, unused) ) return false;
+            if ( s.intersectSegSeg(b, unused) ) return false;
+            if ( s.intersectSegSeg(c, unused) ) return false;
+            if ( s.intersectSegSeg(d, unused) ) return false;
+        }
+
+        return true;
+    }
 }
 
+
 bool
-Roof::findRectangle(const Footprint* fp, osg::BoundingBox& output) const
+Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
 {
-    osg::ref_ptr<Geometry> g = fp->clone();
+    // This algorithm attempts to find a suitable location and size
+    // for a rectangle that lies inside the footprint. Later we can
+    // extend it to try multiple different points and find the one
+    // that yields the best result. Random scattering is one option,
+    // a 3x3 grid is another option. For now it calculates a "centriod"
+    // derived from the "longest edge" of the footprint (the same one
+    // used to determine the buidling's rotation).
 
-    // rotate into axis-aligned space
-    for(Geometry::iterator i = g->begin(); i != g->end(); ++i)
-        getParent()->rotate( *i );
+    // Inspiration:
+    // http://d3plus.org/blog/behind-the-scenes/2014/07/08/largest-rect/
 
-    // step 1. find candidate center point.
-    osg::Vec3d y0 = getParent()->getLongEdgeRotatedMidpoint();
-    osg::Vec3d n  = getParent()->getLongEdgeRotatedInsideNormal();
+    // Find candidate center point. We start with the midpoint of the 
+    // longest edge, which is calculated earlier in Elevation::setRotation.
+    osg::Vec3d m = getParent()->getLongEdgeRotatedMidpoint();
+    osg::Vec3d n = getParent()->getLongEdgeRotatedInsideNormal();
 
-    Line bisectorY(y0, y0+osg::Vec3d(0,1,0));
-    ConstSegmentIterator siY( g.get(), true );
-    osg::Vec3d y1;
-    while(siY.hasMore()) 
+    // Two vectors (orthogonal) will form the "X" and "Y" axes
+    // of our rotated rectangle.
+    osg::Vec3d yvec = n;
+    osg::Vec3d xvec = n^osg::Vec3d(0,0,1); xvec.normalize();
+
+    // Extend a line out from the starting point along our "Y" axis
+    // and intersect it with the far edge of the polygon. Then find the midpoint.
+    Line yline(m, m+yvec);
+    ConstSegmentIterator siY( fp, true );
+    osg::Vec3d y0, y1;
+    int num = 0;
+    while(siY.hasMore() && num < 2)
     {
         Segment s = siY.next();
-        if ( Line(s.first, s.second).intersectLine(bisectorY, y1) )
-            break;
-    }
-
-    osg::Vec3d p = (y0+y1)/2.0;
-
-    Line bisectorX(p, p+osg::Vec3d(1,0,0));
-    ConstSegmentIterator siX(g.get(), true);
-    osg::Vec3d x0, x1;
-    int num = 0;
-    while(siX.hasMore() && num < 2)
-    {
-        Segment s = siX.next();
+        Line seg(s.first, s.second);
         if ( num == 0 ) {
-            if ( Line(s.first, s.second).intersectLine(bisectorX, p0) )
+            if ( yline.intersectLineSeg(seg, y0) )
                 ++num;
         }
         else {
-            if ( Line(s.first, s.second).intersectLine(bisectorY, x1) )
+            if ( yline.intersectLineSeg(seg, y1) )
                 ++num;
         }
     }
+    if ( num < 2 ) return false;
+
+    osg::Vec3d p0 = (y0+y1)*0.5;
+
+    // Next extend a line from this new point along our "X" axis,
+    // finding where it intersects the outside of the polygon.
+    // Again, find the midpoint of these two intersections.
+    Line xline(p0, p0+xvec);
+    ConstSegmentIterator siX( fp, true );
+    osg::Vec3d x0, x1;
+    num = 0;
+    while(siX.hasMore() && num < 2)
+    {
+        Segment s = siX.next();
+        Line seg(s.first, s.second);
+        if ( num == 0 ) {
+            if ( xline.intersectLineSeg(seg, x0) )
+                ++num;
+        }
+        else {
+            if ( xline.intersectLineSeg(seg, x1) )
+                ++num;
+        }
+    }
+    if ( num < 2 ) return false;
     
-    p = (x0+x1)/2.0;
+    osg::Vec3d p1 = (x0+x1)*0.5;
 
-    // step 3. calc max width and height from center point.
-    double maxWidth  = std::min( (p-x0).length(), (p-x1).length() );
-    double maxHeight = std::min( (p-y0).length(), (p-y1).length() );
+    // We now have a reasonable center point for our rectangle.
+    // Calculate the maximum width and height based on distance 
+    // from the edges of the polygon.
+    double w = std::min( (p1-x0).length(), (p1-x1).length() );
+    double h = std::min( (p1-y0).length(), (p1-y1).length() );
 
-    // step 4. start with a square, then iterate over boxes of varying aspect ratios
-    double maxArea = 0.0;
-
-    // start with a single AR:
-    double ar = 1.0;
-
+    // make a box based on the max height and width, and scale it
+    // down until it fits or until we give up.
+    for(double scale = 0.8; scale >= 0.5; scale -= 1.0)
+    {
+        osg::Vec3d dx = xvec*w*scale, dy = yvec*h*scale;
     
+        output[0].set( p1-dx-dy );  
+        output[1].set( p1+dx-dy );  
+        output[2].set( p1+dx+dy );
+        output[3].set( p1-dx+dy );
 
+        if ( polyContainsBox(fp, output) )
+        {
+            return true;
+        }
+    }
 
-    return true;
+    return false;
 }

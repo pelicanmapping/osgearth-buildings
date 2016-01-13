@@ -21,6 +21,8 @@
 #include <osgEarthFeatures/Session>
 #include <osgEarthSymbology/MeshConsolidator>
 #include <osgUtil/Tessellator>
+#include <osg/MatrixTransform>
+#include <osg/ComputeBoundsVisitor>
 
 using namespace osgEarth;
 using namespace osgEarth::Features;
@@ -34,6 +36,7 @@ bool
 FlatRoofCompiler::compile(const Building*    building,
                           const Elevation*   elevation, 
                           osg::Geode*        geode,
+                          osg::Group*        models,
                           const osg::Matrix& world2local) const
 {
     if ( !geode ) return false;
@@ -94,6 +97,8 @@ FlatRoofCompiler::compile(const Building*    building,
     //    roof->setTexCoordArray(1, anchors);
     //}
 
+    float roofZ = 0.0f;
+
     // Create a series of line loops that the tessellator can reorganize into polygons.
     unsigned vertptr = 0;
     for(Elevation::Walls::const_iterator wall = elevation->getWalls().begin();
@@ -109,6 +114,7 @@ FlatRoofCompiler::compile(const Building*    building,
             if ( f->left.isFromSource )
             {
                 verts->push_back( f->left.upper );
+                roofZ = f->left.upper.z();
 
                 if ( colors )
                 {
@@ -184,6 +190,46 @@ FlatRoofCompiler::compile(const Building*    building,
         (*v) = (*v) * frame;
 
     geode->addDrawable( geom.get() );
+    
+    // Load models:
+    ModelResource* model = roof->getModelResource();
+    if ( model && roof->hasModelBox() )
+    {
+        osg::ref_ptr<osg::Node> node;
+        if ( _session->getResourceCache() )
+        {
+            _session->getResourceCache()->getOrCreateInstanceNode(model, node);
+        }
+
+        if ( node.valid() )
+        {
+            const osg::Vec3d* modelBox = roof->getModelBox();
+            osg::Vec3d rbox[4];
+            osg::BoundingBox bbox;
+            for(int i=0; i<4; ++i) { 
+                rbox[i] = modelBox[i];
+                roof->getParent()->rotate(rbox[i]);
+                bbox.expandBy(rbox[i]);
+            }
+
+            osg::ComputeBoundsVisitor cb;
+            node->accept( cb );
+
+            osg::Vec3d p = bbox.center();
+            roof->getParent()->unrotate( p );
+            p.z() = roofZ - cb.getBoundingBox().zMin();
+
+            osg::MatrixTransform* xform = new osg::MatrixTransform();
+            xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
+            xform->addChild( node.get() );
+
+            models->addChild( xform );
+        }
+        else
+        {
+            OE_WARN << LC << "Model resource set, but couldn't find model\n";
+        }
+    }
 
     return true;
 }

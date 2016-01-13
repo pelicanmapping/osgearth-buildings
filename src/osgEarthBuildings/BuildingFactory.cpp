@@ -127,14 +127,18 @@ BuildingFactory::create(FeatureCursor*    input,
         Feature* feature = input->nextFeature();
         if ( feature && feature->getGeometry() )
         {
-            if ( !cropToCentroid(feature, cropTo) )
-            {
-                continue;
-            }
+            // Removing co-linear points will help produce a more "true"
+            // longest-edge for rotation and roof rectangle calcuations.
+            feature->getGeometry()->removeColinearPoints();
 
             if ( _outSRS.valid() )
             {
                 feature->transform( _outSRS.get() );
+            }
+
+            if ( !cropToCentroid(feature, cropTo) )
+            {
+                continue;
             }
 
 

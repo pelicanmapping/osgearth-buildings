@@ -226,6 +226,8 @@ namespace osgEarth { namespace Buildings
 
     public:
 
+        osg::Matrix getRotation() const;
+
         /** rotates a 2D point based on the calculated rotation */
         inline void rotate(float& x, float& y) const {
             float x2 = _cosR*x - _sinR*y, y2 = _sinR*x + _cosR*y;
@@ -238,7 +240,9 @@ namespace osgEarth { namespace Buildings
             rotate(v.x(), v.y());
         }
         inline void rotate(osg::Vec3d& v) const {
-            rotate((float&)v.x(), (float&)v.y());
+            float x = v.x(), y = v.y();
+            rotate(x, y);
+            v.x() = x, v.y() = y;
         }
         inline void unrotate(float& x, float& y) const {
             float x2 = _cosR*x + _sinR*y, y2 = - _sinR*x + _cosR*y;
@@ -249,6 +253,11 @@ namespace osgEarth { namespace Buildings
         }
         inline void unrotate(osg::Vec3f& v) const {
             unrotate(v.x(), v.y());
+        }
+        inline void unrotate(osg::Vec3d& v) const {
+            float x = v.x(), y = v.y();
+            unrotate(x, y);
+            v.x() = x, v.y() = y;
         }
             
     };

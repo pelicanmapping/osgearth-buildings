@@ -23,6 +23,7 @@
 #include "Footprint"
 #include <osgEarthSymbology/Color>
 #include <osgEarthSymbology/Skins>
+#include <osgEarthSymbology/ModelResource>
 #include <vector>
 
 namespace osgEarth { namespace Buildings
@@ -73,27 +74,42 @@ namespace osgEarth { namespace Buildings
         /**
          * Texture and properties for texturing this roof 
          */
-        void setSkinResource(SkinResource* skin) { _skinResource = skin; }
-        SkinResource* getSkinResource() const    { return _skinResource; }
+        void setSkinResource(SkinResource* skin) { _skin = skin; }
+        SkinResource* getSkinResource() const    { return _skin.get(); }
+
+        /**
+         * Model to place on the roof
+         */
+        void setModelResource(ModelResource* model) { _model = model; }
+        ModelResource* getModelResource() const     { return _model.get(); }
+
+        /**
+         * Bounding polygon (4-point box) for rooftop models.
+         * Available after calling build().
+         */
+        const osg::Vec3d* getModelBox() const { return _modelBox; }
+        bool hasModelBox() const              { return _hasModelBox; }
 
     public:
 
         // noop for now.
-        bool build(const Footprint*) { return true; }
+        bool build(const Footprint*);
 
         virtual Config getConfig() const;
 
-        bool findRectangle(const Footprint* fp, osg::BoundingBox& output) const;
+        bool findRectangle(const Footprint* fp, osg::Vec3d* output) const;
 
     protected:
         virtual ~Roof() { }
 
-        Type                       _type;
-        Elevation*                 _parent;
-        Color                      _color;
-        osg::ref_ptr<SkinSymbol>   _skinSymbol;
-        osg::ref_ptr<SkinResource> _skinResource;
-        osg::BoundingBox           _aabb;
+        Type                        _type;
+        Elevation*                  _parent;
+        Color                       _color;
+        osg::ref_ptr<SkinSymbol>    _skinSymbol;
+        osg::ref_ptr<SkinResource>  _skin;
+        osg::ref_ptr<ModelResource> _model;
+        bool                        _hasModelBox;
+        osg::Vec3d                  _modelBox[4];
     };
 } }
 

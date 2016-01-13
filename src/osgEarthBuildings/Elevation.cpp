@@ -107,12 +107,19 @@ Elevation::setRotation(const Footprint* footprint)
     _sinR = sinf( r );
     _cosR = cosf( r );
 
-    osg::Vec3d r1 = n.first;  rotate(r1);
-    osg::Vec3d r2 = n.second; rotate(r2);
-
-    _longEdgeRotatedMidpoint = (r1+r2)/2.0;
-    _longEdgeRotatedInsideNormal = (r2-r1)^osg::Vec3d(0,0,1);
+    _longEdgeRotatedMidpoint = (p1+p2)*0.5;
+    _longEdgeRotatedInsideNormal = (n.second-n.first)^osg::Vec3d(0,0,-1);
     _longEdgeRotatedInsideNormal.normalize();
+}
+
+osg::Matrix
+Elevation::getRotation() const 
+{
+    return osg::Matrix(
+        _cosR, -_sinR, 0, 0,
+        _sinR,  _cosR, 0, 0,
+        0,      0,     1, 0,
+        0,      0,     0, 1);
 }
 
 void
@@ -180,6 +187,7 @@ Elevation::build(const Footprint* in_footprint)
     /** calculates the rotation based on the footprint */
     setRotation(in_footprint);
 
+#if 0
     // offsets: shift the coordinates relative to the dominant rotation angle:
     if ( getXOffset() != 0.0f || getYOffset() != 0.0f )
     {
@@ -199,6 +207,7 @@ Elevation::build(const Footprint* in_footprint)
         }
         footprint = dynamic_cast<Polygon*>(copy.get());
     }
+#endif
 
     // compute the axis-aligned bbox
     _aabb.init();

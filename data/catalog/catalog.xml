@@ -103,5 +103,15 @@
 		<image_height>2</image_height>
 		<texture_mode>modulate</texture_mode>
 	</skin>
+    
+    <!-- models -->
+    
+    <model name="roof.cow" tags="roof">
+        <url>models/cow.osg.osgearth_shadergen</url>
+    </model>
+    
+    <model name="roof.flag" tags="roof">
+        <url>models/red_flag.osg.10.scale.osgearth_shadergen</url>
+    </model>
 
 </resources>

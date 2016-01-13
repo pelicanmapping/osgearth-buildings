@@ -79,6 +79,7 @@ bool
 GableRoofCompiler::compile(const Building*    building,
                            const Elevation*   elevation, 
                            osg::Geode*        geode,
+                           osg::Group*        models,
                            const osg::Matrix& world2local) const
 {
     if ( !geode ) return false;
