@@ -24,6 +24,7 @@
 #include <osgEarthSymbology/Color>
 #include <osgEarthSymbology/Skins>
 #include <osgEarthSymbology/ModelResource>
+#include <osgEarthSymbology/ModelSymbol>
 #include <vector>
 
 namespace osgEarth { namespace Buildings
@@ -78,7 +79,13 @@ namespace osgEarth { namespace Buildings
         SkinResource* getSkinResource() const    { return _skin.get(); }
 
         /**
-         * Model to place on the roof
+         * Symbol defining how to select roof models
+         */
+        void setModelSymbol(ModelSymbol* symbol) { _modelSymbol = symbol; }
+        ModelSymbol* getModelSymbol() const      { return _modelSymbol.get(); }
+
+        /**
+         * Model to place on the roof.
          */
         void setModelResource(ModelResource* model) { _model = model; }
         ModelResource* getModelResource() const     { return _model.get(); }
@@ -107,6 +114,7 @@ namespace osgEarth { namespace Buildings
         Color                       _color;
         osg::ref_ptr<SkinSymbol>    _skinSymbol;
         osg::ref_ptr<SkinResource>  _skin;
+        osg::ref_ptr<ModelSymbol>   _modelSymbol;
         osg::ref_ptr<ModelResource> _model;
         bool                        _hasModelBox;
         osg::Vec3d                  _modelBox[4];

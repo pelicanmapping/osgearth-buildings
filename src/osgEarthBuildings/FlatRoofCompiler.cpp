@@ -215,6 +215,16 @@ FlatRoofCompiler::compile(const Building*    building,
             osg::ComputeBoundsVisitor cb;
             node->accept( cb );
 
+            for(int i=0; i<4; ++i)
+            {
+                osg::Vec3d p = modelBox[i];
+                p.z() = roofZ - cb.getBoundingBox().zMin();
+                osg::MatrixTransform* xform = new osg::MatrixTransform();
+                xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
+                xform->addChild( node.get() );
+                models->addChild( xform );
+            }
+#if 0
             osg::Vec3d p = bbox.center();
             roof->getParent()->unrotate( p );
             p.z() = roofZ - cb.getBoundingBox().zMin();
@@ -222,8 +232,9 @@ FlatRoofCompiler::compile(const Building*    building,
             osg::MatrixTransform* xform = new osg::MatrixTransform();
             xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
             xform->addChild( node.get() );
-
             models->addChild( xform );
+
+#endif
         }
         else
         {

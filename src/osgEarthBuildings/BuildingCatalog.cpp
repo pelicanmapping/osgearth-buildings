@@ -34,14 +34,14 @@ using namespace osgEarth::Buildings;
 
 namespace
 {
-    // Resolves SkinSymbols into SkinResources.
-    struct ResolveSkins : public BuildingVisitor
+    // Resolves symbols into resources.
+    struct ResolveResources : public BuildingVisitor
     {
         const ResourceLibrary* _lib;
         const osgDB::Options*  _dbo;
         Random                 _prng;
 
-        ResolveSkins(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
+        ResolveResources(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
             : _lib(lib), _prng(seed), _dbo(dbo) { }
 
         void apply(Elevation* elevation)
@@ -91,13 +91,9 @@ namespace
                 }
             }
 
-            if ( true ) // roof->getModelSymbol()
+            if ( roof->getModelSymbol() )
             {
-                ModelResource* model = dynamic_cast<ModelResource*>(_lib->getInstance("roof.flag", _dbo));
-                if ( model )
-                {
-                    roof->setModelResource( model );
-                }
+                roof->setModelResource( _lib->getModel(roof->getModelSymbol()) );
             }
 
             traverse(roof);
@@ -194,8 +190,8 @@ BuildingCatalog::createBuildings(Feature*          feature,
 
                     if ( reslib )
                     {
-                        ResolveSkins resolveSkins( reslib, building->getUID(), session->getDBOptions() );
-                        building->accept( resolveSkins );
+                        ResolveResources resolver( reslib, building->getUID(), session->getDBOptions() );
+                        building->accept( resolver );
                     }
                 
                     // Build the internal structures:
@@ -417,6 +413,12 @@ BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
     if ( r->hasValue("color") )
         roof->setColor( Color(r->value("color")) );
 
+    ModelSymbol* modelSymbol = parseModelSymbol( r );
+    if ( modelSymbol )
+    {
+        roof->setModelSymbol( modelSymbol );
+    }
+
     return roof;
 }
 
@@ -437,4 +439,23 @@ BuildingCatalog::parseSkinSymbol(const Config* c) const
     }
 
     return skinSymbol;
+}
+
+ModelSymbol*
+BuildingCatalog::parseModelSymbol(const Config* c) const
+{
+    ModelSymbol* symbol = 0L;
+
+    if ( c->hasValue("model_name") )
+    {
+        symbol = new ModelSymbol();
+        symbol->name() = c->value("model_name");
+    }
+    else if ( c->hasValue("skin_tags") )
+    {
+        symbol = new ModelSymbol();
+        symbol->addTags( c->value("skin_tags") );
+    }
+
+    return symbol;
 }

@@ -82,6 +82,8 @@ namespace osgEarth { namespace Buildings
         Roof* parseRoof(const Config*, ProgressCallback*) const;
         
         SkinSymbol* parseSkinSymbol(const Config* conf) const;
+
+        ModelSymbol* parseModelSymbol(const Config* conf) const;
         
         void cleanPolygon(Footprint* polygon) const;
 

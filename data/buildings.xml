@@ -13,7 +13,7 @@
     <building name="Commercial basic" tags="commercial" min_height="12" max_height="20">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade commercial">
-                <roof type="flat" skin_tags="roof commercial"/>
+                <roof type="flat" skin_tags="roof commercial" model_name="roof.flag"/>
             </elevation>
         </elevations>
     </building>
@@ -21,7 +21,7 @@
     <building name="Commercial with roof" tags="commercial" min_height="20" max_height="60">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade commercial">
-                <roof type="flat" skin_tags="roof commercial"/>
+                <roof type="flat" skin_tags="roof commercial" model_name="roof.flag"/>
                 <elevations>                
                     <elevation type="parapet"  height="1.2" width="0.5" skin_name="parapet.concrete">
                         <roof type="flat" skin_name="parapet.concrete"/>
@@ -38,7 +38,7 @@
                 <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
                     <elevation height="5" inset="3">
-                        <roof type="flat" skin_tags="roof commercial"/>
+                        <roof type="flat" skin_tags="roof commercial" model_name="roof.cow"/>
                         <elevations>
                             <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.concrete">
                                 <roof type="flat" skin_name="parapet.concrete"/>
@@ -60,7 +60,7 @@
                         <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>
                             <elevation height_percentage="35" inset="4" xoffset="2" yoffset="2">
-                                <roof type="flat" skin_tags="roof commercial"/>
+                                <roof type="flat" skin_tags="roof commercial" model_name="roof.flag"/>
                                 <elevations>
                                     <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.concrete">
                                         <roof type="flat" skin_name="parapet.concrete"/>

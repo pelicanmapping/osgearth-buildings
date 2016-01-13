@@ -41,8 +41,11 @@ Roof::getConfig() const
 bool
 Roof::build(const Footprint* footprint)
 {
-    // calculate a 4-point boundary suitable for placing rooftop models.
-    _hasModelBox = findRectangle( footprint, _modelBox );
+    if ( getModelSymbol() )
+    {
+        // calculate a 4-point boundary suitable for placing rooftop models.
+        _hasModelBox = findRectangle( footprint, _modelBox );
+    }
     return true;
 }
 
