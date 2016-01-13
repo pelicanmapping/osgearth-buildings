@@ -35,13 +35,13 @@ using namespace osgEarth::Buildings;
 namespace
 {
     // Resolves symbols into resources.
-    struct ResolveResources : public BuildingVisitor
+    struct ResolveSkins : public BuildingVisitor
     {
         const ResourceLibrary* _lib;
         const osgDB::Options*  _dbo;
         Random                 _prng;
 
-        ResolveResources(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
+        ResolveSkins(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
             : _lib(lib), _prng(seed), _dbo(dbo) { }
 
         void apply(Elevation* elevation)
@@ -96,6 +96,26 @@ namespace
                 roof->setModelResource( _lib->getModel(roof->getModelSymbol()) );
             }
 
+            traverse(roof);
+        }
+    };
+
+    // Resolves symbols into resources.
+    struct ResolveModels : public BuildingVisitor
+    {
+        const ResourceLibrary* _lib;
+        const osgDB::Options*  _dbo;
+        Random                 _prng;
+
+        ResolveModels(const ResourceLibrary* lib, const UID& seed, const osgDB::Options* dbo) 
+            : _lib(lib), _prng(seed), _dbo(dbo) { }
+
+        void apply(Roof* roof)
+        {
+            if ( roof->getModelSymbol() )
+            {
+                roof->setModelResource( _lib->getModel(roof->getModelSymbol()) );
+            }
             traverse(roof);
         }
     };
@@ -188,15 +208,23 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     if ( !reslib )
                         reslib = session->styles()->getDefaultResourceLibrary();
 
+                    // Pick textures before building:
                     if ( reslib )
                     {
-                        ResolveResources resolver( reslib, building->getUID(), session->getDBOptions() );
+                        ResolveSkins resolver( reslib, building->getUID(), session->getDBOptions() );
                         building->accept( resolver );
                     }
                 
                     // Build the internal structures:
                     if ( building->build() )
                     {
+                        // pick models after building:
+                        if ( reslib )
+                        {
+                            ResolveModels resolver( reslib, building->getUID(), session->getDBOptions() );
+                            building->accept( resolver );
+                        }
+
                         output.push_back( building.get() );
                     }
                     else

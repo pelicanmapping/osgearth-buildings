@@ -7,7 +7,7 @@
 		<tiled>true</tiled>
 		<image_width>20</image_width>
 		<image_height>12</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <skin name="facade.residential.sf.2" tags="facade residential singlefamily">
@@ -15,7 +15,7 @@
 		<tiled>true</tiled>
 		<image_width>12</image_width>
 		<image_height>12</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <!-- Facades: commercial -->
@@ -25,7 +25,7 @@
 		<tiled>true</tiled>
 		<image_width>25</image_width>
 		<image_height>25</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <skin name="facade.commercial.2" tags="facade commercial">
@@ -33,7 +33,7 @@
 		<tiled>true</tiled>
 		<image_width>25</image_width>
 		<image_height>5</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
     </skin>
     
     <skin name="facade.commercial.3" tags="facade commercial">
@@ -41,7 +41,7 @@
 		<tiled>true</tiled>
 		<image_width>25</image_width>
 		<image_height>14</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
     </skin>
     
     <skin name="facade.commercial.4" tags="facade commercial">
@@ -49,7 +49,7 @@
 		<tiled>true</tiled>
 		<image_width>25</image_width>
 		<image_height>8</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
     </skin>
     
     <skin name="facade.commercial.5" tags="facade commercial">
@@ -57,7 +57,7 @@
 		<tiled>true</tiled>
 		<image_width>30</image_width>
 		<image_height>12</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
     </skin>
     
     <skin name="facade.commercial.6" tags="facade commercial">
@@ -65,7 +65,7 @@
 		<tiled>true</tiled>
 		<image_width>30</image_width>
 		<image_height>12</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
     </skin>
     
     <!-- Roofs -->
@@ -75,7 +75,7 @@
 		<tiled>true</tiled>
 		<image_width>10</image_width>
 		<image_height>10</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <skin name="roof.commercial.2" tags="roof commercial">
@@ -83,7 +83,7 @@
 		<tiled>true</tiled>
 		<image_width>10</image_width>
 		<image_height>10</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <!-- Parapets -->
@@ -93,7 +93,7 @@
 		<tiled>true</tiled>
 		<image_width>2</image_width>
 		<image_height>2</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <skin name="parapet.poured" tags="parapet commercial">
@@ -101,7 +101,7 @@
 		<tiled>true</tiled>
 		<image_width>8</image_width>
 		<image_height>2</image_height>
-		<texture_mode>modulate</texture_mode>
+		<texture_mode>decal</texture_mode>
 	</skin>
     
     <!-- models -->
@@ -112,6 +112,14 @@
     
     <model name="roof.flag" tags="roof">
         <url>models/red_flag.osg.10.scale.osgearth_shadergen</url>
+    </model>
+        
+    <model name="roof.ac" tags="roof medium">
+        <url>models/ac.osgb.osgearth_shadergen</url>
+    </model>
+        
+    <model name="roof.ac.small" tags="roof small">
+        <url>models/ac.osgb.(0.3,1,1).scale.osgearth_shadergen</url>
     </model>
 
 </resources>

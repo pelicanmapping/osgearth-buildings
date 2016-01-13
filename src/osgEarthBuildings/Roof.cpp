@@ -164,6 +164,10 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
     osg::Vec3d yvec = n;
     osg::Vec3d xvec = n^osg::Vec3d(0,0,1); xvec.normalize();
 
+    // TEST:
+    //m = fp->getBounds().center();
+
+
     // Extend a line out from the starting point along our "Y" axis
     // and intersect it with the far edge of the polygon. Then find the midpoint.
     Line yline(m, m+yvec);
@@ -219,7 +223,7 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
 
     // make a box based on the max height and width, and scale it
     // down until it fits or until we give up.
-    for(double scale = 0.8; scale >= 0.5; scale -= 1.0)
+    for(double scale = 0.8; scale >= 0.2; scale -= 0.1)
     {
         osg::Vec3d dx = xvec*w*scale, dy = yvec*h*scale;
     

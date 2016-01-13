@@ -18,11 +18,13 @@
  */
 #include "FlatRoofCompiler"
 #include <osgEarth/Tessellator>
+#include <osgEarth/Random>
 #include <osgEarthFeatures/Session>
 #include <osgEarthSymbology/MeshConsolidator>
 #include <osgUtil/Tessellator>
 #include <osg/MatrixTransform>
 #include <osg/ComputeBoundsVisitor>
+#include <osg/Program>
 
 using namespace osgEarth;
 using namespace osgEarth::Features;
@@ -31,6 +33,41 @@ using namespace osgEarth::Buildings;
 
 #define LC "[FlatRoofCompiler] "
 
+namespace
+{
+    static bool s_debug = ::getenv("OSGEARTH_BUILDINGS_DEBUG") != 0L;
+
+    osg::Node* createModelBoxGeom(const osg::Vec3d* box, const osg::Matrix& frame, float z)
+    {
+        osg::Vec3Array* v = new osg::Vec3Array();
+        for(int i=0; i<4; ++i) v->push_back( box[i] + osg::Vec3(0,0,z+0.25) );
+
+        osg::Vec4Array* c = new osg::Vec4Array();
+        c->push_back(osg::Vec4(1,0,0,1));
+
+        osg::Vec3Array* n = new osg::Vec3Array();
+        n->push_back(osg::Vec3(0,0,1));
+
+        osg::Geometry* g = new osg::Geometry();
+        g->setUseVertexBufferObjects(true);
+        g->setUseDisplayList(false);
+
+        g->setVertexArray( v );
+        g->setColorArray( c );
+        g->setColorBinding( g->BIND_OVERALL );
+        g->setNormalArray( n );
+        g->setNormalBinding( g->BIND_OVERALL );
+        g->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, 0, 4) );
+
+        osg::Geode* d = new osg::Geode();
+        d->addDrawable( g );
+
+        osg::MatrixTransform* m = new osg::MatrixTransform(frame);
+        m->addChild( d );
+        m->getOrCreateStateSet()->setAttribute(new osg::Program(),1);
+        return m;
+    }
+}
 
 bool
 FlatRoofCompiler::compile(const Building*    building,
@@ -205,16 +242,17 @@ FlatRoofCompiler::compile(const Building*    building,
         {
             const osg::Vec3d* modelBox = roof->getModelBox();
             osg::Vec3d rbox[4];
-            osg::BoundingBox bbox;
+            osg::BoundingBox space;
             for(int i=0; i<4; ++i) { 
                 rbox[i] = modelBox[i];
                 roof->getParent()->rotate(rbox[i]);
-                bbox.expandBy(rbox[i]);
+                space.expandBy(rbox[i]);
             }
 
             osg::ComputeBoundsVisitor cb;
             node->accept( cb );
 
+#if 0
             for(int i=0; i<4; ++i)
             {
                 osg::Vec3d p = modelBox[i];
@@ -224,17 +262,41 @@ FlatRoofCompiler::compile(const Building*    building,
                 xform->addChild( node.get() );
                 models->addChild( xform );
             }
-#if 0
-            osg::Vec3d p = bbox.center();
-            roof->getParent()->unrotate( p );
-            p.z() = roofZ - cb.getBoundingBox().zMin();
+#else
+            // calculate a pseudo-random offset.
+            float spaceWidth = space.xMax() - space.xMin();
+            float spaceHeight = space.yMax() - space.yMin();
 
-            osg::MatrixTransform* xform = new osg::MatrixTransform();
-            xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
-            xform->addChild( node.get() );
-            models->addChild( xform );
+            float modelWidth = cb.getBoundingBox().xMax() - cb.getBoundingBox().xMin();
+            float modelHeight = cb.getBoundingBox().yMax() - cb.getBoundingBox().yMin();
+            
+            if ( modelWidth < spaceWidth && modelHeight < spaceHeight )
+            {
+                Random prng(building->getUID());
+                float x = prng.next();
+                float y = prng.next();
 
+                float maxOffsetX = spaceWidth-modelWidth;
+                float maxOffsetY = spaceHeight-modelHeight;
+                float dx = prng.next()*maxOffsetX - 0.5*maxOffsetX;
+                float dy = prng.next()*maxOffsetY - 0.5*maxOffsetY;
+
+                osg::Vec3d p = space.center() + osg::Vec3d(dx, dy, 0);
+                roof->getParent()->unrotate( p );
+                p.z() = roofZ - cb.getBoundingBox().zMin();
+
+                osg::MatrixTransform* xform = new osg::MatrixTransform();
+                xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
+                xform->addChild( node.get() );
+                models->addChild( xform );
+            }
 #endif
+
+            if ( s_debug )
+            {
+                models->addChild( createModelBoxGeom(modelBox, frame, roofZ) );
+            }
+
         }
         else
         {
