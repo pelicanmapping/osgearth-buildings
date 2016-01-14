@@ -26,14 +26,18 @@ using namespace osgEarth::Buildings;
 Building::Building() :
 _zoning   ( Zoning::ZONING_UNKNOWN ),
 _minHeight( 0.0f ),
-_maxHeight( FLT_MAX )
+_maxHeight( FLT_MAX ),
+_minArea  ( 0.0f ),
+_maxArea  ( FLT_MAX )
 {
 }
 
 Building::Building(const Building& rhs) :
 _zoning   ( rhs._zoning ),
 _minHeight( rhs._minHeight ),
-_maxHeight( rhs._maxHeight )
+_maxHeight( rhs._maxHeight ),
+_minArea  ( rhs._minArea ),
+_maxArea  ( rhs._maxArea )
 {
     for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e)
         _elevations.push_back( e->get()->clone() );

@@ -86,6 +86,22 @@
 		<texture_mode>decal</texture_mode>
 	</skin>
     
+    <skin name="roof.commercial.gravel" tags="roof commercial">
+	    <url>roof/commercial4.jpg</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>20</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.residential.brown" tags="roof residential">
+	    <url>roof/shingles1.jpg</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
     <!-- Parapets -->
     
     <skin name="parapet.concrete" tags="parapet commercial">

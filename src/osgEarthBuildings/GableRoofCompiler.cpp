@@ -33,8 +33,8 @@ _session( session )
     osg::Vec3f LL(0, 0, 0), LM(0.5, 0, 2), LR(1, 0, 0),
                UL(0, 1, 0), UM(0.5, 1, 2), UR(1, 1, 0);
 
-    osg::Vec3f texLL(0, 0, 0), texLM(0.5, 0, 0), texLR(1, 0, 0),
-               texUL(0, 1, 0), texUM(0.5, 1, 0), texUR(1, 1, 0);
+    osg::Vec3f texLL(1, 0, 0), texLM(1, 1, 0), texLR(0, 0, 0),
+               texUL(0, 0, 0), texUM(0, 1, 0), texUR(1, 0, 0);
 
     // set the Y values here if you want the roofs to overhang the gables.
     // this is cool, but creates a backfacing polygon which might now work
@@ -56,20 +56,20 @@ _session( session )
     // second side:
     _verts->push_back(LR+LO); _texCoords->push_back(texLR);
     _verts->push_back(UR+UO); _texCoords->push_back(texUR);
-    _verts->push_back(LM+LO); _texCoords->push_back(texLM);
-    _verts->push_back(LM+LO); _texCoords->push_back(texLM);
+    _verts->push_back(LM+LO); _texCoords->push_back(texUM);
+    _verts->push_back(LM+LO); _texCoords->push_back(texUM);
     _verts->push_back(UR+UO); _texCoords->push_back(texUR);
-    _verts->push_back(UM+UO); _texCoords->push_back(texUM);
+    _verts->push_back(UM+UO); _texCoords->push_back(texLM);
 
     // south gable:
     _verts->push_back(UL); _texCoords->push_back(texUL);
-    _verts->push_back(UM); _texCoords->push_back(texUM);
-    _verts->push_back(UR); _texCoords->push_back(texUR);
+    _verts->push_back(UM); _texCoords->push_back(texUL);
+    _verts->push_back(UR); _texCoords->push_back(texUL);
 
     // north gable:
-    _verts->push_back(LL); _texCoords->push_back(texLL);
-    _verts->push_back(LR); _texCoords->push_back(texLR);
-    _verts->push_back(LM); _texCoords->push_back(texLM);
+    _verts->push_back(LL); _texCoords->push_back(texUL);
+    _verts->push_back(LR); _texCoords->push_back(texUL);
+    _verts->push_back(LM); _texCoords->push_back(texUL);
 
     // add a chimney :)
     addCappedBox(osg::Vec3f(0.2, 0.2, 0.0), osg::Vec3f(0.3, 0.3, 2.5), _verts.get(), _texCoords.get());
@@ -135,6 +135,8 @@ GableRoofCompiler::compile(const Building*    building,
     osg::Vec3f scale(aabb.xMax()-aabb.xMin(), aabb.yMax()-aabb.yMin(), 1.0f);
     osg::Vec3f bias (aabb.xMin(), aabb.yMin(), roofZ);
 
+    osg::Vec2f tscale(scale.x() / skin->imageWidth().get(), scale.y() / skin->imageHeight().get());
+
     // scale and bias the geometry, rotate it back to its actual location,
     // and transform into the final coordinate frame.
     for(int i=0; i<verts->size(); ++i)
@@ -143,6 +145,12 @@ GableRoofCompiler::compile(const Building*    building,
         v = osg::componentMultiply(v, scale) + bias;
         elevation->unrotate( v );
         v = v * frame;
+
+        if ( texCoords )
+        {
+            osg::Vec3f& tx = (*texCoords)[i];
+            tx.x() *= tscale.y(), tx.y() *= tscale.x();         
+        }
     }
 
     // calculate normals (after transforming the vertices)

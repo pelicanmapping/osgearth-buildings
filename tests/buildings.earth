@@ -1,4 +1,8 @@
 <map>
+    <options>
+        <terrain driver="rex" tile_size="7"/>
+    </options>
+    
     <image driver="tms"
            url="http://readymap.org/readymap/tiles/1.0.0/22/">
     </image>
@@ -9,7 +13,7 @@
     
     <extensions>
     
-        <buildings lod="14">
+        <buildings lod="13">
         
             <features driver="ogr"
                       build_spatial_index="true"

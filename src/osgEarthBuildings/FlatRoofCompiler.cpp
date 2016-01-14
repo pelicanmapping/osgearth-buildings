@@ -25,6 +25,7 @@
 #include <osg/MatrixTransform>
 #include <osg/ComputeBoundsVisitor>
 #include <osg/Program>
+#include <osg/LineWidth>
 
 using namespace osgEarth;
 using namespace osgEarth::Features;
@@ -64,7 +65,8 @@ namespace
 
         osg::MatrixTransform* m = new osg::MatrixTransform(frame);
         m->addChild( d );
-        m->getOrCreateStateSet()->setAttribute(new osg::Program(),1);
+        m->getOrCreateStateSet()->setAttribute(new osg::Program());
+        m->getOrCreateStateSet()->setAttributeAndModes(new osg::LineWidth(2),1);
         return m;
     }
 }
@@ -263,15 +265,17 @@ FlatRoofCompiler::compile(const Building*    building,
                 models->addChild( xform );
             }
 #else
-            // calculate a pseudo-random offset.
+            // calculate the size of the model box:
             float spaceWidth = space.xMax() - space.xMin();
             float spaceHeight = space.yMax() - space.yMin();
 
             float modelWidth = cb.getBoundingBox().xMax() - cb.getBoundingBox().xMin();
             float modelHeight = cb.getBoundingBox().yMax() - cb.getBoundingBox().yMin();
             
+            // only place a model is there is enough room:
             if ( modelWidth < spaceWidth && modelHeight < spaceHeight )
             {
+                // generate a pseudo-random position inside the model box:
                 Random prng(building->getUID());
                 float x = prng.next();
                 float y = prng.next();
@@ -283,8 +287,12 @@ FlatRoofCompiler::compile(const Building*    building,
 
                 osg::Vec3d p = space.center() + osg::Vec3d(dx, dy, 0);
                 roof->getParent()->unrotate( p );
+
+                // offset to the bottom of the model's bounding box:
                 p.z() = roofZ - cb.getBoundingBox().zMin();
 
+                // place the model.
+                // todo: replace this with a model manager for instancing?
                 osg::MatrixTransform* xform = new osg::MatrixTransform();
                 xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
                 xform->addChild( node.get() );
@@ -292,6 +300,7 @@ FlatRoofCompiler::compile(const Building*    building,
             }
 #endif
 
+            // draw the model box for debugging purposes.
             if ( s_debug )
             {
                 models->addChild( createModelBoxGeom(modelBox, frame, roofZ) );

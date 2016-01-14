@@ -2,15 +2,23 @@
 
 <buildings>
 
-    <building name="Single-family home" tags="residential singlefamily" max_height="15">
+    <building name="Single-family home" tags="residential singlefamily" max_height="15" max_area="750">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade residential singlefamily">
-                <roof type="gable" skin_tags="roof commercial"/>
+                <roof type="gable" skin_tags="roof residential"/>
             </elevation>
         </elevations>
     </building>
 
-    <building name="Commercial basic" tags="commercial" min_height="0" max_height="20">
+    <building name="Commercial low" tags="commercial" min_height="0" max_height="15" min_area="750">
+        <elevations>
+            <elevation height_percentage="100" skin_tags="facade commercial">
+                <roof type="flat" skin_tags="roof commercial" model_name="roof.ac.small"/>
+            </elevation>
+        </elevations>
+    </building>
+
+    <building name="Commercial medium simple" tags="commercial" min_height="15" max_height="30">
         <elevations>
             <elevation height_percentage="100" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial" model_name="roof.ac.small"/>

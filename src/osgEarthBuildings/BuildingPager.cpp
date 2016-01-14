@@ -85,7 +85,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     
     OE_START_TIMER(start);
 
-    OE_TEST << LC << "createNode(" << tileKey.str() << ")\n";
+    OE_TEST << LC << tileKey.str() << ": createNode(" << tileKey.str() << ")\n";
     
     // Create a cursor to iterator over the feature data:
     Query query;
@@ -93,7 +93,7 @@ BuildingPager::createNode(const TileKey& tileKey)
     osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
     if ( !cursor.valid() || !cursor->hasMore() )
     {
-        OE_DEBUG << LC << "Invalid or empty cursor for tile key (" << tileKey.str() << ")\n";
+        OE_DEBUG << LC << tileKey.str() << ":    Invalid or empty cursor for tile key\n";
         return 0L;
     }
     
@@ -110,21 +110,21 @@ BuildingPager::createNode(const TileKey& tileKey)
     BuildingVector buildings;
     if ( !factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
     {
-        OE_WARN << LC << "Failed to create building data model\n";
+        OE_WARN << LC << tileKey.str() << ":    Failed to create building data model\n";
         return 0L;
     }
-    OE_NOTICE << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
+    OE_TEST << LC << tileKey.str() << ":    Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
 
     // Create OSG model from buildings.
     OE_START_TIMER(compile);
 
     osg::ref_ptr<osg::Node> node = _compiler->compile(buildings);   
 
-    OE_TEST << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
+    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
     
     if ( !node.valid() )
     {
-        OE_WARN << LC << "Compile failed";
+        OE_WARN << LC << tileKey.str() << ":    Compile failed";
         return 0L;
     }
 
@@ -132,11 +132,11 @@ BuildingPager::createNode(const TileKey& tileKey)
     // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
     osgUtil::Optimizer o;
     o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
-    OE_TEST << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
+    OE_TEST << LC << tileKey.str() << ":    Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
     
     Registry::instance()->shaderGenerator().run( node.get(), "Buildings", _stateSetCache.get() );
    
-    OE_TEST << LC << "Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
+    OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
 
     //todo
     return node.release();

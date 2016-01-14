@@ -97,6 +97,18 @@ namespace osgEarth { namespace Buildings
         float getMaxHeight() const     { return _maxHeight; }
 
         /**
+         * Minimum are for which to use this building as a template (sqm)
+         */
+        void setMinArea(float value) { _minArea = value; }
+        float getMinArea() const     { return _minArea; }
+
+        /**
+         * Maximum area for which to use this building as a template (sqm)
+         */
+        void setMaxArea(float value) { _maxArea = value; }
+        float getMaxArea() const     { return _maxArea; }
+
+        /**
          * Build the internal structure of the building and its components.
          * You must call setFootprint() before calling this function.
          */
@@ -120,6 +132,8 @@ namespace osgEarth { namespace Buildings
         osg::Matrix             _local2world;
         float                   _minHeight;
         float                   _maxHeight;
+        float                   _minArea;
+        float                   _maxArea;
     };
 
     typedef std::vector< osg::ref_ptr<Building> > BuildingVector;

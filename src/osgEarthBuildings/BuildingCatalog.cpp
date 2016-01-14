@@ -186,8 +186,10 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->floorHeight().get()));
                 }
 
+                float area = footprint->getBounds().area2d();
+
                 // A footprint is the minumum info required to make a building.
-                osg::ref_ptr<Building> building = createBuildingTemplate(feature, height, session);
+                osg::ref_ptr<Building> building = createBuildingTemplate(feature, height, area, session);
 
                 if ( building )
                 {
@@ -258,6 +260,7 @@ BuildingCatalog::cleanPolygon(Footprint* polygon) const
 Building*
 BuildingCatalog::createBuildingTemplate(Feature* feature,
                                         float    height,
+                                        float    area,
                                         Session* session) const
 {
     if ( !_buildingsTemplates.empty() )
@@ -266,8 +269,14 @@ BuildingCatalog::createBuildingTemplate(Feature* feature,
         for(unsigned i=0; i<_buildingsTemplates.size(); ++i)
         {
             const Building* bt = _buildingsTemplates.at(i).get();
-            if ( height >= bt->getMinHeight() && height <= bt->getMaxHeight() )
+
+            bool heightOK = height == 0.0f || (height >= bt->getMinHeight() && height <= bt->getMaxHeight());
+            bool areaOK   = area == 0.0f   || (area >= bt->getMinArea() && area <= bt->getMaxArea());
+
+            if ( heightOK && areaOK )
+            {
                 candidates.push_back(i);
+            }
         }
 
         if ( !candidates.empty() )
@@ -325,11 +334,11 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
             skinSymbol->addTags( b->value("skin_tags") );
         }
 
-        if ( b->hasValue("min_height") )
-            building->setMinHeight( b->value("min_height", 0.0f) );
+        building->setMinHeight( b->value("min_height", 0.0f) );
+        building->setMaxHeight( b->value("max_height", FLT_MAX) );
 
-        if ( b->hasValue("max_height") )
-            building->setMaxHeight( b->value("max_height", FLT_MAX) );
+        building->setMinArea( b->value("min_area", 0.0f) );
+        building->setMaxArea( b->value("max_area", FLT_MAX) );
 
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )

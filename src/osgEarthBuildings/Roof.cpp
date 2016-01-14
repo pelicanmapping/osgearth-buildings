@@ -165,7 +165,7 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
     osg::Vec3d xvec = n^osg::Vec3d(0,0,1); xvec.normalize();
 
     // TEST:
-    //m = fp->getBounds().center();
+    m = fp->getBounds().center();
 
 
     // Extend a line out from the starting point along our "Y" axis
