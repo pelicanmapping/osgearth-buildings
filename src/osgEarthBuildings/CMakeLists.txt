@@ -21,6 +21,7 @@ set(LIB_PUBLIC_HEADERS
     BuildingVisitor
     Common
     Compiler
+    CompilerOutput
     Elevation
     ElevationCompiler
     Export
@@ -42,6 +43,7 @@ set(LIB_COMMON_FILES
     BuildingSymbol.cpp
     BuildingVisitor.cpp
     Compiler.cpp
+    CompilerOutput.cpp
     Elevation.cpp
     ElevationCompiler.cpp
     FeaturePlugin.cpp

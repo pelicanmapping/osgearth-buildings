@@ -20,6 +20,7 @@
 #define OSGEARTH_BUILDINGS_BUILDING_COMPILER_H
 
 #include "Compiler"
+#include "CompilerOutput"
 #include "Building"
 #include "ElevationCompiler"
 #include "FlatRoofCompiler"
@@ -47,8 +48,9 @@ namespace osgEarth { namespace Buildings
          * @param[in ] progress Progress/error tracking token
          * @return              OSG scene graph with building geometry
          */
-        virtual osg::Node* compile(
+        virtual bool compile(
             Building*         input,
+            CompilerOutput&   output,
             ProgressCallback* progress =0L);
 
         /**
@@ -57,8 +59,9 @@ namespace osgEarth { namespace Buildings
          * @param[in ] progress Progress/error tracking token
          * @return              OSG scene graph with building geometry.
          */
-        virtual osg::Node* compile(
+        virtual bool compile(
             const BuildingVector& input,
+            CompilerOutput&       output,
             ProgressCallback*     progress =0L);
 
     protected:
@@ -72,13 +75,13 @@ namespace osgEarth { namespace Buildings
          * @param[in ] world2local Reference frame into which to re-localize coordinates (optional)
          * @return     OSG geometry
          */
-        virtual bool addBuilding(osg::Geode*, const Building*, const osg::Matrix&) const;
+        virtual bool addBuilding(CompilerOutput&, const Building*, const osg::Matrix&) const;
 
-        virtual bool addSimpleFootprint(osg::Geode*, const Building*, const osg::Matrix&) const;
+        virtual bool addSimpleFootprint(CompilerOutput&, const Building*, const osg::Matrix&) const;
 
-        virtual bool addElevations(osg::Geode*, osg::Group*, const Building*, const ElevationVector&, const osg::Matrix&) const;
+        virtual bool addElevations(CompilerOutput&, const Building*, const ElevationVector&, const osg::Matrix&) const;
 
-        virtual bool addRoof(osg::Geode*, osg::Group*, const Building*, const Elevation*, const osg::Matrix&) const;
+        virtual bool addRoof(CompilerOutput&, const Building*, const Elevation*, const osg::Matrix&) const;
 
     protected:
         osg::ref_ptr<Session>           _session;

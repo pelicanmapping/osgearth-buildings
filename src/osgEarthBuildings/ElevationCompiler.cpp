@@ -29,12 +29,11 @@ using namespace osgEarth::Buildings;
 
 
 bool
-ElevationCompiler::compile(const Building*    building,
-                           const Elevation*   elevation, 
-                           osg::Geode*        geode,
+ElevationCompiler::compile(CompilerOutput&    output,
+                           const Building*    building,
+                           const Elevation*   elevation,
                            const osg::Matrix& world2local) const
 {
-    if ( !geode ) return false;
     if ( !building ) return false;
     if ( !elevation ) return false;
 
@@ -241,9 +240,16 @@ ElevationCompiler::compile(const Building*    building,
 
     // TODO - temporary, doesn't smooth disconnected edges
     osgUtil::SmoothingVisitor::smooth( *geom.get(), 15.0f );
+    
+    if ( !genColors )
+    {
+        colors = new osg::Vec4Array();
+        geom->setColorArray( colors );
+        geom->setColorBinding( geom->BIND_OVERALL );
+        colors->push_back(osg::Vec4(1,1,1,1));
+    }
 
-    geode->addDrawable( geom.get() );
-
+    output.getMainGeode()->addDrawable( geom.get() );
 
     return true;
 }

@@ -72,13 +72,11 @@ namespace
 }
 
 bool
-FlatRoofCompiler::compile(const Building*    building,
-                          const Elevation*   elevation, 
-                          osg::Geode*        geode,
-                          osg::Group*        models,
+FlatRoofCompiler::compile(CompilerOutput&    output,
+                          const Building*    building,
+                          const Elevation*   elevation,
                           const osg::Matrix& world2local) const
 {
-    if ( !geode ) return false;
     if ( !building ) return false;
     if ( !elevation ) return false;
     if ( !elevation->getRoof() ) return false;
@@ -228,7 +226,7 @@ FlatRoofCompiler::compile(const Building*    building,
     for(osg::Vec3Array::iterator v = verts->begin(); v != verts->end(); ++v)
         (*v) = (*v) * frame;
 
-    geode->addDrawable( geom.get() );
+    output.getMainGeode()->addDrawable( geom.get() );
     
     // Load models:
     ModelResource* model = roof->getModelResource();
@@ -251,20 +249,10 @@ FlatRoofCompiler::compile(const Building*    building,
                 space.expandBy(rbox[i]);
             }
 
+            // TODO: compute this only once per resource.
             osg::ComputeBoundsVisitor cb;
             node->accept( cb );
 
-#if 0
-            for(int i=0; i<4; ++i)
-            {
-                osg::Vec3d p = modelBox[i];
-                p.z() = roofZ - cb.getBoundingBox().zMin();
-                osg::MatrixTransform* xform = new osg::MatrixTransform();
-                xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
-                xform->addChild( node.get() );
-                models->addChild( xform );
-            }
-#else
             // calculate the size of the model box:
             float spaceWidth = space.xMax() - space.xMin();
             float spaceHeight = space.yMax() - space.yMin();
@@ -291,21 +279,24 @@ FlatRoofCompiler::compile(const Building*    building,
                 // offset to the bottom of the model's bounding box:
                 p.z() = roofZ - cb.getBoundingBox().zMin();
 
+#if 0
                 // place the model.
                 // todo: replace this with a model manager for instancing?
                 osg::MatrixTransform* xform = new osg::MatrixTransform();
                 xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
                 xform->addChild( node.get() );
                 models->addChild( xform );
-            }
 #endif
+
+                osg::Matrix placement( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
+                output.addInstance( model, placement );
+            }
 
             // draw the model box for debugging purposes.
             if ( s_debug )
             {
-                models->addChild( createModelBoxGeom(modelBox, frame, roofZ) );
+                output.getDebugGroup()->addChild( createModelBoxGeom(modelBox, frame, roofZ) );
             }
-
         }
         else
         {

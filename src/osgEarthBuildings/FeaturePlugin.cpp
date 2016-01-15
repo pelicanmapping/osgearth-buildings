@@ -131,8 +131,11 @@ namespace osgEarth { namespace Buildings
 
             // Create OSG model from buildings.
             OE_START_TIMER(compile);
+            CompilerOutput output;
             osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
-            osg::Node* node = compiler->compile(buildings);            
+            compiler->compile(buildings, output);
+            osg::Node* node = output.createSceneGraph( session );
+
             OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
 
             if ( node )

@@ -20,6 +20,7 @@
 #define OSGEARTH_BUILDINGS_FLAT_ROOF_COMPILER_H
 
 #include "Compiler"
+#include "CompilerOutput"
 #include "Building"
 #include <osgEarthFeatures/Session>
 #include <osg/Geode>
@@ -38,10 +39,9 @@ namespace osgEarth { namespace Buildings
 
     public:
         virtual bool compile(
+            CompilerOutput&    output,
             const Building*    building,
-            const Elevation*   elevation, 
-            osg::Geode*        geode,
-            osg::Group*        models,
+            const Elevation*   elevation,            
             const osg::Matrix& world2local) const;
 
     protected:

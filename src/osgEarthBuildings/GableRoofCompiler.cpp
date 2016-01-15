@@ -76,13 +76,11 @@ _session( session )
 }
 
 bool
-GableRoofCompiler::compile(const Building*    building,
-                           const Elevation*   elevation, 
-                           osg::Geode*        geode,
-                           osg::Group*        models,
+GableRoofCompiler::compile(CompilerOutput&    output,
+                           const Building*    building,
+                           const Elevation*   elevation,
                            const osg::Matrix& world2local) const
 {
-    if ( !geode ) return false;
     if ( !building ) return false;
     if ( !elevation ) return false;
     if ( !elevation->getRoof() ) return false;
@@ -159,6 +157,7 @@ GableRoofCompiler::compile(const Building*    building,
     // and finally the triangles.
     geom->addPrimitiveSet( new osg::DrawArrays(GL_TRIANGLES, 0, verts->size()) );
 
-    geode->addDrawable( geom.get() );
+    output.getMainGeode()->addDrawable( geom.get() );
+
     return true;
 }

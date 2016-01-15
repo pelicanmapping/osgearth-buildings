@@ -1,6 +1,6 @@
 <map>
     <options>
-        <terrain driver="rex" tile_size="7"/>
+        <terrain driver="mp" skirt_ratio="0"/>
     </options>
     
     <image driver="tms"
