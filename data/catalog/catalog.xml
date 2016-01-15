@@ -2,16 +2,24 @@
 <resources name="osgearth-buildings">
 
     <!-- Facades: residential -->
-    <skin name="facade.residential.sf.1" tags="facade residential singlefamily">
+    <skin name="facade.residential.sf.1" tags="facade residential singlefamily 2story">
 	    <url>facade/house-colonial.jpg</url>
 		<tiled>true</tiled>
 		<image_width>20</image_width>
-		<image_height>12</image_height>
+		<image_height>8</image_height>
 		<texture_mode>decal</texture_mode>
 	</skin>
     
-    <skin name="facade.residential.sf.2" tags="facade residential singlefamily">
+    <skin name="facade.residential.sf.2" tags="facade residential singlefamily 2story">
 	    <url>facade/house-victorian.jpg</url>
+		<tiled>true</tiled>
+		<image_width>12</image_width>
+		<image_height>8</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="facade.residential.sf.3" tags="facade residential singlefamily 3story">
+	    <url>facade/residential-3story.jpg</url>
 		<tiled>true</tiled>
 		<image_width>12</image_width>
 		<image_height>12</image_height>
@@ -119,6 +127,15 @@
 		<image_height>2</image_height>
 		<texture_mode>decal</texture_mode>
 	</skin>
+    
+    <!-- barriers -->
+    
+    <skin name="fence.picket" tags="fence picket residential">
+        <url>barrier/fence-picket-white.png</url>
+		<image_width>5</image_width>
+		<image_height>1.5</image_height>
+        <texture_mode>modulate</texture_mode>
+    </skin>
     
     <!-- models -->
     
