@@ -17,7 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "Elevation"
-#include <osgEarthSymbology/Geometry>
 
 #define LC "[Elevation] "
 
@@ -32,10 +31,11 @@ _numFloors         ( _height.get()/3.5f ),
 _inset             ( 0.0f ),
 _xoffset           ( 0.0f ),
 _yoffset           ( 0.0f ),
+_color             ( Color::White ),
 _cosR              ( 1.0f ),
 _sinR              ( 0.0f ),
-_color             ( Color::White ),
-_parent            ( 0L )
+_parent            ( 0L ),
+_renderAABB        ( false )
 {
     //nop
 }
@@ -47,12 +47,16 @@ _numFloors       ( rhs._numFloors ),
 _inset           ( rhs._inset ),
 _xoffset         ( rhs._xoffset ),
 _yoffset         ( rhs._yoffset ),
-_cosR            ( rhs._cosR ),
-_sinR            ( rhs._sinR ),
 _skinSymbol      ( rhs._skinSymbol.get() ),
 _skinResource    ( rhs._skinResource.get() ),
 _color           ( rhs._color ),
-_parent          ( rhs._parent )
+_cosR            ( rhs._cosR ),
+_sinR            ( rhs._sinR ),
+_aabb            ( rhs._aabb ),
+_parent          ( rhs._parent ),
+_renderAABB      ( rhs._renderAABB ),
+_longEdgeMidpoint( rhs._longEdgeMidpoint ),
+_longEdgeInsideNormal( rhs._longEdgeInsideNormal )
 {
     if ( rhs.getRoof() )
     {
@@ -73,53 +77,20 @@ Elevation::clone() const
     return new Elevation( *this );
 }
 
+#if 0
+void
+Elevation::setBuilding(Building* building)
+{
+    _building = building;
+}
+#endif
+
 void
 Elevation::setRoof(Roof* roof)
 {
     _roof = roof;
     if ( roof )
         roof->setParent( this );
-}
-
-void
-Elevation::setRotation(const Footprint* footprint)
-{
-    // looks for the longest segment in the footprint and
-    // returns the angle of that segment relative to north.
-    Segment n;
-    double  maxLen2 = 0.0;
-    ConstSegmentIterator i( footprint, true );
-    while( i.hasMore() )
-    {
-        Segment s = i.next();
-        double len2 = (s.second - s.first).length2();
-        if ( len2 > maxLen2 ) 
-        {
-            maxLen2 = len2;
-            n = s;
-        }
-    }
-
-    const osg::Vec3d& p1 = n.first.x() < n.second.x() ? n.first : n.second;
-    const osg::Vec3d& p2 = n.first.x() < n.second.x() ? n.second : n.first;
-
-    float r = atan2( p2.x()-p1.x(), p2.y()-p1.y() );
-    _sinR = sinf( r );
-    _cosR = cosf( r );
-
-    _longEdgeRotatedMidpoint = (p1+p2)*0.5;
-    _longEdgeRotatedInsideNormal = (n.second-n.first)^osg::Vec3d(0,0,-1);
-    _longEdgeRotatedInsideNormal.normalize();
-}
-
-osg::Matrix
-Elevation::getRotation() const 
-{
-    return osg::Matrix(
-        _cosR, -_sinR, 0, 0,
-        _sinR,  _cosR, 0, 0,
-        0,      0,     1, 0,
-        0,      0,     0, 1);
 }
 
 void
@@ -162,30 +133,57 @@ Elevation::getTop() const
 }
 
 bool
-Elevation::build(const Footprint* in_footprint)
+Elevation::build(const Polygon* in_footprint)
 {
-    if ( !in_footprint ) return false;
+    if ( !in_footprint || !in_footprint->isValid() )
+        return false;
 
-    _walls.clear();
+    const Polygon* footprint = in_footprint;
 
-    // Buffer the footprint if necessary to apply the inset:
-    const Footprint* footprint = in_footprint;
-    osg::ref_ptr<Geometry> copy;
-    if ( getInset() != 0.0f )
+    // For simplification we replace the footprint with its rotated bounding box:
+    osg::ref_ptr<Polygon> box;
+    if ( getRenderAsBox() )
     {
-        BufferParameters bp( BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE );
-        if ( footprint->buffer( -getInset(), copy, bp ) )
-            footprint = dynamic_cast<Polygon*>(copy.get());
+        calculateRotations( in_footprint );
+        if ( _aabb.valid() )
+        {
+            box = new Polygon();
+            osg::Vec3d p;
+            p.set( _aabb.xMin(), _aabb.yMin(), 0.0f ); unrotate(p); box->push_back(p);
+            p.set( _aabb.xMax(), _aabb.yMin(), 0.0f ); unrotate(p); box->push_back(p);
+            p.set( _aabb.xMax(), _aabb.yMax(), 0.0f ); unrotate(p); box->push_back(p);
+            p.set( _aabb.xMin(), _aabb.yMax(), 0.0f ); unrotate(p); box->push_back(p);
+            footprint = box.get();
+        }
     }
 
+    // Buffer the footprint if necessary to apply an inset:
+    if ( getInset() != 0.0f )
+    {
+        osg::ref_ptr<Geometry> inset;
+        BufferParameters bp( BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE );
+        if ( footprint->buffer(-getInset(), inset, bp) )
+        {
+            return buildImpl( dynamic_cast<Polygon*>(inset.get()) );
+        }
+    }
+
+    return buildImpl( footprint );
+}
+
+bool
+Elevation::buildImpl(const Polygon* footprint)
+{
     if ( !footprint || !footprint->isValid() )
     {
         OE_DEBUG << LC << "Discarding invalid footprint.\n";
         return false;
     }
+    
+    _walls.clear();
 
     /** calculates the rotation based on the footprint */
-    setRotation(in_footprint);
+    calculateRotations( footprint );
 
 #if 0
     // offsets: shift the coordinates relative to the dominant rotation angle:
@@ -209,15 +207,6 @@ Elevation::build(const Footprint* in_footprint)
     }
 #endif
 
-    // compute the axis-aligned bbox
-    _aabb.init();
-    for(Footprint::const_iterator i = footprint->begin(); i != footprint->end(); ++i)
-    {
-        osg::Vec3f v(i->x(), i->y(), getTop());
-        rotate( v );
-        _aabb.expandBy( v );
-    }
-
     // prep for wall texture coordinate generation.
     float texWidthM  = _skinResource.valid() ? _skinResource->imageWidth().get()  : 0.0f;
     float texHeightM = _skinResource.valid() ? _skinResource->imageHeight().get() : 1.0f;
@@ -228,18 +217,29 @@ Elevation::build(const Footprint* in_footprint)
     // based on the longest side.
     Bounds bounds = footprint->getBounds();
 
+    float aabbWidth = _aabb.xMax() - _aabb.xMin();
+    float aabbHeight = _aabb.yMax() - _aabb.yMin();
+
     // roof data:
     osg::Vec2f roofTexSpan;
     SkinResource* roofSkin = _roof.valid() ? _roof->getSkinResource() : 0L;
     if ( roofSkin )
     {
-        roofTexSpan.x() = roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : 10.0;
-        if ( roofTexSpan.x() <= 0.0 )
-            roofTexSpan.x() = 10.0;
+        if ( roofSkin->isTiled() == true )
+        {
+            roofTexSpan.x() = roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : 10.0;
+            if ( roofTexSpan.x() <= 0.0 )
+                roofTexSpan.x() = 10.0;
 
-        roofTexSpan.y() = roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : 10.0;
-        if ( roofTexSpan.y() <= 0.0 )
-            roofTexSpan.y() = 10.0;
+            roofTexSpan.y() = roofSkin->imageHeight().isSet() ? *roofSkin->imageHeight() : roofSkin->imageWidth().isSet() ? *roofSkin->imageWidth() : 10.0;
+            if ( roofTexSpan.y() <= 0.0 )
+                roofTexSpan.y() = 10.0;
+        }
+        else
+        {
+            roofTexSpan.x() = aabbWidth;
+            roofTexSpan.y() = aabbHeight;
+        }
     }
 
     ConstGeometryIterator iter( footprint );
@@ -271,11 +271,21 @@ Elevation::build(const Footprint* in_footprint)
             // resolve UV coordinates based on dominant rotation:
             if ( roofSkin )
             {
-                float xr = corner->upper.x() - bounds.xMin();
-                float yr = corner->upper.y() - bounds.yMin();
-                rotate(xr, yr);
-
-                corner->roofUV.set( xr/roofTexSpan.x(), yr/roofTexSpan.y() );
+                if ( roofSkin->isTiled() == true )
+                {
+                    float xr = corner->upper.x() - bounds.xMin();
+                    float yr = corner->upper.y() - bounds.yMin();
+                    rotate(xr, yr);
+                    corner->roofUV.set( xr/roofTexSpan.x(), yr/roofTexSpan.y() );
+                }
+                else
+                {
+                    float xr = corner->upper.x(), yr = corner->upper.y();
+                    rotate(xr, yr);
+                    xr -= _aabb.xMin();
+                    yr -= _aabb.yMin();
+                    corner->roofUV.set( xr/aabbWidth, yr/aabbHeight );
+                }
             }
 
             // cache the length for later use.
@@ -406,6 +416,55 @@ Elevation::build(const Footprint* in_footprint)
     }
 
     return true;
+}
+
+void
+Elevation::calculateRotations(const Polygon* footprint)
+{
+    if ( footprint )
+    {
+        // calculate the rotation data.
+        // looks for the longest segment in the footprint and
+        // returns the angle of that segment relative to north.
+        Segment n;
+        double  maxLen2 = 0.0;
+        ConstSegmentIterator i( footprint, true );
+        while( i.hasMore() )
+        {
+            Segment s = i.next();
+            double len2 = (s.second - s.first).length2();
+            if ( len2 > maxLen2 ) 
+            {
+                maxLen2 = len2;
+                n = s;
+            }
+        }
+
+        // swap coords if neceesary, so that p1 is always on the left.
+        const osg::Vec3d& p1 = n.first.x() < n.second.x() ? n.first : n.second;
+        const osg::Vec3d& p2 = n.first.x() < n.second.x() ? n.second : n.first;
+
+        // compute a rotation that will transform the long segment to be
+        // parallel to the Y axis.
+        float r = atan2( p2.x()-p1.x(), p2.y()-p1.y() );
+        _sinR = sinf( r );
+        _cosR = cosf( r );
+
+        // cache the midpoint of the longest segment, and the vector that
+        // points towards the inside of the polygon.
+        _longEdgeMidpoint = (p1+p2)*0.5;
+        _longEdgeInsideNormal = (n.second-n.first)^osg::Vec3d(0,0,-1);
+        _longEdgeInsideNormal.normalize();
+        
+        // compute the axis-aligned bbox
+        _aabb.init();
+        for(Polygon::const_iterator i = footprint->begin(); i != footprint->end(); ++i)
+        {
+            osg::Vec3f v(i->x(), i->y(), getTop());
+            rotate( v );
+            _aabb.expandBy( v );
+        }
+    }
 }
 
 Config

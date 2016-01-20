@@ -217,8 +217,8 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
         GeometryIterator iter2( geometry, false );
         while(iter2.hasMore())
         {
-            Polygon* footprint = dynamic_cast<Polygon*>(iter2.next());
-            if ( footprint && footprint->isValid() )
+            Polygon* polygon = dynamic_cast<Polygon*>(iter2.next());
+            if ( polygon && polygon->isValid() )
             {
                 // A footprint is the minumum info required to make a building.
                 building = createSampleBuilding( feature );
@@ -227,11 +227,10 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
                 building->setReferenceFrame( local2world );
 
                 // Do initial cleaning of the footprint and install is:
-                cleanPolygon( footprint );
+                cleanPolygon( polygon );
 
                 // Finally, build the internal structure from the footprint.
-                building->setFootprint( footprint );
-                building->build();
+                building->build( polygon );
             }
             else
             {

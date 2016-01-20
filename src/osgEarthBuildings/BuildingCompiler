@@ -77,7 +77,7 @@ namespace osgEarth { namespace Buildings
          */
         virtual bool addBuilding(CompilerOutput&, const Building*, const osg::Matrix&) const;
 
-        virtual bool addSimpleFootprint(CompilerOutput&, const Building*, const osg::Matrix&) const;
+        //virtual bool addSimpleFootprint(CompilerOutput&, const Building*, const osg::Matrix&) const;
 
         virtual bool addElevations(CompilerOutput&, const Building*, const ElevationVector&, const osg::Matrix&) const;
 

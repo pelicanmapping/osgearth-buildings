@@ -39,6 +39,9 @@ namespace osgEarth { namespace Buildings
     public:
         CompilerOutput();
 
+        void setDetailRangeFactor(float value) { _detailRangeFactor = value; }
+        float getDetailRangeFactor() const     { return _detailRangeFactor; }
+
         void setLocalToWorld(const osg::Matrix& m) { _local2world = m; }
         const osg::Matrix& getLocalToWorld() const { return _local2world; }
 
@@ -65,6 +68,8 @@ namespace osgEarth { namespace Buildings
         ModelPlacementMap _instances;
 
         osg::ref_ptr<osg::Group> _debugGroup;
+
+        float _detailRangeFactor;
     };
 } }
 

@@ -125,9 +125,7 @@ BuildingPager::createNode(const TileKey& tileKey)
         return 0L;
     }
 
-    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
-
-    OE_START_TIMER(optimize);
+    output.setDetailRangeFactor( 1.0f );
 
     osg::ref_ptr<osg::Node> node = output.createSceneGraph(_session.get());
     if ( !node.valid() )
@@ -135,20 +133,9 @@ BuildingPager::createNode(const TileKey& tileKey)
         OE_WARN << LC << tileKey.str() << ":   Build Scene Graph failed\n";
         return 0L;
     }
-    
-    // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
-    osgUtil::Optimizer::MergeGeometryVisitor mgv;
-    mgv.setTargetMaximumNumberOfVertices( 250000u );
-    node->accept( mgv );
 
-    osgUtil::Optimizer o;
-    o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) & (~o.MERGE_GEOMETRY) );
+    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
 
-
-    OE_TEST << LC << tileKey.str() << ":    Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
-    
-    Registry::instance()->shaderGenerator().run( node.get(), "Buildings", _stateSetCache.get() );
-   
     OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
 
     //todo

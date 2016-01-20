@@ -248,8 +248,11 @@ ElevationCompiler::compile(CompilerOutput&    output,
         geom->setColorBinding( geom->BIND_OVERALL );
         colors->push_back(osg::Vec4(1,1,1,1));
     }
-
-    output.getMainGeode()->addDrawable( geom.get() );
+    
+    if ( elevation->isDetail() )
+        output.getDetailGeode()->addDrawable( geom.get() );
+    else
+        output.getMainGeode()->addDrawable( geom.get() );
 
     return true;
 }

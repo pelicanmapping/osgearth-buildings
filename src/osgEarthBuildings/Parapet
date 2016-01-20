@@ -21,6 +21,7 @@
 
 #include "Common"
 #include "Elevation"
+#include <osgEarthSymbology/Geometry>
 
 namespace osgEarth { namespace Buildings
 {
@@ -47,9 +48,11 @@ namespace osgEarth { namespace Buildings
 
     public: // Elevation
 
-        virtual bool build(const Footprint* footprint);
+        virtual bool build(const Polygon* footprint);
 
         virtual Config getConfig() const;
+
+        virtual bool isDetail() const { return true; }
 
     protected:
         virtual ~Parapet() { }

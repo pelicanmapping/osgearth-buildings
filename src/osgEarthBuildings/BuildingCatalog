@@ -77,7 +77,7 @@ namespace osgEarth { namespace Buildings
 
         Building* createBuildingTemplate(Feature*, float height, float area, Session*) const;
         
-        bool parseElevations(const Config&, Elevation*, ElevationVector&, SkinSymbol*, ProgressCallback*);
+        bool parseElevations(const Config&, Building*, Elevation*, ElevationVector&, SkinSymbol*, ProgressCallback*);
 
         Roof* parseRoof(const Config*, ProgressCallback*) const;
         
@@ -85,7 +85,7 @@ namespace osgEarth { namespace Buildings
 
         ModelSymbol* parseModelSymbol(const Config* conf) const;
         
-        void cleanPolygon(Footprint* polygon) const;
+        void cleanPolygon(Polygon* polygon) const;
 
     protected:
 

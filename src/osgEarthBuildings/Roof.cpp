@@ -18,7 +18,6 @@
  */
 #include "Roof"
 #include "Elevation"
-#include <osgEarthSymbology/Geometry>
 
 using namespace osgEarth;
 using namespace osgEarth::Symbology;
@@ -39,12 +38,17 @@ Roof::getConfig() const
 }
 
 bool
-Roof::build(const Footprint* footprint)
+Roof::build(const Polygon* footprint)
 {
     if ( getModelSymbol() )
     {
         // calculate a 4-point boundary suitable for placing rooftop models.
         _hasModelBox = findRectangle( footprint, _modelBox );
+
+        // encode the model box dimensions in the symbology so we can find
+        // suitable models that fit.
+        getModelSymbol()->maxSizeX() = (_modelBox[1]-_modelBox[0]).length();
+        getModelSymbol()->maxSizeY() = (_modelBox[2]-_modelBox[1]).length();
     }
     return true;
 }
@@ -141,7 +145,7 @@ namespace
 
 
 bool
-Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
+Roof::findRectangle(const Ring* footprint, osg::Vec3d* output) const
 {
     // This algorithm attempts to find a suitable location and size
     // for a rectangle that lies inside the footprint. Later we can
@@ -156,8 +160,8 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
 
     // Find candidate center point. We start with the midpoint of the 
     // longest edge, which is calculated earlier in Elevation::setRotation.
-    osg::Vec3d m = getParent()->getLongEdgeRotatedMidpoint();
-    osg::Vec3d n = getParent()->getLongEdgeRotatedInsideNormal();
+    osg::Vec3d m = getParent()->getLongEdgeMidpoint();
+    osg::Vec3d n = getParent()->getLongEdgeInsideNormal();
 
     // Two vectors (orthogonal) will form the "X" and "Y" axes
     // of our rotated rectangle.
@@ -165,13 +169,12 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
     osg::Vec3d xvec = n^osg::Vec3d(0,0,1); xvec.normalize();
 
     // TEST:
-    m = fp->getBounds().center();
-
+    m = footprint->getBounds().center();
 
     // Extend a line out from the starting point along our "Y" axis
     // and intersect it with the far edge of the polygon. Then find the midpoint.
     Line yline(m, m+yvec);
-    ConstSegmentIterator siY( fp, true );
+    ConstSegmentIterator siY( footprint, true );
     osg::Vec3d y0, y1;
     int num = 0;
     while(siY.hasMore() && num < 2)
@@ -195,7 +198,7 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
     // finding where it intersects the outside of the polygon.
     // Again, find the midpoint of these two intersections.
     Line xline(p0, p0+xvec);
-    ConstSegmentIterator siX( fp, true );
+    ConstSegmentIterator siX( footprint, true );
     osg::Vec3d x0, x1;
     num = 0;
     while(siX.hasMore() && num < 2)
@@ -232,7 +235,7 @@ Roof::findRectangle(const Footprint* fp, osg::Vec3d* output) const
         output[2].set( p1+dx+dy );
         output[3].set( p1-dx+dy );
 
-        if ( polyContainsBox(fp, output) )
+        if ( polyContainsBox(footprint, output) )
         {
             return true;
         }

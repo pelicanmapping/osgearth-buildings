@@ -20,7 +20,7 @@
 #define OSGEARTH_BUILDINGS_ROOF_H
 
 #include "Common"
-#include "Footprint"
+#include <osgEarthSymbology/Geometry>
 #include <osgEarthSymbology/Color>
 #include <osgEarthSymbology/Skins>
 #include <osgEarthSymbology/ModelResource>
@@ -31,6 +31,7 @@ namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Symbology;
 
+    class Building;
     class Elevation;
 
     /**
@@ -58,6 +59,11 @@ namespace osgEarth { namespace Buildings
          */
         void setParent(Elevation* elevation) { _parent = elevation; }
         Elevation* getParent() const         { return _parent; }
+
+        /**
+         * Building to which this roof belongs.
+         */
+        Building* getBuilding() const;
 
         /**
          * Roof color. If there is a skin, it will be modulated
@@ -100,11 +106,11 @@ namespace osgEarth { namespace Buildings
     public:
 
         // noop for now.
-        bool build(const Footprint*);
+        bool build(const Polygon*);
 
         virtual Config getConfig() const;
 
-        bool findRectangle(const Footprint* fp, osg::Vec3d* output) const;
+        bool findRectangle(const Ring*, osg::Vec3d* output) const;
 
     protected:
         virtual ~Roof() { }

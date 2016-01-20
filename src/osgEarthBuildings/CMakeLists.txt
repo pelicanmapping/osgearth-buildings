@@ -25,7 +25,6 @@ set(LIB_PUBLIC_HEADERS
     Elevation
     ElevationCompiler
     Export
-    Footprint
     FlatRoofCompiler
     GableRoofCompiler
     Parapet
@@ -47,7 +46,6 @@ set(LIB_COMMON_FILES
     Elevation.cpp
     ElevationCompiler.cpp
     FeaturePlugin.cpp
-    Footprint.cpp
     FlatRoofCompiler.cpp
     GableRoofCompiler.cpp
     Parapet.cpp

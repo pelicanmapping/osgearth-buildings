@@ -112,9 +112,22 @@ namespace
 
         void apply(Roof* roof)
         {
-            if ( roof->getModelSymbol() )
+            if ( roof->getModelSymbol() && roof->hasModelBox() )
             {
-                roof->setModelResource( _lib->getModel(roof->getModelSymbol()) );
+                if ( roof->getModelSymbol()->name().isSet() )
+                {
+                    roof->setModelResource( _lib->getModel(roof->getModelSymbol(), _dbo) );
+                }
+                else
+                {
+                    ModelResourceVector candidates;
+                    _lib->getModels(roof->getModelSymbol(), candidates, _dbo);
+                    if ( !candidates.empty() )
+                    {
+                        unsigned index = _prng.next( candidates.size() );
+                        roof->setModelResource( candidates.at(index) );
+                    }
+                }
             }
             traverse(roof);
         }
@@ -173,8 +186,8 @@ BuildingCatalog::createBuildings(Feature*          feature,
         GeometryIterator iter2( geometry, false );
         while(iter2.hasMore())
         {
-            Polygon* footprint = dynamic_cast<Polygon*>(iter2.next());
-            if ( footprint && footprint->isValid() )
+            Polygon* polygon = dynamic_cast<Polygon*>(iter2.next());
+            if ( polygon && polygon->isValid() )
             {        
                 // resolve the height:
                 float    height    = 0.0f;
@@ -186,7 +199,7 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     numFloors = (unsigned)std::max(1.0f, osg::round(height / sym->floorHeight().get()));
                 }
 
-                float area = footprint->getBounds().area2d();
+                float area = polygon->getBounds().area2d();
 
                 // A footprint is the minumum info required to make a building.
                 osg::ref_ptr<Building> building = createBuildingTemplate(feature, height, area, session);
@@ -197,10 +210,7 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     building->setReferenceFrame( local2world );
 
                     // Do initial cleaning of the footprint and install is:
-                    cleanPolygon( footprint );
-
-                    // Finally, build the internal structure from the footprint.
-                    building->setFootprint( footprint );
+                    cleanPolygon( polygon );
 
                     // Apply the symbology:
                     building->setHeight( height );
@@ -218,7 +228,7 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     }
                 
                     // Build the internal structures:
-                    if ( building->build() )
+                    if ( building->build(polygon) )
                     {
                         // pick models after building:
                         if ( reslib )
@@ -246,14 +256,16 @@ BuildingCatalog::createBuildings(Feature*          feature,
 }
 
 void
-BuildingCatalog::cleanPolygon(Footprint* polygon) const
+BuildingCatalog::cleanPolygon(Polygon* fp) const
 {
-    polygon->open();
+    if ( fp && fp->isValid() )
+    {
+        fp->open();
 
-    polygon->removeDuplicates();
+        fp->removeDuplicates();
 
-    polygon->rewind( Polygon::ORIENTATION_CCW );
-
+        fp->rewind( Polygon::ORIENTATION_CCW );
+    }
     // TODO: remove colinear points? for skeleton?
 }
 
@@ -343,7 +355,7 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )
         {
-            parseElevations( *elevations, 0L, building->getElevations(), skinSymbol, progress );
+            parseElevations( *elevations, building, 0L, building->getElevations(), skinSymbol, progress );
         }
 
         _buildingsTemplates.push_back( building );
@@ -356,6 +368,7 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
 
 bool
 BuildingCatalog::parseElevations(const Config&     conf, 
+                                 Building*         building,
                                  Elevation*        parent, 
                                  ElevationVector&  output,
                                  SkinSymbol*       parentSkinSymbol,
@@ -379,7 +392,9 @@ BuildingCatalog::parseElevations(const Config&     conf,
         }
 
         if ( parent )
+        {
             elevation->setParent( parent );
+        }
         
         // resolve the skin symbol for this Elevation.
         SkinSymbol* skinSymbol = parseSkinSymbol( &(*e) );
@@ -412,6 +427,9 @@ BuildingCatalog::parseElevations(const Config&     conf,
         if ( e->hasValue("color") )
             elevation->setColor( Color(e->value("color")) );
 
+        if ( e->value("simplify", false) == true )
+            elevation->setRenderAsBox( true );
+
         if ( e->hasChild("roof") )
         {
             Roof* roof = parseRoof( e->child_ptr("roof"), progress );
@@ -424,7 +442,7 @@ BuildingCatalog::parseElevations(const Config&     conf,
         const Config* children = e->child_ptr("elevations");
         if ( children )
         {
-            parseElevations( *children, elevation, elevation->getElevations(), skinSymbol, progress );
+            parseElevations( *children, building, elevation, elevation->getElevations(), skinSymbol, progress );
         }
     }
 
@@ -488,10 +506,10 @@ BuildingCatalog::parseModelSymbol(const Config* c) const
         symbol = new ModelSymbol();
         symbol->name() = c->value("model_name");
     }
-    else if ( c->hasValue("skin_tags") )
+    else if ( c->hasValue("model_tags") )
     {
         symbol = new ModelSymbol();
-        symbol->addTags( c->value("skin_tags") );
+        symbol->addTags( c->value("model_tags") );
     }
 
     return symbol;

@@ -44,6 +44,9 @@ namespace
         for(int i=0; i<4; ++i) v->push_back( box[i] + osg::Vec3(0,0,z+0.25) );
 
         osg::Vec4Array* c = new osg::Vec4Array();
+        c->push_back(osg::Vec4(1,1,0,1));
+        c->push_back(osg::Vec4(1,0,0,1));
+        c->push_back(osg::Vec4(1,0,0,1));
         c->push_back(osg::Vec4(1,0,0,1));
 
         osg::Vec3Array* n = new osg::Vec3Array();
@@ -55,7 +58,7 @@ namespace
 
         g->setVertexArray( v );
         g->setColorArray( c );
-        g->setColorBinding( g->BIND_OVERALL );
+        g->setColorBinding( g->BIND_PER_VERTEX );
         g->setNormalArray( n );
         g->setNormalBinding( g->BIND_OVERALL );
         g->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, 0, 4) );
@@ -67,6 +70,7 @@ namespace
         m->addChild( d );
         m->getOrCreateStateSet()->setAttribute(new osg::Program());
         m->getOrCreateStateSet()->setAttributeAndModes(new osg::LineWidth(2),1);
+        m->getOrCreateStateSet()->setMode(GL_LIGHTING, 0);
         return m;
     }
 }
@@ -232,75 +236,53 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
     ModelResource* model = roof->getModelResource();
     if ( model && roof->hasModelBox() )
     {
-        osg::ref_ptr<osg::Node> node;
-        if ( _session->getResourceCache() )
-        {
-            _session->getResourceCache()->getOrCreateInstanceNode(model, node);
+        const osg::Vec3d* modelBox = roof->getModelBox();
+        osg::Vec3d rbox[4];
+        osg::BoundingBox space;
+        for(int i=0; i<4; ++i)
+        { 
+            rbox[i] = modelBox[i];
+            roof->getParent()->rotate(rbox[i]);
+            space.expandBy(rbox[i]);
         }
 
-        if ( node.valid() )
-        {
-            const osg::Vec3d* modelBox = roof->getModelBox();
-            osg::Vec3d rbox[4];
-            osg::BoundingBox space;
-            for(int i=0; i<4; ++i) { 
-                rbox[i] = modelBox[i];
-                roof->getParent()->rotate(rbox[i]);
-                space.expandBy(rbox[i]);
-            }
+        // calculate the size of the model box:            
+        float spaceWidth = space.xMax() - space.xMin();
+        float spaceHeight = space.yMax() - space.yMin();
 
-            // TODO: compute this only once per resource.
-            osg::ComputeBoundsVisitor cb;
-            node->accept( cb );
-
-            // calculate the size of the model box:
-            float spaceWidth = space.xMax() - space.xMin();
-            float spaceHeight = space.yMax() - space.yMin();
-
-            float modelWidth = cb.getBoundingBox().xMax() - cb.getBoundingBox().xMin();
-            float modelHeight = cb.getBoundingBox().yMax() - cb.getBoundingBox().yMin();
+        const osg::BoundingBox& bbox = model->getBoundingBox(0L);
+        //osg::BoundingBox bbox(0, 0, 0, 10, 10, 10);
+        float modelWidth  = bbox.xMax() - bbox.xMin();
+        float modelHeight = bbox.yMax() - bbox.yMin();
             
-            // only place a model is there is enough room:
-            if ( modelWidth < spaceWidth && modelHeight < spaceHeight )
-            {
-                // generate a pseudo-random position inside the model box:
-                Random prng(building->getUID());
-                float x = prng.next();
-                float y = prng.next();
-
-                float maxOffsetX = spaceWidth-modelWidth;
-                float maxOffsetY = spaceHeight-modelHeight;
-                float dx = prng.next()*maxOffsetX - 0.5*maxOffsetX;
-                float dy = prng.next()*maxOffsetY - 0.5*maxOffsetY;
-
-                osg::Vec3d p = space.center() + osg::Vec3d(dx, dy, 0);
-                roof->getParent()->unrotate( p );
-
-                // offset to the bottom of the model's bounding box:
-                p.z() = roofZ - cb.getBoundingBox().zMin();
-
-#if 0
-                // place the model.
-                // todo: replace this with a model manager for instancing?
-                osg::MatrixTransform* xform = new osg::MatrixTransform();
-                xform->setMatrix( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
-                xform->addChild( node.get() );
-                models->addChild( xform );
-#endif
-
-                osg::Matrix placement( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
-                output.addInstance( model, placement );
-            }
-
-            // draw the model box for debugging purposes.
-            if ( s_debug )
-            {
-                output.getDebugGroup()->addChild( createModelBoxGeom(modelBox, frame, roofZ) );
-            }
-        }
-        else
+        // only place a model is there is enough room:
+        if ( modelWidth < spaceWidth && modelHeight < spaceHeight )
         {
-            OE_WARN << LC << "Model resource set, but couldn't find model\n";
+            // generate a pseudo-random position inside the model box:
+            Random prng(building->getUID());
+            float x = prng.next();
+            float y = prng.next();
+
+            float max_dx = spaceWidth - modelWidth;
+            float max_dy = spaceHeight - modelHeight;
+
+            float dx = prng.next()*max_dx - bbox.xMin();
+            float dy = prng.next()*max_dy - bbox.yMin();
+
+            osg::Vec3d p = osg::Vec3d(space.xMin()+dx, space.yMin()+dy, 0.0);
+            roof->getParent()->unrotate( p );
+
+            // offset to the bottom of the model's bounding box:
+            p.z() = roofZ - bbox.zMin();
+
+            osg::Matrix placement( roof->getParent()->getRotation() * frame * osg::Matrix::translate(p) );
+            output.addInstance( model, placement );
+        }
+
+        // draw the model box for debugging purposes.
+        if ( s_debug )
+        {
+            output.getDebugGroup()->addChild( createModelBoxGeom(modelBox, frame, roofZ) );
         }
     }
 

@@ -48,12 +48,12 @@ BuildingCompiler::compile(Building*         building,
                           CompilerOutput&   output,
                           ProgressCallback* progress)
 {
-    return addSimpleFootprint( output, building, osg::Matrix::identity() );
+    return false; //addSimpleFootprint( output, building, osg::Matrix::identity() );
 }
 
 bool
 BuildingCompiler::compile(const BuildingVector& input,
-                          CompilerOutput&   output,
+                          CompilerOutput&       output,
                           ProgressCallback*     progress)
 {
     // Use the first building as our global reference frame. In usual practice,
@@ -82,9 +82,10 @@ BuildingCompiler::addBuilding(CompilerOutput&    output,
                               const Building*    building,
                               const osg::Matrix& world2local) const
 {
-    return addSimpleFootprint(output, building, world2local);
+    return false; //addSimpleFootprint(output, building, world2local);
 }
 
+#if 0
 bool
 BuildingCompiler::addSimpleFootprint(CompilerOutput&    output,
                                      const Building*    building,
@@ -99,7 +100,7 @@ BuildingCompiler::addSimpleFootprint(CompilerOutput&    output,
     osg::Vec3Array* v = new osg::Vec3Array();
     geom->setVertexArray( v );
 
-    GeometryIterator iter( building->getFootprint() );
+    GeometryIterator iter( building->getGeometry() );
     while( iter.hasMore() )
     {
         int ptr = v->size();
@@ -115,6 +116,7 @@ BuildingCompiler::addSimpleFootprint(CompilerOutput&    output,
 
     return true;
 }
+#endif
 
 bool
 BuildingCompiler::addElevations(CompilerOutput&        output,

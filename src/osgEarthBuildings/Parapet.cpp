@@ -46,26 +46,27 @@ Parapet::clone() const
 }
 
 bool
-Parapet::build(const Footprint* footprint)
+Parapet::build(const Polygon* footprint)
 {
     // copy the outer ring of the footprint. Ignore any holes.
-    osg::ref_ptr<Footprint> newFootprint = new Footprint( &footprint->asVector() );
-    osg::ref_ptr<Geometry> buffered;
-
-    // applly a negative buffer to the outer ring:
+    osg::ref_ptr<Polygon> copy = dynamic_cast<Polygon*>(footprint->clone());
+    
+    // apply a negative buffer to the outer ring:
+    osg::ref_ptr<Geometry> hole;
     BufferParameters bp(BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE);
-    if ( newFootprint->buffer(-getWidth(), buffered, bp) )
+    if ( copy->buffer(-getWidth(), hole, bp) )
     {
-        Ring* ring = dynamic_cast<Ring*>( buffered.get() );
+        Ring* ring = dynamic_cast<Ring*>( hole.get() );
         if ( ring )
         {
             // rewind the new geometry CW and add it as a hole:
             ring->rewind(Geometry::ORIENTATION_CW);
-            newFootprint->getHoles().push_back( ring );
+            copy->getHoles().push_back( ring );
+            return Elevation::build( copy.get() );
         }
     }
 
-    return Elevation::build( newFootprint.get() );
+    return Elevation::build( footprint );
 }
 
 Config
