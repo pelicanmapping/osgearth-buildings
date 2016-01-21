@@ -45,8 +45,8 @@ namespace osgEarth { namespace Buildings
         /**
          * Width of the parapet, in meters
          */
-        void setWidth(float value)           { _width = value; }
-        float getWidth() const               { return _width.get(); }
+        void setWidth(float value);
+        float getWidth() const { return _width.get(); }
 
     public: // Elevation
 

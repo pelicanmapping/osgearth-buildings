@@ -26,11 +26,8 @@ using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 Parapet::Parapet() :
-_width( 1.0f )
+_width( 0.0f )
 {
-    // parapet always has a roof.
-    _roof = new Roof();
-    _roof->setType( Roof::TYPE_FLAT );
     _numFloors = 1u;
 }
 
@@ -46,24 +43,44 @@ Parapet::clone() const
     return new Parapet(*this);
 }
 
+
+void
+Parapet::setWidth(float width)
+{
+    _width = width;
+
+    if ( width > 0.0f )
+    {
+        _roof = new Roof();
+        _roof->setType( Roof::TYPE_FLAT );
+    }
+    else
+    {
+        _roof = 0L;
+    }
+}
+
 bool
 Parapet::build(const Polygon* footprint, BuildContext& bc)
 {
-    // copy the outer ring of the footprint. Ignore any holes.
-    osg::ref_ptr<Polygon> copy = dynamic_cast<Polygon*>(footprint->clone());
-    
-    // apply a negative buffer to the outer ring:
-    osg::ref_ptr<Geometry> hole;
-    BufferParameters bp(BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE);
-    if ( copy->buffer(-getWidth(), hole, bp) )
+    if ( getWidth() > 0.0f )
     {
-        Ring* ring = dynamic_cast<Ring*>( hole.get() );
-        if ( ring )
+        // copy the outer ring of the footprint. Ignore any holes.
+        osg::ref_ptr<Polygon> copy = dynamic_cast<Polygon*>(footprint->clone());
+    
+        // apply a negative buffer to the outer ring:
+        osg::ref_ptr<Geometry> hole;
+        BufferParameters bp(BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE);
+        if ( copy->buffer(-getWidth(), hole, bp) )
         {
-            // rewind the new geometry CW and add it as a hole:
-            ring->rewind(Geometry::ORIENTATION_CW);
-            copy->getHoles().push_back( ring );
-            return Elevation::build( copy.get(), bc );
+            Ring* ring = dynamic_cast<Ring*>( hole.get() );
+            if ( ring )
+            {
+                // rewind the new geometry CW and add it as a hole:
+                ring->rewind(Geometry::ORIENTATION_CW);
+                copy->getHoles().push_back( ring );
+                return Elevation::build( copy.get(), bc );
+            }
         }
     }
 

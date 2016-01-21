@@ -72,18 +72,22 @@ Roof::resolveSkin(const Polygon* footprint, BuildContext& bc)
             if (getType() == TYPE_FLAT &&
                 (getParent()->getElevations().empty() || dynamic_cast<Parapet*>(getParent()->getElevations().front().get())))
             {
+                getSkinSymbol()->isTiled() = false;
+
+#if 0
                 float aabbWidth = (aabb.xMax()-aabb.xMin()), aabbHeight = (aabb.yMax()-aabb.yMin());
                 float aabbAR = std::max( aabbWidth/aabbHeight, aabbHeight/aabbWidth );
-                //if ( aabbAR < 2.0f )
+                if ( aabbAR < 2.0f )
                 {
                     float aabbArea = aabbWidth*aabbHeight;
                     float polyArea = fabs( footprint->getSignedArea2D() );
                     float ratio    = fabs( polyArea/aabbArea );
-                    //if ( ratio > 0.99f )
+                    if ( ratio > 0.99f )
                     {
                         getSkinSymbol()->isTiled() = false;
                     }
                 }
+#endif
             }
         }
 
