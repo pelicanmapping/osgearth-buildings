@@ -92,7 +92,7 @@ CompilerOutput::createSceneGraph(Session* session) const
     
 
     // install the model instances, creating one instance group for each model.
-    if ( false && session && session->getResourceCache() )
+    if ( session && session->getResourceCache() )
     {
         // group to hold all instanced models:
         osg::Group* instances = new osg::Group();

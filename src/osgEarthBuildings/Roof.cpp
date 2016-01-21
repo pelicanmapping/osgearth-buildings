@@ -21,6 +21,8 @@
 #include "BuildContext"
 #include "Parapet"
 
+#define LC "[Roof] "
+
 using namespace osgEarth;
 using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
@@ -113,10 +115,16 @@ Roof::resolveModel(const Polygon* footprint, BuildContext& bc)
         // encode the model box dimensions in the symbology so we can find
         // suitable models that fit.
         getModelSymbol()->maxSizeX() = (_modelBox[1]-_modelBox[0]).length();
-        getModelSymbol()->maxSizeY() = (_modelBox[2]-_modelBox[1]).length();            
+        getModelSymbol()->maxSizeY() = (_modelBox[2]-_modelBox[1]).length();
         
         // resolve the resource.
-        setModelResource( bc.getResourceLibrary()->getModel(getModelSymbol(), bc.getDBOptions()) );
+        ModelResourceVector candidates;
+        bc.getResourceLibrary()->getModels( getModelSymbol(), candidates, bc.getDBOptions() );
+        if ( !candidates.empty() )
+        {
+            unsigned index = bc.getPRNG().next( candidates.size() );
+            setModelResource( candidates.at(index) );
+        }
     }
 }
 

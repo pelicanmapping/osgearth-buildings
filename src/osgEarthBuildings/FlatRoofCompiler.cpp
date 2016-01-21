@@ -128,6 +128,7 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
         geom->setStateSet( stateSet.get() );
     }
 
+    // prep texture scale/bias for atlas support
     osg::Vec3f texBias(0, 0, 0);
     osg::Vec3f texScale(1, 1, 1);
     if ( skin )
