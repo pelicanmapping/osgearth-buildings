@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "Parapet"
+#include "BuildContext"
 
 #define LC "[Parapet] "
 
@@ -46,7 +47,7 @@ Parapet::clone() const
 }
 
 bool
-Parapet::build(const Polygon* footprint)
+Parapet::build(const Polygon* footprint, BuildContext& bc)
 {
     // copy the outer ring of the footprint. Ignore any holes.
     osg::ref_ptr<Polygon> copy = dynamic_cast<Polygon*>(footprint->clone());
@@ -62,11 +63,11 @@ Parapet::build(const Polygon* footprint)
             // rewind the new geometry CW and add it as a hole:
             ring->rewind(Geometry::ORIENTATION_CW);
             copy->getHoles().push_back( ring );
-            return Elevation::build( copy.get() );
+            return Elevation::build( copy.get(), bc );
         }
     }
 
-    return Elevation::build( footprint );
+    return Elevation::build( footprint, bc );
 }
 
 Config

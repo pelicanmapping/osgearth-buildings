@@ -13,7 +13,7 @@
     
     <extensions>
     
-        <buildings lod="13">
+        <buildings lod="14">
         
             <features driver="ogr"
                       build_spatial_index="true"

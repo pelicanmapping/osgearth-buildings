@@ -133,7 +133,9 @@ GableRoofCompiler::compile(CompilerOutput&    output,
     osg::Vec3f scale(aabb.xMax()-aabb.xMin(), aabb.yMax()-aabb.yMin(), 1.0f);
     osg::Vec3f bias (aabb.xMin(), aabb.yMin(), roofZ);
 
-    osg::Vec2f tscale(scale.x() / skin->imageWidth().get(), scale.y() / skin->imageHeight().get());
+    osg::Vec2f tscale(1.0f, 1.0f);
+    if ( skin )
+        tscale.set(scale.x() / skin->imageWidth().get(), scale.y() / skin->imageHeight().get());
 
     // scale and bias the geometry, rotate it back to its actual location,
     // and transform into the final coordinate frame.

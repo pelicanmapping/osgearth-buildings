@@ -84,6 +84,7 @@
 		<image_width>10</image_width>
 		<image_height>10</image_height>
 		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
 	</skin>
     
     <skin name="roof.commercial.2" tags="roof commercial">
@@ -92,6 +93,7 @@
 		<image_width>10</image_width>
 		<image_height>10</image_height>
 		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
 	</skin>
     
     <skin name="roof.commercial.gravel" tags="roof commercial">
@@ -100,6 +102,7 @@
 		<image_width>20</image_width>
 		<image_height>20</image_height>
 		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
 	</skin>
     
     <skin name="roof.residential.brown" tags="roof residential">
@@ -107,6 +110,31 @@
 		<tiled>true</tiled>
 		<image_width>3</image_width>
 		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
+	</skin>
+    
+    <skin name="roof.comm.2" tags="roof commercial">
+	    <url>roof/croof2.jpg</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.56" tags="roof commercial">
+	    <url>roof/croof56.jpg</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.94" tags="roof commercial">
+	    <url>roof/croof94.jpg</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.95" tags="roof commercial">
+	    <url>roof/croof95.jpg</url>
+		<tiled>false</tiled>
 		<texture_mode>decal</texture_mode>
 	</skin>
     
@@ -140,19 +168,39 @@
     <!-- models -->
     
     <model name="roof.cow" tags="roof">
-        <url>models/cow.osg.osgearth_shadergen</url>
+        <url>models/cow.osg</url>
     </model>
     
     <model name="roof.flag" tags="roof">
-        <url>models/red_flag.osg.10.scale.osgearth_shadergen</url>
+        <url>models/red_flag.osg.10.scale</url>
     </model>
         
-    <model name="roof.ac" tags="roof medium">
-        <url>models/ac.osgb.osgearth_shadergen</url>
+    <model name="roof.ac" tags="roof clutter">
+        <url>models/ac.osgb</url>
     </model>
         
-    <model name="roof.ac.small" tags="roof small">
-        <url>models/ac.osgb.(0.3,1,1).scale.osgearth_shadergen</url>
+    <model name="roof.ac.small" tags="roof clutter">
+        <url>models/ac.osgb.(0.3,1,1).scale</url>
     </model>
+        
+    <model name="roof.clutter.1" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_1.flt</url>
+    </model>
+        
+    <model name="roof.clutter.2" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_2.flt</url>
+    </model>
+        
+    <model name="roof.clutter.3" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_3.flt</url>
+    </model>
+        
+    <model name="roof.clutter.4" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_4.flt</url>
+    </model>
+        
+    <model name="roof.clutter.5" tags="roof clutter">
+        <url>models/rc/rc5.osgb</url>
+    </model>    
 
 </resources>

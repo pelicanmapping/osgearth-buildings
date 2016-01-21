@@ -10,6 +10,7 @@ set(LIB_NAME osgEarthBuildings)
 set(HEADER_PATH ${OSGEARTH_SOURCE_DIR}/include/${LIB_NAME})
 
 set(LIB_PUBLIC_HEADERS
+    BuildContext
     Building
     BuildingCatalog
     BuildingCompiler

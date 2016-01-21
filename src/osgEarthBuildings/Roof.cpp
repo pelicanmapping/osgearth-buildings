@@ -18,6 +18,8 @@
  */
 #include "Roof"
 #include "Elevation"
+#include "BuildContext"
+#include "Parapet"
 
 using namespace osgEarth;
 using namespace osgEarth::Symbology;
@@ -38,9 +40,68 @@ Roof::getConfig() const
 }
 
 bool
-Roof::build(const Polygon* footprint)
+Roof::build(const Polygon* footprint, BuildContext& bc)
 {
-    if ( getModelSymbol() )
+    // resolve the skin symbol into a resource:
+    resolveSkin( footprint, bc );
+
+    // resolve the model symbol into a resource:
+    resolveModel( footprint, bc );
+
+    return true;
+}
+
+void
+Roof::resolveSkin(const Polygon* footprint, BuildContext& bc)
+{
+    osg::ref_ptr<SkinResource> skin;
+
+    if ( getSkinSymbol() && bc.getResourceLibrary() )
+    {
+        // decide whether we want a tiled or non-tiled roof texture based on
+        // the roof type and the difference in area between the actual footprint
+        // and the bounding polygon.
+        const osg::BoundingBox& aabb = getParent()->getAxisAlignedBoundingBox();
+        
+        if ( !getSkinSymbol()->name().isSet() )
+        {
+            getSkinSymbol()->isTiled() = true;
+        
+            // if this is the top-most roof, consider a non-tiled texture. It should also
+            // be low aspect ratio (not too stretched out).
+            if (getType() == TYPE_FLAT &&
+                (getParent()->getElevations().empty() || dynamic_cast<Parapet*>(getParent()->getElevations().front().get())))
+            {
+                float aabbWidth = (aabb.xMax()-aabb.xMin()), aabbHeight = (aabb.yMax()-aabb.yMin());
+                float aabbAR = std::max( aabbWidth/aabbHeight, aabbHeight/aabbWidth );
+                //if ( aabbAR < 2.0f )
+                {
+                    float aabbArea = aabbWidth*aabbHeight;
+                    float polyArea = fabs( footprint->getSignedArea2D() );
+                    float ratio    = fabs( polyArea/aabbArea );
+                    //if ( ratio > 0.99f )
+                    {
+                        getSkinSymbol()->isTiled() = false;
+                    }
+                }
+            }
+        }
+
+        // resolve the resource.
+        SkinResourceVector candidates;
+        bc.getResourceLibrary()->getSkins(getSkinSymbol(), candidates, bc.getDBOptions() );
+        if ( !candidates.empty() )
+        {
+            unsigned index = bc.getPRNG().next( candidates.size() );
+            setSkinResource( candidates.at(index) );
+        }
+    }
+}
+
+void
+Roof::resolveModel(const Polygon* footprint, BuildContext& bc)
+{
+    if ( getModelSymbol() && bc.getResourceLibrary() )
     {
         // calculate a 4-point boundary suitable for placing rooftop models.
         _hasModelBox = findRectangle( footprint, _modelBox );
@@ -48,9 +109,11 @@ Roof::build(const Polygon* footprint)
         // encode the model box dimensions in the symbology so we can find
         // suitable models that fit.
         getModelSymbol()->maxSizeX() = (_modelBox[1]-_modelBox[0]).length();
-        getModelSymbol()->maxSizeY() = (_modelBox[2]-_modelBox[1]).length();
+        getModelSymbol()->maxSizeY() = (_modelBox[2]-_modelBox[1]).length();            
+        
+        // resolve the resource.
+        setModelResource( bc.getResourceLibrary()->getModel(getModelSymbol(), bc.getDBOptions()) );
     }
-    return true;
 }
 
 namespace

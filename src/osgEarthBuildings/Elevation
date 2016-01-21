@@ -33,6 +33,8 @@ namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Symbology;
 
+    class BuildContext;
+
     /**
      * A vertical section of a building.
      */
@@ -147,7 +149,7 @@ namespace osgEarth { namespace Buildings
          * Builds an internal structure for this elevation. If this returns
          * true, you can then call getWalls() to access the structure.
          */
-        virtual bool build(const Polygon* footprint);
+        virtual bool build(const Polygon* footprint, BuildContext& bc);
 
         virtual Config getConfig() const;
 
@@ -272,50 +274,9 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~Elevation() { }
 
-        /**
-         * Determines the apparent rotation of a building.
-         //*/
-       // void setRotation(const Footprint&);
-
-        bool buildImpl(const Polygon*);
-
-    public:
-
-#if 0
-        osg::Matrix getRotation() const;
-
-        /** rotates a 2D point based on the calculated rotation */
-        inline void rotate(float& x, float& y) const {
-            float x2 = _cosR*x - _sinR*y, y2 = _sinR*x + _cosR*y;
-            x = x2, y = y2;
-        }
-        inline void rotate(osg::Vec2f& v) const {
-            rotate(v.x(), v.y());
-        }
-        inline void rotate(osg::Vec3f& v) const {
-            rotate(v.x(), v.y());
-        }
-        inline void rotate(osg::Vec3d& v) const {
-            float x = v.x(), y = v.y();
-            rotate(x, y);
-            v.x() = x, v.y() = y;
-        }
-        inline void unrotate(float& x, float& y) const {
-            float x2 = _cosR*x + _sinR*y, y2 = - _sinR*x + _cosR*y;
-            x = x2, y = y2;
-        }
-        inline void unrotate(osg::Vec2f& v) const {
-            unrotate(v.x(), v.y());
-        }
-        inline void unrotate(osg::Vec3f& v) const {
-            unrotate(v.x(), v.y());
-        }
-        inline void unrotate(osg::Vec3d& v) const {
-            float x = v.x(), y = v.y();
-            unrotate(x, y);
-            v.x() = x, v.y() = y;
-        }
-#endif
+        bool buildImpl(const Polygon*, BuildContext& bc);
+        
+        void resolveSkin(BuildContext& bc);
     };
 
     typedef Elevation::Vector ElevationVector;

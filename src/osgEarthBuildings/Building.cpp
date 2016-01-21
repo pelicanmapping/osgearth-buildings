@@ -18,6 +18,7 @@
  */
 #include "Building"
 #include "BuildingVisitor"
+#include "BuildContext"
 
 #define LC "[Building] "
 
@@ -30,6 +31,7 @@ _maxHeight ( FLT_MAX ),
 _minArea   ( 0.0f ),
 _maxArea   ( FLT_MAX )
 {
+    //nop
 }
 
 Building::Building(const Building& rhs) :
@@ -107,14 +109,14 @@ Building::setHeight(float height)
 }
 
 bool
-Building::build(const Polygon* footprint)
+Building::build(const Polygon* footprint, BuildContext& bc)
 {
     if ( !footprint || !footprint->isValid() )
         return false;
 
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
-        e->get()->build( footprint );
+        e->get()->build( footprint, bc );
     }
 
     return true;

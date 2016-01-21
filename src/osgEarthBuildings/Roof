@@ -31,8 +31,8 @@ namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Symbology;
 
-    class Building;
     class Elevation;
+    class BuildContext;
 
     /**
      * Top of a building.
@@ -59,11 +59,6 @@ namespace osgEarth { namespace Buildings
          */
         void setParent(Elevation* elevation) { _parent = elevation; }
         Elevation* getParent() const         { return _parent; }
-
-        /**
-         * Building to which this roof belongs.
-         */
-        Building* getBuilding() const;
 
         /**
          * Roof color. If there is a skin, it will be modulated
@@ -105,12 +100,9 @@ namespace osgEarth { namespace Buildings
 
     public:
 
-        // noop for now.
-        bool build(const Polygon*);
+        virtual bool build(const Polygon*, BuildContext& bc);
 
         virtual Config getConfig() const;
-
-        bool findRectangle(const Ring*, osg::Vec3d* output) const;
 
     protected:
         virtual ~Roof() { }
@@ -124,6 +116,12 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<ModelResource> _model;
         bool                        _hasModelBox;
         osg::Vec3d                  _modelBox[4];
+
+        bool findRectangle(const Ring*, osg::Vec3d* output) const;
+
+        void resolveSkin(const Polygon*, BuildContext&);
+
+        void resolveModel(const Polygon*, BuildContext&);
     };
 } }
 

@@ -19,6 +19,7 @@
 #include "BuildingFactory"
 #include "BuildingSymbol"
 #include "BuildingVisitor"
+#include "BuildContext"
 #include "Parapet"
 #include <osgEarthFeatures/AltitudeFilter>
 #include <osgEarthSymbology/Geometry>
@@ -213,6 +214,9 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
             }
         }
 
+        BuildContext context;
+        context.getPRNG().seed( feature->getFID() );
+
         // Next, iterate over the polygons and set up the Building object.
         GeometryIterator iter2( geometry, false );
         while(iter2.hasMore())
@@ -230,7 +234,7 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
                 cleanPolygon( polygon );
 
                 // Finally, build the internal structure from the footprint.
-                building->build( polygon );
+                building->build( polygon, context );
             }
             else
             {

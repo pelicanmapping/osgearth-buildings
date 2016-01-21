@@ -157,13 +157,12 @@ BuildingCompiler::addRoof(CompilerOutput& output, const Building* building, cons
     {
         if ( elevation->getRoof()->getType() == Roof::TYPE_GABLE )
         {
-            if ( elevation->getAxisAlignedBoundingBox().radius() < 20.0f )
-            {
-                return _gableRoofCompiler->compile(output, building, elevation, world2local);
-            }
+            return _gableRoofCompiler->compile(output, building, elevation, world2local);
         }
-
-        return _flatRoofCompiler->compile(output, building, elevation, world2local);
+        else
+        {
+            return _flatRoofCompiler->compile(output, building, elevation, world2local);
+        }
     }
     return false;
 }

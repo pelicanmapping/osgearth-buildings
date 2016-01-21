@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "Elevation"
+#include "BuildContext"
 
 #define LC "[Elevation] "
 
@@ -77,14 +78,6 @@ Elevation::clone() const
     return new Elevation( *this );
 }
 
-#if 0
-void
-Elevation::setBuilding(Building* building)
-{
-    _building = building;
-}
-#endif
-
 void
 Elevation::setRoof(Roof* roof)
 {
@@ -133,7 +126,7 @@ Elevation::getTop() const
 }
 
 bool
-Elevation::build(const Polygon* in_footprint)
+Elevation::build(const Polygon* in_footprint, BuildContext& bc)
 {
     if ( !in_footprint || !in_footprint->isValid() )
         return false;
@@ -164,15 +157,15 @@ Elevation::build(const Polygon* in_footprint)
         BufferParameters bp( BufferParameters::CAP_DEFAULT, BufferParameters::JOIN_MITRE );
         if ( footprint->buffer(-getInset(), inset, bp) )
         {
-            return buildImpl( dynamic_cast<Polygon*>(inset.get()) );
+            return buildImpl( dynamic_cast<Polygon*>(inset.get()), bc );
         }
     }
 
-    return buildImpl( footprint );
+    return buildImpl( footprint, bc );
 }
 
 bool
-Elevation::buildImpl(const Polygon* footprint)
+Elevation::buildImpl(const Polygon* footprint, BuildContext& bc)
 {
     if ( !footprint || !footprint->isValid() )
     {
@@ -206,6 +199,15 @@ Elevation::buildImpl(const Polygon* footprint)
         footprint = dynamic_cast<Polygon*>(copy.get());
     }
 #endif
+
+    // Build the roof first, since we potentially need the roof skin in order
+    // to generate roof texture coordinates.
+    if ( getRoof() )
+    {
+        getRoof()->build( footprint, bc );
+    }
+
+    resolveSkin( bc );
 
     // prep for wall texture coordinate generation.
     float texWidthM  = _skinResource.valid() ? _skinResource->imageWidth().get()  : 0.0f;
@@ -405,17 +407,41 @@ Elevation::buildImpl(const Polygon* footprint)
         }
     }
 
-    if ( getRoof() )
-    {
-        getRoof()->build( footprint );
-    }
-
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
-        e->get()->build( footprint );
+        e->get()->build( footprint, bc );
     }
 
     return true;
+}
+
+void
+Elevation::resolveSkin(BuildContext& bc)
+{
+    if ( getSkinSymbol() )
+    {
+        SkinResourceVector candidates;
+        bc.getResourceLibrary()->getSkins( getSkinSymbol(), candidates, bc.getDBOptions() );                
+        if ( !candidates.empty() )
+        {
+            unsigned index = bc.getPRNG().next( candidates.size() );
+            SkinResource* skin = candidates.at(index);
+            setSkinResource( skin );
+                    
+            unsigned numFloors = (unsigned)std::max(1.0f, osg::round(getHeight() / skin->imageHeight().get()));
+            setNumFloors( numFloors );
+        }
+    }
+    else if ( getParent() )
+    {
+        SkinResource* skin = getParent()->getSkinResource();
+        if ( skin )
+        {
+            setSkinResource( skin );                    
+            unsigned numFloors = (unsigned)std::max(1.0f, osg::round(getHeight() / skin->imageHeight().get()));
+            setNumFloors( numFloors );
+        }
+    }
 }
 
 void

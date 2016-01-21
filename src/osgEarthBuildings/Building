@@ -30,6 +30,7 @@ namespace osgEarth { namespace Buildings
     using namespace osgEarth::Symbology;
 
     class BuildingVisitor;
+    class BuildContext;
 
     /**
      * Building represents one complete structure, comprised of 
@@ -105,7 +106,7 @@ namespace osgEarth { namespace Buildings
          * Build the internal structure of the building and its components.
          * You must call setFootprint() before calling this function.
          */
-        bool build(const Polygon*);
+        bool build(const Polygon*, BuildContext& bi);
 
         /**
          * Visit this building.

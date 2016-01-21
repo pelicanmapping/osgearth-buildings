@@ -26,6 +26,8 @@
 namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Symbology;
+
+    class BuildContext;
     
     /**
      * Low wall along the edge of a roof.
@@ -48,7 +50,7 @@ namespace osgEarth { namespace Buildings
 
     public: // Elevation
 
-        virtual bool build(const Polygon* footprint);
+        virtual bool build(const Polygon* footprint, BuildContext& bc);
 
         virtual Config getConfig() const;
 

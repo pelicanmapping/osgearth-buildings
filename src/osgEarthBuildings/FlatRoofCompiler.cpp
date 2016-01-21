@@ -128,6 +128,14 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
         geom->setStateSet( stateSet.get() );
     }
 
+    osg::Vec3f texBias(0, 0, 0);
+    osg::Vec3f texScale(1, 1, 1);
+    if ( skin )
+    {
+        texBias.set ( skin->imageBiasS().get(),  skin->imageBiasT().get(), (float)skin->imageLayer().get() );
+        texScale.set( skin->imageScaleS().get(), skin->imageScaleT().get(), 1.0f );
+    }
+
     //osg::Vec4Array* anchors = 0L;
     //if ( _gpuClamping )
     //{
@@ -164,7 +172,8 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
 
                 if ( texCoords )
                 {
-                    texCoords->push_back( osg::Vec3f(f->left.roofUV.x(), f->left.roofUV.y(), (float)0.0f) );
+                    osg::Vec3f tc( f->left.roofUV.x(), f->left.roofUV.y(), (float)0.0f );
+                    texCoords->push_back( texBias + osg::componentMultiply(tc, texScale) );
                 }
 
 #if 0
@@ -251,7 +260,6 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
         float spaceHeight = space.yMax() - space.yMin();
 
         const osg::BoundingBox& bbox = model->getBoundingBox(0L);
-        //osg::BoundingBox bbox(0, 0, 0, 10, 10, 10);
         float modelWidth  = bbox.xMax() - bbox.xMin();
         float modelHeight = bbox.yMax() - bbox.yMin();
             
