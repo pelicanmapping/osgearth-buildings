@@ -76,6 +76,22 @@
 		<texture_mode>decal</texture_mode>
     </skin>
     
+    <skin name="facade.retail.0" tags="facade retail">
+        <url>facade/retail0.jpg</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.retail.2" tags="facade retail">
+        <url>facade/retail2.jpg</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
     <!-- Roofs -->
     
     <skin name="roof.commercial.1" tags="roof commercial">

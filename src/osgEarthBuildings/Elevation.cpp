@@ -101,6 +101,12 @@ Elevation::setHeight(float height)
         _height.init( newHeight );
     }
 
+    else if ( _height.get() < 0.0f )
+    {
+        // negative height means total height - value:
+        _height.init( height + _height.get() );
+    }
+
     for(ElevationVector::iterator e = _elevations.begin(); e != _elevations.end(); ++e)
     {
         e->get()->setHeight( height );

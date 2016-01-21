@@ -31,7 +31,8 @@ using namespace osgEarth::Symbology;
 
 
 BuildingPager::BuildingPager(const Profile* profile) :
-SimplePager( profile )
+SimplePager( profile ),
+_detailRangeFactor( 0.5f )
 {
     _stateSetCache = new StateSetCache();
     setAdditive( false );
@@ -42,6 +43,12 @@ BuildingPager::setLOD(unsigned lod)
 {
     setMinLevel( lod );
     setMaxLevel( lod );
+}
+
+void
+BuildingPager::setDetailRangeFactor(float value)
+{
+    _detailRangeFactor = value;
 }
 
 void
@@ -125,7 +132,9 @@ BuildingPager::createNode(const TileKey& tileKey)
         return 0L;
     }
 
-    output.setDetailRangeFactor( 1.0f );
+    // set the distance at which details become visible.
+    osg::BoundingSphered tileBound = getBounds( tileKey );
+    output.setDetailRange( tileBound.radius() * getRangeFactor() * 0.2f );
 
     osg::ref_ptr<osg::Node> node = output.createSceneGraph(_session.get());
     if ( !node.valid() )

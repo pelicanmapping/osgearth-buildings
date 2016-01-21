@@ -30,7 +30,7 @@ using namespace osgEarth::Buildings;
 #define LC "[CompilerOutput] "
 
 CompilerOutput::CompilerOutput() :
-_detailRangeFactor( 0.0f )
+_detailRange( FLT_MAX )
 {
     _mainGeode = new osg::Geode();
     _detailGeode = new osg::Geode();
@@ -53,23 +53,17 @@ CompilerOutput::createSceneGraph(Session* session) const
     
     // add the main geode.
     if ( getMainGeode()->getNumDrawables() > 0 )
+    {
         root->addChild( getMainGeode() );
+    }
     
     // add the detail geode with a closer LOD range.
-    osg::LOD* detailLOD = 0L;
+    osg::LOD* detailLOD = new osg::LOD();
     if ( getDetailGeode()->getNumDrawables() > 0 )
     {
-        if ( _detailRangeFactor != 0.0f )
-        {
-            detailLOD = new osg::LOD();
-            detailLOD->addChild( getDetailGeode(), 0.0f, FLT_MAX );
-            root->addChild( detailLOD );
-        }
-        else
-        {
-            root->addChild( getDetailGeode() ); // TODO: add LOD here
-        }
+        detailLOD->addChild( getDetailGeode(), 0.0f, _detailRange );
     }
+    root->addChild( detailLOD );
     
     // Run an optimization pass before adding any debug data or models
     {
@@ -85,7 +79,9 @@ CompilerOutput::createSceneGraph(Session* session) const
 
     // debug information.
     if ( getDebugGroup()->getNumChildren() > 0 )
-        root->addChild( getDebugGroup() );
+    {
+        detailLOD->addChild( getDebugGroup() );
+    }
 
     // shader generation pass (before models)
     Registry::instance()->shaderGenerator().run( root, "Buildings", _sscache.get() );
@@ -137,12 +133,7 @@ CompilerOutput::createSceneGraph(Session* session) const
         DrawInstanced::install( instances->getOrCreateStateSet() );
 
         // finally add all the instance groups.
-        root->addChild( instances );
-    }
-
-    if ( detailLOD )
-    {
-        detailLOD->setRange(0, 0.0f, root->getBound().radius() * _detailRangeFactor );
+        detailLOD->addChild( instances, 0.0f, _detailRange );
     }
 
     return root.release();

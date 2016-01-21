@@ -44,6 +44,10 @@ namespace osgEarth { namespace Buildings
         /** The LOD at which to create nodes */
         void setLOD(unsigned lod);
 
+        /** Detail geometry is visible at tile range * this. For example if a 
+            tile pages in at X meters, the detail becomes visible at X*DRF meters */
+        void setDetailRangeFactor(float value);
+
         /** Source from which to query features */
         void setFeatureSource(FeatureSource* features);
 
@@ -70,6 +74,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<CacheBin>         _cacheBin;
         CachePolicy                    _cachePolicy;
         osg::ref_ptr<BuildingCompiler> _compiler;
+        float                          _detailRangeFactor;
     };
 
 } } // namespace

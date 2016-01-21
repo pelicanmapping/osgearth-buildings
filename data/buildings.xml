@@ -22,7 +22,7 @@
               max_area="750">
               
         <elevations>
-            <elevation height_percentage="100" skin_tags="facade residential singlefamily 3story">
+            <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
                 <roof type="gable" skin_tags="roof residential"/>
             </elevation>
         </elevations>
@@ -71,10 +71,14 @@
               max_height="30">
               
         <elevations>
-            <elevation height_percentage="100" skin_tags="facade commercial">
-                <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
-                <elevations>                
-                    <elevation type="parapet" inset="0.15" height="0.75" width="0.0" skin_name="parapet.poured">
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-5" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
+                        <elevations>                
+                            <elevation type="parapet" inset="0.15" height="0.75" width="0.0" skin_name="parapet.poured">
+                            </elevation>
+                        </elevations>
                     </elevation>
                 </elevations>
             </elevation>
@@ -83,10 +87,14 @@
 
     <building name="Commercial with roof" tags="commercial" min_height="20" max_height="60">
         <elevations>
-            <elevation height_percentage="100" skin_tags="facade commercial">
-                <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
-                <elevations>                
-                    <elevation type="parapet" inset="0.25" height="1.2" width="0.0" skin_name="parapet.poured">
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-6.2" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
+                        <elevations>                
+                            <elevation type="parapet" inset="0.25" height="1.2" width="0.0" skin_name="parapet.poured">
+                            </elevation>
+                        </elevations>
                     </elevation>
                 </elevations>
             </elevation>
@@ -96,14 +104,18 @@
    <building name="Commercial 2-tier building" tags="commercial" min_height="50">
         <skin_tags>commercial facade</skin_tags>
         <elevations>
-            <elevation height_percentage="95">
-                <roof type="flat" skin_tags="roof commercial"/>
-                <elevations>                
-                    <elevation height="5" inset="3">
-                        <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
-                        <elevations>
-                            <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.poured">
-                                <roof type="flat" skin_name="parapet.concrete"/>
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-11.2" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial"/>
+                        <elevations>                
+                            <elevation height="5" inset="3">
+                                <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
+                                <elevations>
+                                    <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.poured">
+                                        <roof type="flat" skin_name="parapet.concrete"/>
+                                    </elevation>
+                                </elevations>
                             </elevation>
                         </elevations>
                     </elevation>
