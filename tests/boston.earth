@@ -1,7 +1,4 @@
 <map>
-    <options>
-        <terrain driver="mp" skirt_ratio="0"/>
-    </options>
     
     <image driver="tms"
            url="http://readymap.org/readymap/tiles/1.0.0/22/">
