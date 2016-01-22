@@ -43,6 +43,7 @@ bool
 BuildingCatalog::createBuildings(Feature*          feature,
                                  Session*          session,
                                  const Style*      style,
+                                 float             minHeight,
                                  BuildingVector&   output,
                                  ProgressCallback* progress) const
 {
@@ -102,12 +103,12 @@ BuildingCatalog::createBuildings(Feature*          feature,
             if ( polygon && polygon->isValid() )
             {        
                 // resolve the height:
-                float    height    = 0.0f;
+                float    height    = minHeight;
                 unsigned numFloors = 0u;
                 if ( buildingSymbol )
                 {
                     NumericExpression heightExpr = buildingSymbol->height().get();
-                    height = feature->eval( heightExpr, session );
+                    height = std::max( (float)feature->eval(heightExpr, session), minHeight );
                     numFloors = (unsigned)std::max(1.0f, osg::round(height / buildingSymbol->floorHeight().get()));
                 }
 
@@ -312,6 +313,9 @@ BuildingCatalog::parseElevations(const Config&     conf,
         if ( e->hasValue( "height" ) )
             elevation->setAbsoluteHeight( e->value("height", 15.0f) );
 
+        if ( e->hasValue( "bottom" ) )
+            elevation->setBottom( e->value("bottom", 0.0f) );
+
         elevation->setInset( e->value("inset", 0.0f) );
         elevation->setXOffset( e->value("xoffset", 0.0f) );
         elevation->setYOffset( e->value("yoffset", 0.0f) );
@@ -349,6 +353,8 @@ BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
 
     if ( r->value("type") == "gable" )
         roof->setType( Roof::TYPE_GABLE );
+    else if ( r->value("type") == "custom" )
+        roof->setType( Roof::TYPE_CUSTOM );
     else
         roof->setType( Roof::TYPE_FLAT );
 

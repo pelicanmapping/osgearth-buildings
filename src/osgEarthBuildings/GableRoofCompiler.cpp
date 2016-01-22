@@ -125,7 +125,7 @@ GableRoofCompiler::compile(CompilerOutput&    output,
     geom->setNormalBinding( geom->BIND_PER_VERTEX );
 
     // highest point (this data is guaranteed to exist)
-    float roofZ = elevation->getWalls().begin()->faces.begin()->left.upper.z();
+    float roofZ = elevation->getUppermostZ();
 
     // the AABB gives us the information to scale+bias the unit template 
     // to the proper size and shape:

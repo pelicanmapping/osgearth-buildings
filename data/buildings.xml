@@ -8,8 +8,21 @@
               max_area="750">
               
         <elevations>
-            <elevation height_percentage="100" simplify="true" skin_tags="facade residential singlefamily 2story">
+            <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
                 <roof type="gable" skin_tags="roof residential"/>
+            </elevation>
+        </elevations>
+        
+    </building>
+
+    <building name="Single-family home with a CUSTOM ROOF"
+              tags="residential singlefamily"
+              max_height="9" 
+              max_area="750">
+              
+        <elevations>
+            <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
+                <roof type="custom" model_tags="roof residential" skin_tags="roof residential"/>
             </elevation>
         </elevations>
         

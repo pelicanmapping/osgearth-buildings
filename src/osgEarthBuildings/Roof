@@ -43,7 +43,7 @@ namespace osgEarth { namespace Buildings
         enum Type {
             TYPE_FLAT,
             TYPE_GABLE,
-            TYPE_HIP
+            TYPE_CUSTOM
         };
 
     public:
@@ -121,7 +121,9 @@ namespace osgEarth { namespace Buildings
 
         void resolveSkin(const Polygon*, BuildContext&);
 
-        void resolveModel(const Polygon*, BuildContext&);
+        void resolveClutterModel(const Polygon*, BuildContext&);
+
+        void resolveCustomModel(const Polygon*, BuildContext&);
     };
 } }
 

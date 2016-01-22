@@ -102,8 +102,8 @@ namespace osgEarth { namespace Buildings
         /** True if the feature's centroid falls within the extent */
         virtual bool cropToCentroid(const Feature* feature, const GeoExtent& extent) const;
 
-        /** Alters the Z values of the feature's geometry to place it on the terrain */
-        virtual void clamp(Feature* feature, float& out_min, float& out_max);
+        /** Calculates the min and max terrain elevation under this feature */
+        virtual void calculateTerrainMinMax(Feature* feature, float& out_min, float& out_max);
 
     protected: 
         osg::ref_ptr<Session>                _session;

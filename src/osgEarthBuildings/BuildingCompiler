@@ -25,6 +25,7 @@
 #include "ElevationCompiler"
 #include "FlatRoofCompiler"
 #include "GableRoofCompiler"
+#include "CustomRoofCompiler"
 
 #include <osgEarth/Progress>
 #include <osgEarthFeatures/FeatureCursor>
@@ -84,10 +85,11 @@ namespace osgEarth { namespace Buildings
         virtual bool addRoof(CompilerOutput&, const Building*, const Elevation*, const osg::Matrix&) const;
 
     protected:
-        osg::ref_ptr<Session>           _session;
-        osg::ref_ptr<ElevationCompiler> _elevationCompiler;
-        osg::ref_ptr<FlatRoofCompiler>  _flatRoofCompiler;
-        osg::ref_ptr<GableRoofCompiler> _gableRoofCompiler;
+        osg::ref_ptr<Session>            _session;
+        osg::ref_ptr<ElevationCompiler>  _elevationCompiler;
+        osg::ref_ptr<FlatRoofCompiler>   _flatRoofCompiler;
+        osg::ref_ptr<GableRoofCompiler>  _gableRoofCompiler;
+        osg::ref_ptr<CustomRoofCompiler> _customRoofCompiler;
     };
 
 } } // namespace

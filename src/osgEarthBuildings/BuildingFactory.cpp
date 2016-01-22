@@ -65,14 +65,36 @@ namespace
         float _min, _max;
         BuildingClamper(float min, float max) : _min(min), _max(max) { }
 
-        void apply(Elevation* elev) {
+        void apply(Elevation* elev)
+        {
             Elevation::Walls& walls = elev->getWalls();
-            for(Elevation::Walls::iterator w = walls.begin(); w != walls.end(); ++w) {
-                for(Elevation::Faces::iterator f = w->faces.begin(); f != w->faces.end(); ++f) {
+            for(Elevation::Walls::iterator w = walls.begin(); w != walls.end(); ++w)
+            {
+                for(Elevation::Faces::iterator f = w->faces.begin(); f != w->faces.end(); ++f)
+                {
                     f->left.lower.z()  += _min;
                     f->left.upper.z()  += _min;
                     f->right.lower.z() += _min;
                     f->right.upper.z() += _min;
+#if 0
+                    if ( elev->isBasement() )
+                    {
+                        f->left.lower.z()  = _min;
+                        f->left.upper.z()  = _max;
+                        f->right.lower.z() = _min;
+                        f->right.upper.z() = _max;
+                    
+                        f->left.height  = _max - _min;
+                        f->right.height = _max - _min;
+                    }
+                    else
+                    {
+                        f->left.lower.z()  += _max;
+                        f->left.upper.z()  += _max;
+                        f->right.lower.z() += _max;
+                        f->right.upper.z() += _max;
+                    }
+#endif
                 }
             }
             traverse(elev);
@@ -81,7 +103,7 @@ namespace
 }
 
 void
-BuildingFactory::clamp(Feature* feature, float& min, float& max)
+BuildingFactory::calculateTerrainMinMax(Feature* feature, float& min, float& max)
 {
     if ( !feature || !feature->getGeometry() )
         return;
@@ -137,6 +159,8 @@ BuildingFactory::create(FeatureCursor*    input,
                 feature->transform( _outSRS.get() );
             }
 
+            // this ensures that the feature's centroid is in our bounding
+            // extent, so that a feature doesn't end up in multiple extents
             if ( !cropToCentroid(feature, cropTo) )
             {
                 continue;
@@ -147,14 +171,16 @@ BuildingFactory::create(FeatureCursor*    input,
             float min = FLT_MAX, max = -FLT_MAX;
             if ( needToClamp )
             {
-                clamp(feature, min, max);
+                calculateTerrainMinMax(feature, min, max);
             }
+            bool terrainMinMaxValid = (min < max);
 
             unsigned offset = output.size();
 
             if ( _catalog.valid() )
             {
-                _catalog->createBuildings(feature, _session.get(), style, output, progress);
+                float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
+                _catalog->createBuildings(feature, _session.get(), style, minHeight, output, progress);
             }
 
             else

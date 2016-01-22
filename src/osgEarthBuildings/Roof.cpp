@@ -28,6 +28,7 @@ using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 Roof::Roof() :
+_type       ( TYPE_FLAT ),
 _parent     ( 0L ),
 _hasModelBox( false )
 {
@@ -44,11 +45,22 @@ Roof::getConfig() const
 bool
 Roof::build(const Polygon* footprint, BuildContext& bc)
 {
-    // resolve the skin symbol into a resource:
-    resolveSkin( footprint, bc );
+    if ( getType() == TYPE_FLAT || getType() == TYPE_GABLE )
+    {
+        // resolve the skin symbol into a resource:
+        resolveSkin( footprint, bc );
+    }
 
-    // resolve the model symbol into a resource:
-    resolveModel( footprint, bc );
+    if ( getType() == TYPE_FLAT )
+    {
+        // resolve the model symbol into a resource:
+        resolveClutterModel( footprint, bc );
+    }
+
+    if ( getType() == TYPE_CUSTOM )
+    {
+        resolveCustomModel( footprint, bc );
+    }
 
     return true;
 }
@@ -105,7 +117,7 @@ Roof::resolveSkin(const Polygon* footprint, BuildContext& bc)
 }
 
 void
-Roof::resolveModel(const Polygon* footprint, BuildContext& bc)
+Roof::resolveClutterModel(const Polygon* footprint, BuildContext& bc)
 {
     if ( getModelSymbol() && bc.getResourceLibrary() )
     {
@@ -124,6 +136,28 @@ Roof::resolveModel(const Polygon* footprint, BuildContext& bc)
         {
             unsigned index = bc.getPRNG().next( candidates.size() );
             setModelResource( candidates.at(index) );
+        }
+    }
+}
+
+void
+Roof::resolveCustomModel(const Polygon* footprint, BuildContext& bc)
+{
+    if ( getModelSymbol() && bc.getResourceLibrary() )
+    {
+        getModelSymbol()->addTags("custom roof");
+        
+        // resolve the resource.
+        ModelResourceVector candidates;
+        bc.getResourceLibrary()->getModels( getModelSymbol(), candidates, bc.getDBOptions() );
+        if ( !candidates.empty() )
+        {
+            unsigned index = bc.getPRNG().next( candidates.size() );
+            setModelResource( candidates.at(index) );
+        }
+        else
+        {
+            OE_WARN << LC << "doh" << std::flush;
         }
     }
 }

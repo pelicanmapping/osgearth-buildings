@@ -1,0 +1,84 @@
+
+/* osgEarth - Dynamic map generation toolkit for OpenSceneGraph
+ * Copyright 2008-2016 Pelican Mapping
+ * http://osgearth.org
+ *
+ * osgEarth is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+#include "CustomRoofCompiler"
+#include <osgEarthFeatures/Session>
+#include <osg/MatrixTransform>
+#include <osg/ComputeBoundsVisitor>
+
+using namespace osgEarth;
+using namespace osgEarth::Features;
+using namespace osgEarth::Symbology;
+using namespace osgEarth::Buildings;
+
+#define LC "[CustomRoofCompiler] "
+
+bool
+CustomRoofCompiler::compile(CompilerOutput&    output,
+                            const Building*    building,
+                            const Elevation*   elevation,
+                            const osg::Matrix& world2local) const
+{
+    if ( !building ) return false;
+    if ( !elevation ) return false;
+    if ( !elevation->getRoof() ) return false;
+
+    const Roof* roof = elevation->getRoof();
+
+    // precalculate the frame transformation; combining these will
+    // prevent any precision loss during the transform.
+    osg::Matrix frame = building->getReferenceFrame() * world2local;
+    
+    // Load models:
+    ModelResource* model = roof->getModelResource();
+    if ( model )
+    {
+        const osg::BoundingBox& space = elevation->getAxisAlignedBoundingBox();
+
+        // dimensions of the AABB:       
+        float spaceWidth  = space.xMax() - space.xMin();
+        float spaceHeight = space.yMax() - space.yMin();
+
+        const osg::BoundingBox& bbox = model->getBoundingBox(0L);
+        float modelWidth  = bbox.xMax() - bbox.xMin();
+        float modelHeight = bbox.yMax() - bbox.yMin();
+        osg::Vec3f modelCenter = bbox.center();
+
+        osg::Matrix matrix;
+
+        osg::Vec3d spaceCenter = space.center();
+        elevation->unrotate(spaceCenter);
+        matrix.preMultTranslate( osg::Vec3d(spaceCenter.x(), spaceCenter.y(), 0.0) );
+
+        // rotate the model:
+        matrix.preMult( elevation->getRotation() );
+
+        // scale the model to match the dimensions of the AABB.
+        matrix.preMultScale( osg::Vec3d(spaceWidth/modelWidth, spaceHeight/modelHeight, 1.0f) );
+
+        // translates model so it's centers on 0,0,0.
+        matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), elevation->getUppermostZ()-bbox.zMin()) );
+
+        // translate to the original center point.
+        //matrix.preMultTranslate( osg::Vec3d(modelCenter.x(), modelCenter.y(), elevation->getUppermostZ()) );
+
+        output.addInstance( model, matrix * frame );
+    }
+
+    return true;
+}

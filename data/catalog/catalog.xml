@@ -92,6 +92,22 @@
 		<texture_mode>decal</texture_mode>
     </skin>
     
+    <skin name="brick">
+        <url>facade/brick.jpg</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="brickfade">
+        <url>facade/brickfade.jpg</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
     <!-- Roofs -->
     
     <skin name="roof.commercial.1" tags="roof commercial">
@@ -154,6 +170,7 @@
 		<texture_mode>decal</texture_mode>
 	</skin>
     
+    
     <!-- Parapets -->
     
     <skin name="parapet.concrete" tags="parapet commercial">
@@ -172,7 +189,8 @@
 		<texture_mode>decal</texture_mode>
 	</skin>
     
-    <!-- barriers -->
+    
+    <!-- BARRIERS AND FENCES -->
     
     <skin name="fence.picket" tags="fence picket residential">
         <url>barrier/fence-picket-white.png</url>
@@ -181,7 +199,8 @@
         <texture_mode>modulate</texture_mode>
     </skin>
     
-    <!-- models -->
+    
+    <!-- ROOF CLUTER MODELS -->
     
     <model name="roof.cow" tags="roof">
         <url>models/cow.osg</url>
@@ -218,5 +237,12 @@
     <model name="roof.clutter.5" tags="roof clutter">
         <url>models/rc/rc5.osgb</url>
     </model>    
+    
+    
+    <!-- CUSTOM ROOF MODELS -->
+        
+    <model name="roof.custom.cube" tags="roof custom residential">
+        <url>models/cube_1m.flt</url>
+    </model>  
 
 </resources>

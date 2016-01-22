@@ -41,6 +41,7 @@ _session( session )
     _elevationCompiler = new ElevationCompiler( session );
     _flatRoofCompiler = new FlatRoofCompiler( session );
     _gableRoofCompiler = new GableRoofCompiler( session );
+    _customRoofCompiler = new CustomRoofCompiler( session );
 }
 
 bool
@@ -158,6 +159,10 @@ BuildingCompiler::addRoof(CompilerOutput& output, const Building* building, cons
         if ( elevation->getRoof()->getType() == Roof::TYPE_GABLE )
         {
             return _gableRoofCompiler->compile(output, building, elevation, world2local);
+        }
+        else if ( elevation->getRoof()->getType() == Roof::TYPE_CUSTOM )
+        {
+            return _customRoofCompiler->compile(output, building, elevation, world2local);
         }
         else
         {

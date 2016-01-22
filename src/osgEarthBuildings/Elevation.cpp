@@ -29,6 +29,7 @@ Elevation::Elevation() :
 _height            ( 50.0f ),
 _heightPercentage  ( 1.0f ),
 _numFloors         ( _height.get()/3.5f ),
+_bottom            ( 0.0f ),
 _inset             ( 0.0f ),
 _xoffset           ( 0.0f ),
 _yoffset           ( 0.0f ),
@@ -45,6 +46,7 @@ Elevation::Elevation(const Elevation& rhs) :
 _height          ( rhs._height ),
 _heightPercentage( rhs._heightPercentage ),
 _numFloors       ( rhs._numFloors ),
+_bottom          ( rhs._bottom ),
 _inset           ( rhs._inset ),
 _xoffset         ( rhs._xoffset ),
 _yoffset         ( rhs._yoffset ),
@@ -122,7 +124,10 @@ Elevation::setAbsoluteHeight(float height)
 float
 Elevation::getBottom() const
 {
-    return _parent ? _parent->getTop() : 0.0f;
+    return
+        _bottom.isSet() ? _bottom.get() :
+        _parent         ? _parent->getTop() :
+        0.0f;
 }
 
 float
@@ -497,6 +502,16 @@ Elevation::calculateRotations(const Polygon* footprint)
             _aabb.expandBy( v );
         }
     }
+}
+
+float
+Elevation::getUppermostZ() const
+{
+    if ( !_walls.empty() )
+        if ( !_walls.front().faces.empty() )
+            return _walls.front().faces.front().left.upper.z();
+
+    return getTop();
 }
 
 Config
