@@ -110,7 +110,7 @@ Roof::resolveSkin(const Polygon* footprint, BuildContext& bc)
         bc.getResourceLibrary()->getSkins(getSkinSymbol(), candidates, bc.getDBOptions() );
         if ( !candidates.empty() )
         {
-            unsigned index = bc.getPRNG().next( candidates.size() );
+            unsigned index = Random(bc.getSeed()).next( candidates.size() );
             setSkinResource( candidates.at(index) );
         }
     }
@@ -134,7 +134,7 @@ Roof::resolveClutterModel(const Polygon* footprint, BuildContext& bc)
         bc.getResourceLibrary()->getModels( getModelSymbol(), candidates, bc.getDBOptions() );
         if ( !candidates.empty() )
         {
-            unsigned index = bc.getPRNG().next( candidates.size() );
+            unsigned index = Random(bc.getSeed()).next( candidates.size() );
             setModelResource( candidates.at(index) );
         }
     }
@@ -152,12 +152,12 @@ Roof::resolveCustomModel(const Polygon* footprint, BuildContext& bc)
         bc.getResourceLibrary()->getModels( getModelSymbol(), candidates, bc.getDBOptions() );
         if ( !candidates.empty() )
         {
-            unsigned index = bc.getPRNG().next( candidates.size() );
+            unsigned index = Random(bc.getSeed()).next( candidates.size() );
             setModelResource( candidates.at(index) );
         }
         else
         {
-            OE_WARN << LC << "doh" << std::flush;
+            OE_WARN << LC << "no matching custom model" << std::flush;
         }
     }
 }

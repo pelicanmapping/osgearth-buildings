@@ -435,7 +435,7 @@ Elevation::resolveSkin(BuildContext& bc)
         bc.getResourceLibrary()->getSkins( getSkinSymbol(), candidates, bc.getDBOptions() );                
         if ( !candidates.empty() )
         {
-            unsigned index = bc.getPRNG().next( candidates.size() );
+            unsigned index = Random(bc.getSeed()).next( candidates.size() );
             SkinResource* skin = candidates.at(index);
             setSkinResource( skin );
                     

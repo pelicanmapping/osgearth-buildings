@@ -25,8 +25,8 @@
                 </library>
                 <style type="text/css">
                     default {
-                        building-height:  max(5.0,[story_ht_]*3.5);
-                        building-library: buildings;
+                        building-height:   max(5.0,[story_ht_]*3.5);
+                        building-library:  buildings;
                         altitude-clamping: terrain;                        
                     }
                 </style>
@@ -47,6 +47,15 @@
               <long>-71.04069589645964</long>
               <lat>42.33174157604761</lat>
               <height>-0.0002502305433154106</height>
+            </viewpoint>
+            <viewpoint name="Office Building">
+              <heading>30.6343</heading>
+              <pitch>-22.1976</pitch>
+              <range>391.411m</range>
+              <long>-71.05626216661491</long>
+              <lat>42.35595951880791</lat>
+              <height>25.37104411330074</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
             </viewpoint>
         </viewpoints>
         

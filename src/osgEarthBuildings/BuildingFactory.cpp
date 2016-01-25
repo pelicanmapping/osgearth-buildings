@@ -241,7 +241,7 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
         }
 
         BuildContext context;
-        context.getPRNG().seed( feature->getFID() );
+        context.setSeed( feature->getFID() );
 
         // Next, iterate over the polygons and set up the Building object.
         GeometryIterator iter2( geometry, false );

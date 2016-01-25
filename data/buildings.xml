@@ -115,14 +115,13 @@
     </building>
    
    <building name="Commercial 2-tier building" tags="commercial" min_height="50">
-        <skin_tags>commercial facade</skin_tags>
         <elevations>
             <elevation height="5" skin_tags="facade retail">
                 <elevations>
                     <elevation height="-11.2" skin_tags="facade commercial">
                         <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>                
-                            <elevation height="5" inset="3">
+                            <elevation height="5" inset="3" skin_tags="facade commercial">
                                 <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
                                 <elevations>
                                     <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.poured">
@@ -138,15 +137,14 @@
    </building>
    
    <building name="Commercial 3-tier building offset" tags="commercial" min_height="80">
-        <skin_tags>commercial facade</skin_tags>
         <elevations>
-            <elevation height_percentage="15">
+            <elevation height_percentage="15" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial"/>
                 <elevations>                
-                    <elevation height_percentage="40" inset="5" xoffset="-3" yoffset="-3">
+                    <elevation height_percentage="40" inset="5" skin_tags="facade commercial">
                         <roof type="flat" skin_tags="roof commercial"/>
                         <elevations>
-                            <elevation height_percentage="35" inset="4" xoffset="2" yoffset="2">
+                            <elevation height_percentage="35" inset="4" skin_tags="facade commercial">
                                 <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
                                 <elevations>                
                                     <elevation type="parapet" inset="0.15" height="1.0" width="0.0" skin_name="parapet.poured">

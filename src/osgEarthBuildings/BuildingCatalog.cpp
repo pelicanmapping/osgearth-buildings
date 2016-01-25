@@ -89,9 +89,11 @@ BuildingCatalog::createBuildings(Feature*          feature,
         if ( !reslib )
             reslib = session->styles()->getDefaultResourceLibrary();
         
-        // Construct a context to use during the build process.
+        // Construct a context to use during the build process. 
+        // Seed the number scrambler with the geometry area.
+        // TODO: use a user-provided seed?
         BuildContext context;
-        context.getPRNG().seed( feature->getFID() );
+        context.setSeed( (unsigned)geometry->getBounds().area2d() );
         context.setDBOptions( session->getDBOptions() );
         context.setResourceLibrary( reslib );
         
@@ -104,7 +106,11 @@ BuildingCatalog::createBuildings(Feature*          feature,
         {
             // calculate height from expression:
             NumericExpression heightExpr = buildingSymbol->height().get();
-            height = std::max( (float)feature->eval(heightExpr, session), minHeight );
+            height = (float)feature->eval(heightExpr, session);
+            if ( height == 0.0f )
+                return false;
+
+            height = std::max( height, minHeight );
             numFloors = (unsigned)std::max(1.0f, osg::round(height / buildingSymbol->floorHeight().get()));
         
             // calculate tags from expression:
@@ -255,8 +261,8 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
             building->addTags( b->value("tags") );
             
             // the skinsymbol will go to the elevations.
-            skinSymbol = new SkinSymbol();
-            skinSymbol->addTags( b->value("tags") );
+            //skinSymbol = new SkinSymbol();
+            //skinSymbol->addTags( b->value("tags") );
         }
 
         building->setMinHeight( b->value("min_height", 0.0f) );
@@ -320,7 +326,8 @@ BuildingCatalog::parseElevations(const Config&     conf,
         {
             // use this parent as new parent for sub-elevations
             skinSymbol = parentSkinSymbol;
-            if ( parentSkinSymbol != 0L )
+            if ( parent == 0L )
+            //if ( parentSkinSymbol != 0L )
                 elevation->setSkinSymbol( parentSkinSymbol );
         }
 

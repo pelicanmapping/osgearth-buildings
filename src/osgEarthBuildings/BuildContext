@@ -31,16 +31,21 @@ namespace osgEarth { namespace Buildings
     class /*header-only*/ BuildContext
     {
     public:
-        Random& getPRNG() { return _prng; }
+        BuildContext() : _seed(0) { }
 
         void setDBOptions(const osgDB::Options* dbo) { _dbo = dbo; }
         const osgDB::Options* getDBOptions() const   { return _dbo; }
 
+        /** Seeding value for pseudo-random number generation */
+        void setSeed(unsigned seed) { _seed = seed; }
+        unsigned getSeed() const    { return _seed; }
+
+        /** Resource library for shared textures and models */
         void setResourceLibrary(ResourceLibrary* reslib) { _reslib = reslib; }
         ResourceLibrary* getResourceLibrary() const      { return _reslib; }
 
     private:
-        Random                             _prng;
+        unsigned                           _seed;
         osg::ref_ptr<ResourceLibrary>      _reslib;
         osg::ref_ptr<const osgDB::Options> _dbo;
     };
