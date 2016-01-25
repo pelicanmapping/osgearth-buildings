@@ -5,66 +5,56 @@
     <building name="Single-family home 2-story" 
               tags="residential singlefamily"
               max_height="9" 
-              max_area="750">
-              
+              max_area="750">              
         <elevations>
             <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
                 <roof type="gable" skin_tags="roof residential"/>
             </elevation>
-        </elevations>
-        
+        </elevations>        
     </building>
 
     <building name="Single-family home with a CUSTOM ROOF"
               tags="residential singlefamily"
               max_height="9" 
-              max_area="750">
-              
+              max_area="750">              
         <elevations>
             <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
                 <roof type="custom" model_tags="roof residential" skin_tags="roof residential"/>
             </elevation>
-        </elevations>
-        
+        </elevations>        
     </building>
 
     <building name="Single-family home 3-story" 
               tags="residential singlefamily"
               min_height="9"
               max_height="16" 
-              max_area="750">
-              
+              max_area="750">              
         <elevations>
             <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
                 <roof type="gable" skin_tags="roof residential"/>
             </elevation>
-        </elevations>
-        
+        </elevations>        
     </building>
 
     <building name="Single-family house with fence 3-story" 
               tags="residential singlefamily"
               min_height="9"
               max_height="16" 
-              max_area="750">
-              
+              max_area="750">              
         <elevations>
             <elevation height="1.5" skin_name="fence.picket" inset="-2">
-            </elevation>
-            
+            </elevation>            
             <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
                 <roof type="gable" skin_tags="roof residential"/>
             </elevation>
-        </elevations>
-        
+        </elevations>        
     </building>
     
     <building name="Commercial low" 
               tags="commercial" 
               min_height="0" 
               max_height="15" 
-              min_area="750">
-              
+              min_area="750">              
         <elevations>
             <elevation height_percentage="100" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
@@ -73,16 +63,14 @@
                     </elevation>
                 </elevations>
             </elevation>
-        </elevations>
-        
+        </elevations>        
     </building>
     
 
     <building name="Commercial medium simple" 
               tags="commercial" 
               min_height="15" 
-              max_height="30">
-              
+              max_height="30">              
         <elevations>
             <elevation height="5" skin_tags="facade retail">
                 <elevations>
@@ -98,7 +86,10 @@
         </elevations>
     </building>
 
-    <building name="Commercial with roof" tags="commercial" min_height="20" max_height="60">
+    <building name="Commercial with roof"
+              tags="commercial"
+              min_height="20"
+              max_height="60">
         <elevations>
             <elevation height="5" skin_tags="facade retail">
                 <elevations>
@@ -114,7 +105,9 @@
         </elevations>
     </building>
    
-   <building name="Commercial 2-tier building" tags="commercial" min_height="50">
+   <building name="Commercial 2-tier building"
+             tags="commercial" 
+             min_height="50">
         <elevations>
             <elevation height="5" skin_tags="facade retail">
                 <elevations>
@@ -136,7 +129,9 @@
         </elevations>
    </building>
    
-   <building name="Commercial 3-tier building offset" tags="commercial" min_height="80">
+   <building name="Commercial 3-tier building offset"
+             tags="commercial"
+             min_height="80">
         <elevations>
             <elevation height_percentage="15" skin_tags="facade commercial">
                 <roof type="flat" skin_tags="roof commercial"/>

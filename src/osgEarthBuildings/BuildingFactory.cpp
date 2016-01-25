@@ -143,61 +143,111 @@ BuildingFactory::create(FeatureCursor*    input,
         style->has<AltitudeSymbol>() &&
         style->get<AltitudeSymbol>()->clamping() != AltitudeSymbol::CLAMP_NONE;
 
+    // Find the building symbol if there is one; this will tell us how to 
+    // resolve building heights, among other things.
+    const BuildingSymbol* buildingSymbol =
+        style ? style->get<BuildingSymbol>() :
+        _session->styles() ? _session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
+        0L;
+        
+    // Pull a resource library if one is defined.
+    ResourceLibrary* reslib = 0L;
+    if (buildingSymbol && buildingSymbol->library().isSet())
+        reslib = _session->styles()->getResourceLibrary(buildingSymbol->library().get());
+    if ( !reslib )
+        reslib = _session->styles()->getDefaultResourceLibrary();
+
+    // Construct a context to use during the build process. 
+    // Seed the number scrambler with the geometry area.
+    // TODO: use a user-provided seed?
+    BuildContext context;
+    context.setDBOptions( _session->getDBOptions() );
+    context.setResourceLibrary( reslib );
+
     // iterate over all the input features
     while( input->hasMore() )
     {
         // for each feature, check that it's a polygon
         Feature* feature = input->nextFeature();
         if ( feature && feature->getGeometry() )
-        {
-            // Removing co-linear points will help produce a more "true"
-            // longest-edge for rotation and roof rectangle calcuations.
-            feature->getGeometry()->removeColinearPoints();
+        {        
+            // resolve selection values from the symbology:
+            float       height    = 0.0f; //minHeight;
+            unsigned    numFloors = 0u;
+            TagVector   tags;
 
-            if ( _outSRS.valid() )
+            if ( buildingSymbol )
             {
-                feature->transform( _outSRS.get() );
-            }
+                // calculate height from expression. We do this first because
+                // a height of zero will cause us to skip the feature altogether.
+                NumericExpression heightExpr = buildingSymbol->height().get();
+                height = (float)feature->eval(heightExpr, _session.get());
 
-            // this ensures that the feature's centroid is in our bounding
-            // extent, so that a feature doesn't end up in multiple extents
-            if ( !cropToCentroid(feature, cropTo) )
-            {
-                continue;
-            }
-
-
-            // clamp to the terrain.
-            float min = FLT_MAX, max = -FLT_MAX;
-            if ( needToClamp )
-            {
-                calculateTerrainMinMax(feature, min, max);
-            }
-            bool terrainMinMaxValid = (min < max);
-
-            unsigned offset = output.size();
-
-            if ( _catalog.valid() )
-            {
-                float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
-                _catalog->createBuildings(feature, _session.get(), style, minHeight, output, progress);
-            }
-
-            else
-            {
-                Building* building = createBuilding(feature, progress);
-                if ( building )
+        
+                if (height > 0.0f )
                 {
-                    output.push_back( building );
+                    // calculate tags from expression:
+                    if ( buildingSymbol->tags().isSet() )
+                    {
+                        StringExpression tagsExpr = buildingSymbol->tags().get();
+                        std::string tagString = feature->eval(tagsExpr, _session.get());
+                        if ( !tagString.empty() )
+                            StringTokenizer(tagString, tags, " ", "\"", false);
+                    }
                 }
             }
 
-            if ( min < FLT_MAX && max > -FLT_MAX )
+            if ( height > 0.0f )
             {
-                BuildingClamper clamper(min, max);
-                for(unsigned i=offset; i<output.size(); ++i)
+                // Removing co-linear points will help produce a more "true"
+                // longest-edge for rotation and roof rectangle calcuations.
+                feature->getGeometry()->removeColinearPoints();
+
+                if ( _outSRS.valid() )
                 {
-                    output[i]->accept( clamper );
+                    feature->transform( _outSRS.get() );
+                }
+
+                // this ensures that the feature's centroid is in our bounding
+                // extent, so that a feature doesn't end up in multiple extents
+                if ( !cropToCentroid(feature, cropTo) )
+                {
+                    continue;
+                }
+
+                // clamp to the terrain.
+                float min = FLT_MAX, max = -FLT_MAX;
+                if ( needToClamp )
+                {
+                    calculateTerrainMinMax(feature, min, max);
+                }
+                bool terrainMinMaxValid = (min < max);
+
+                unsigned offset = output.size();
+
+                if ( _catalog.valid() )
+                {   
+                    float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
+                    height = std::max( height, minHeight );
+                    _catalog->createBuildings(feature, tags, height, context, output, progress);
+                }
+
+                else
+                {
+                    Building* building = createBuilding(feature, progress);
+                    if ( building )
+                    {
+                        output.push_back( building );
+                    }
+                }
+
+                if ( min < FLT_MAX && max > -FLT_MAX )
+                {
+                    BuildingClamper clamper(min, max);
+                    for(unsigned i=offset; i<output.size(); ++i)
+                    {
+                        output[i]->accept( clamper );
+                    }
                 }
             }
         }

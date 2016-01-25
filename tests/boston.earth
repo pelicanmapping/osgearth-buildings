@@ -25,11 +25,19 @@
                 </library>
                 <style type="text/css">
                     default {
-                        building-height:   max(5.0,[story_ht_]*3.5);
+                        building-height:   getHeight();
                         building-library:  buildings;
-                        altitude-clamping: terrain;                        
+                        altitude-clamping: terrain;
                     }
                 </style>
+                <script language="javascript">
+                  <![CDATA[
+                    function getHeight() {
+                        var h = Math.max(5.0, feature.properties.story_ht_*3.5);
+                        return h;
+                    }
+                  ]]>
+                </script>
             </styles>
             
             <cache_policy max_age="0"/>

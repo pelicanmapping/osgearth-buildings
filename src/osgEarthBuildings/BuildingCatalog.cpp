@@ -40,14 +40,14 @@ BuildingCatalog::BuildingCatalog()
 }
 
 bool
-BuildingCatalog::createBuildings(Feature*          feature,
-                                 Session*          session,
-                                 const Style*      style,
-                                 float             minHeight,
-                                 BuildingVector&   output,
-                                 ProgressCallback* progress) const
+BuildingCatalog::createBuildings(Feature*              feature,
+                                 const TagVector&      tags,
+                                 float                 height,
+                                 BuildContext&         context,
+                                 BuildingVector&       output,
+                                 ProgressCallback*     progress) const
 {
-    if ( !feature || !session )
+    if ( !feature )
         return false;
 
     Geometry* geometry = feature->getGeometry();
@@ -75,54 +75,6 @@ BuildingCatalog::createBuildings(Feature*          feature,
             }
         }
 
-        // Find the building symbol if there is one; this will tell us how to 
-        // resolve building heights, among other things.
-        const BuildingSymbol* buildingSymbol =
-            style ? style->get<BuildingSymbol>() :
-            session->styles() ? session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
-            0L;
-        
-        // Pull a resource library if one is defined.
-        ResourceLibrary* reslib = 0L;
-        if (buildingSymbol && buildingSymbol->library().isSet())
-            reslib = session->styles()->getResourceLibrary(buildingSymbol->library().get());
-        if ( !reslib )
-            reslib = session->styles()->getDefaultResourceLibrary();
-        
-        // Construct a context to use during the build process. 
-        // Seed the number scrambler with the geometry area.
-        // TODO: use a user-provided seed?
-        BuildContext context;
-        context.setSeed( (unsigned)geometry->getBounds().area2d() );
-        context.setDBOptions( session->getDBOptions() );
-        context.setResourceLibrary( reslib );
-        
-        // resolve selection values from the symbology:
-        float       height    = minHeight;
-        unsigned    numFloors = 0u;
-        TagVector   tags;
-
-        if ( buildingSymbol )
-        {
-            // calculate height from expression:
-            NumericExpression heightExpr = buildingSymbol->height().get();
-            height = (float)feature->eval(heightExpr, session);
-            if ( height == 0.0f )
-                return false;
-
-            height = std::max( height, minHeight );
-            numFloors = (unsigned)std::max(1.0f, osg::round(height / buildingSymbol->floorHeight().get()));
-        
-            // calculate tags from expression:
-            if ( buildingSymbol->tags().isSet() )
-            {
-                StringExpression tagsExpr = buildingSymbol->tags().get();
-                std::string tagString = feature->eval(tagsExpr, session);
-                if ( !tagString.empty() )
-                    StringTokenizer(tagString, tags, " ", "\"", false);
-            }
-        }
-
         // Next, iterate over the polygons and set up the Building object.
         GeometryIterator iter2( geometry, false );
         while(iter2.hasMore())
@@ -133,7 +85,7 @@ BuildingCatalog::createBuildings(Feature*          feature,
                 float area = polygon->getBounds().area2d();
 
                 // A footprint is the minumum info required to make a building.
-                osg::ref_ptr<Building> building = cloneBuildingTemplate(feature, tags, height, area, session);
+                osg::ref_ptr<Building> building = cloneBuildingTemplate(feature, tags, height, area);
 
                 if ( building )
                 {
@@ -143,8 +95,11 @@ BuildingCatalog::createBuildings(Feature*          feature,
                     // Do initial cleaning of the footprint and install is:
                     cleanPolygon( polygon );
 
-                    // Apply the symbology:
+                    // Apply the height:
                     building->setHeight( height );
+
+                    // Seed the random number generator with the local-space area:
+                    context.setSeed( (unsigned)area );
 
                     // Build the internal structures:
                     if ( building->build(polygon, context) )
@@ -185,8 +140,7 @@ Building*
 BuildingCatalog::cloneBuildingTemplate(Feature*           feature,
                                        const TagVector&   tags,
                                        float              height,
-                                       float              area,
-                                       Session*           session) const
+                                       float              area) const
 {
     if ( !_buildingsTemplates.empty() )
     {
@@ -196,7 +150,7 @@ BuildingCatalog::cloneBuildingTemplate(Feature*           feature,
         {
             const Building* bt = _buildingsTemplates.at(i).get();
 
-            bool heightOK = (height == 0.0f) || (height >= bt->getMinHeight() && height <= bt->getMaxHeight());
+            bool heightOK = (height >= bt->getMinHeight() && height <= bt->getMaxHeight());
             if ( !heightOK )
                 continue;
 
@@ -214,8 +168,7 @@ BuildingCatalog::cloneBuildingTemplate(Feature*           feature,
         if ( !candidates.empty() )
         {
             UID uid = feature->getFID() + 1u;
-            Random prng( uid );
-            unsigned index = prng.next(candidates.size());
+            unsigned index = Random((unsigned)area).next(candidates.size());
             Building* copy = osg::clone( _buildingsTemplates.at( candidates[index] ).get() );
             copy->setUID( uid );
             return copy;
@@ -259,10 +212,6 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
         if ( b->hasValue("tags") )
         {
             building->addTags( b->value("tags") );
-            
-            // the skinsymbol will go to the elevations.
-            //skinSymbol = new SkinSymbol();
-            //skinSymbol->addTags( b->value("tags") );
         }
 
         building->setMinHeight( b->value("min_height", 0.0f) );

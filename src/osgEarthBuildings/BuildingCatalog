@@ -30,6 +30,7 @@ namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Features;
 
+    class BuildContext;
     class Roof;
 
     /**
@@ -69,15 +70,15 @@ namespace osgEarth { namespace Buildings
          */
         bool createBuildings(
             Feature*          feature,
-            Session*          session,
-            const Style*      style,
-            float             minHeight,
+            const TagVector&  tags,
+            float             height,
+            BuildContext&     context,
             BuildingVector&   output,
             ProgressCallback* progress) const;
 
     protected:
 
-        Building* cloneBuildingTemplate(Feature*, const TagVector& tags, float height, float area, Session*) const;
+        Building* cloneBuildingTemplate(Feature*, const TagVector& tags, float height, float area) const;
         
         bool parseElevations(const Config&, Building*, Elevation*, ElevationVector&, SkinSymbol*, ProgressCallback*);
 
