@@ -94,6 +94,28 @@ BuildingCatalog::createBuildings(Feature*          feature,
         context.getPRNG().seed( feature->getFID() );
         context.setDBOptions( session->getDBOptions() );
         context.setResourceLibrary( reslib );
+        
+        // resolve selection values from the symbology:
+        float       height    = minHeight;
+        unsigned    numFloors = 0u;
+        TagVector   tags;
+
+        if ( buildingSymbol )
+        {
+            // calculate height from expression:
+            NumericExpression heightExpr = buildingSymbol->height().get();
+            height = std::max( (float)feature->eval(heightExpr, session), minHeight );
+            numFloors = (unsigned)std::max(1.0f, osg::round(height / buildingSymbol->floorHeight().get()));
+        
+            // calculate tags from expression:
+            if ( buildingSymbol->tags().isSet() )
+            {
+                StringExpression tagsExpr = buildingSymbol->tags().get();
+                std::string tagString = feature->eval(tagsExpr, session);
+                if ( !tagString.empty() )
+                    StringTokenizer(tagString, tags, " ", "\"", false);
+            }
+        }
 
         // Next, iterate over the polygons and set up the Building object.
         GeometryIterator iter2( geometry, false );
@@ -101,21 +123,11 @@ BuildingCatalog::createBuildings(Feature*          feature,
         {
             Polygon* polygon = dynamic_cast<Polygon*>(iter2.next());
             if ( polygon && polygon->isValid() )
-            {        
-                // resolve the height:
-                float    height    = minHeight;
-                unsigned numFloors = 0u;
-                if ( buildingSymbol )
-                {
-                    NumericExpression heightExpr = buildingSymbol->height().get();
-                    height = std::max( (float)feature->eval(heightExpr, session), minHeight );
-                    numFloors = (unsigned)std::max(1.0f, osg::round(height / buildingSymbol->floorHeight().get()));
-                }
-
+            {
                 float area = polygon->getBounds().area2d();
 
                 // A footprint is the minumum info required to make a building.
-                osg::ref_ptr<Building> building = createBuildingTemplate(feature, height, area, session);
+                osg::ref_ptr<Building> building = cloneBuildingTemplate(feature, tags, height, area, session);
 
                 if ( building )
                 {
@@ -164,25 +176,33 @@ BuildingCatalog::cleanPolygon(Polygon* fp) const
 }
 
 Building*
-BuildingCatalog::createBuildingTemplate(Feature* feature,
-                                        float    height,
-                                        float    area,
-                                        Session* session) const
+BuildingCatalog::cloneBuildingTemplate(Feature*           feature,
+                                       const TagVector&   tags,
+                                       float              height,
+                                       float              area,
+                                       Session*           session) const
 {
     if ( !_buildingsTemplates.empty() )
     {
         std::vector<unsigned> candidates;
+
         for(unsigned i=0; i<_buildingsTemplates.size(); ++i)
         {
             const Building* bt = _buildingsTemplates.at(i).get();
 
-            bool heightOK = height == 0.0f || (height >= bt->getMinHeight() && height <= bt->getMaxHeight());
-            bool areaOK   = area == 0.0f   || (area >= bt->getMinArea() && area <= bt->getMaxArea());
+            bool heightOK = (height == 0.0f) || (height >= bt->getMinHeight() && height <= bt->getMaxHeight());
+            if ( !heightOK )
+                continue;
 
-            if ( heightOK && areaOK )
-            {
-                candidates.push_back(i);
-            }
+            bool areaOK = (area == 0.0f) || (area >= bt->getMinArea() && area <= bt->getMaxArea());
+            if ( !areaOK )
+                continue;
+
+            bool tagsOK = tags.empty() || (bt->containsTags(tags));
+            if ( !tagsOK )
+                continue;
+
+            candidates.push_back(i);
         }
 
         if ( !candidates.empty() )
@@ -190,7 +210,7 @@ BuildingCatalog::createBuildingTemplate(Feature* feature,
             UID uid = feature->getFID() + 1u;
             Random prng( uid );
             unsigned index = prng.next(candidates.size());
-            Building* copy = _buildingsTemplates.at( candidates[index] ).get()->clone();
+            Building* copy = osg::clone( _buildingsTemplates.at( candidates[index] ).get() );
             copy->setUID( uid );
             return copy;
         }
@@ -228,16 +248,15 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
 
         Building* building = new Building();
 
-        SkinSymbol* skinSymbol = 0L;
-        if ( b->hasValue("skin") )
+        osg::ref_ptr<SkinSymbol> skinSymbol;
+
+        if ( b->hasValue("tags") )
         {
+            building->addTags( b->value("tags") );
+            
+            // the skinsymbol will go to the elevations.
             skinSymbol = new SkinSymbol();
-            skinSymbol->name()->setLiteral( b->value("skin") );
-        }
-        else if ( b->hasValue("skin_tags") )
-        {
-            skinSymbol = new SkinSymbol();
-            skinSymbol->addTags( b->value("skin_tags") );
+            skinSymbol->addTags( b->value("tags") );
         }
 
         building->setMinHeight( b->value("min_height", 0.0f) );
@@ -249,7 +268,7 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )
         {
-            parseElevations( *elevations, building, 0L, building->getElevations(), skinSymbol, progress );
+            parseElevations( *elevations, building, 0L, building->getElevations(), skinSymbol.get(), progress );
         }
 
         _buildingsTemplates.push_back( building );
@@ -301,7 +320,7 @@ BuildingCatalog::parseElevations(const Config&     conf,
         {
             // use this parent as new parent for sub-elevations
             skinSymbol = parentSkinSymbol;
-            if ( parent == 0L )
+            if ( parentSkinSymbol != 0L )
                 elevation->setSkinSymbol( parentSkinSymbol );
         }
 

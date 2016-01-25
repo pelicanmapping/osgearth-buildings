@@ -27,7 +27,7 @@
                     default {
                         building-height:  max(5.0,[story_ht_]*3.5);
                         building-library: buildings;
-                        altitude-clamping: terrain;
+                        altitude-clamping: terrain;                        
                     }
                 </style>
             </styles>

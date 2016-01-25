@@ -77,7 +77,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
 
-        Building* createBuildingTemplate(Feature*, float height, float area, Session*) const;
+        Building* cloneBuildingTemplate(Feature*, const TagVector& tags, float height, float area, Session*) const;
         
         bool parseElevations(const Config&, Building*, Elevation*, ElevationVector&, SkinSymbol*, ProgressCallback*);
 

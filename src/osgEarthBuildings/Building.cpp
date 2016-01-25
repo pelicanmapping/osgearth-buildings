@@ -22,9 +22,11 @@
 
 #define LC "[Building] "
 
+using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 Building::Building() :
+Taggable<osg::Object>(),
 _zoning    ( Zoning::ZONING_UNKNOWN ),
 _minHeight ( 0.0f ),
 _maxHeight ( FLT_MAX ),
@@ -34,7 +36,8 @@ _maxArea   ( FLT_MAX )
     //nop
 }
 
-Building::Building(const Building& rhs) :
+Building::Building(const Building& rhs, const osg::CopyOp& copy) :
+Taggable<osg::Object>( rhs, copy ),
 _zoning    ( rhs._zoning ),
 _minHeight ( rhs._minHeight ),
 _maxHeight ( rhs._maxHeight ),
@@ -45,11 +48,13 @@ _maxArea   ( rhs._maxArea )
         _elevations.push_back( e->get()->clone() );
 }
 
+#if 0
 Building*
 Building::clone() const
 {
     return new Building(*this);
 }
+#endif
 
 void
 Building::setHeight(float height)

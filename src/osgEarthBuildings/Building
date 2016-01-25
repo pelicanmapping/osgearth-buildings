@@ -24,6 +24,8 @@
 #include "Zoning"
 #include <vector>
 #include <osgEarthSymbology/Geometry>
+#include <osgEarthSymbology/Tags>
+#include <osg/Referenced>
 
 namespace osgEarth { namespace Buildings 
 {
@@ -36,14 +38,16 @@ namespace osgEarth { namespace Buildings
      * Building represents one complete structure, comprised of 
      * at least one elevation and a roof.
      */
-    class OSGEARTHBUILDINGS_EXPORT Building : public osg::Referenced
+    class OSGEARTHBUILDINGS_EXPORT Building : public Taggable<osg::Object>
     {
     public:
+        META_Object(osgEarthBuildings, Building);
+
         /** Construct a new Building */
         Building();
 
         /** Copy constructor */
-        Building(const Building& rhs);
+        Building(const Building& rhs, const osg::CopyOp& copy);
 
         /**
          * Building's unique identifier.
@@ -51,7 +55,7 @@ namespace osgEarth { namespace Buildings
         void setUID(UID uid) { _uid = uid; }
         UID getUID() const   { return _uid; }
 
-        virtual Building* clone() const;
+        //virtual Building* clone() const;
 
         /**
          * Reference frame for all coordinates used to define the building.
@@ -76,7 +80,7 @@ namespace osgEarth { namespace Buildings
          * Zoning for this building 
          */
         void setZoning(const Zoning::Type& zoning) { _zoning = zoning; }
-        const Zoning::Type& getZoning() const     { return _zoning; }
+        const Zoning::Type& getZoning() const      { return _zoning; }
 
         /**
          * Minimum height for which to use this building. 
