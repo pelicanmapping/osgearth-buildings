@@ -34,6 +34,7 @@ _detailRange( FLT_MAX )
 {
     _mainGeode = new osg::Geode();
     _detailGeode = new osg::Geode();
+    _externalModelsGroup = new osg::Group();
     _debugGroup = new osg::Group();
 }
 
@@ -64,6 +65,11 @@ CompilerOutput::createSceneGraph(Session* session) const
         detailLOD->addChild( getDetailGeode(), 0.0f, _detailRange );
     }
     root->addChild( detailLOD );
+
+    if ( _externalModelsGroup->getNumChildren() > 0 )
+    {
+        root->addChild( _externalModelsGroup.get() );
+    }
     
     // Run an optimization pass before adding any debug data or models
     {
@@ -97,7 +103,7 @@ CompilerOutput::createSceneGraph(Session* session) const
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
         ModelNodes modelNodes;
 
-        for(ModelPlacementMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
+        for(InstanceMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
         {
             // look up or create the node corresponding to this instance:
             osg::ref_ptr<osg::Node>& modelNode = modelNodes[i->first.get()];

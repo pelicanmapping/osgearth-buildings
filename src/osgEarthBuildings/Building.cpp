@@ -42,19 +42,12 @@ _zoning    ( rhs._zoning ),
 _minHeight ( rhs._minHeight ),
 _maxHeight ( rhs._maxHeight ),
 _minArea   ( rhs._minArea ),
-_maxArea   ( rhs._maxArea )
+_maxArea   ( rhs._maxArea ),
+_modelURI  ( rhs._modelURI )
 {
     for(ElevationVector::const_iterator e = rhs.getElevations().begin(); e != rhs.getElevations().end(); ++e)
         _elevations.push_back( e->get()->clone() );
 }
-
-#if 0
-Building*
-Building::clone() const
-{
-    return new Building(*this);
-}
-#endif
 
 void
 Building::setHeight(float height)
@@ -88,7 +81,9 @@ Building::accept(BuildingVisitor& bv)
 Config
 Building::getConfig() const
 {
+    //TODO: incomplete.
     Config conf("building");
+    conf.addObjIfSet("model_uri", _modelURI);
     if ( !getElevations().empty() )
     {
         Config evec("elevations");

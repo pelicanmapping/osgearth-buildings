@@ -52,6 +52,10 @@ namespace osgEarth { namespace Buildings
         optional<StringExpression>& tags() { return _tagsExpr; }
         const optional<StringExpression>& tags() const { return _tagsExpr; }
 
+        /** Expression resolving to an external model URI to use instead of creating geometry */
+        optional<StringExpression>& modelURI() { return _modelURIExpr; }
+        const optional<StringExpression>& modelURI() const { return _modelURIExpr; }
+
         /** Resource library name */
         optional<std::string>& library() { return _libraryName; }
         const optional<std::string>& library() const { return _libraryName; }
@@ -65,6 +69,7 @@ namespace osgEarth { namespace Buildings
         optional<float>             _floorHeight;
         optional<NumericExpression> _heightExpr;
         optional<StringExpression>  _tagsExpr;
+        optional<StringExpression>  _modelURIExpr;
         optional<std::string>       _libraryName;
     };
 } }

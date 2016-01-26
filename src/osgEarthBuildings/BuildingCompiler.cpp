@@ -21,11 +21,6 @@
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/MatrixTransform>
-#include <osgUtil/SmoothingVisitor>
-#include <osgUtil/Tessellator>
-#include <osgEarth/Tessellator>
-#include <osgEarthSymbology/MeshConsolidator>
-#include <osgEarth/ShaderGenerator>
 
 #define LC "[BuildingCompiler] "
 
@@ -42,14 +37,6 @@ _session( session )
     _flatRoofCompiler = new FlatRoofCompiler( session );
     _gableRoofCompiler = new GableRoofCompiler( session );
     _customRoofCompiler = new CustomRoofCompiler( session );
-}
-
-bool
-BuildingCompiler::compile(Building*         building,
-                          CompilerOutput&   output,
-                          ProgressCallback* progress)
-{
-    return false; //addSimpleFootprint( output, building, osg::Matrix::identity() );
 }
 
 bool
@@ -72,52 +59,35 @@ BuildingCompiler::compile(const BuildingVector& input,
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
         Building* building = i->get();
-        addElevations( output, building, building->getElevations(), world2local );
-    }
 
-    return true;
-}
-
-bool
-BuildingCompiler::addBuilding(CompilerOutput&    output,
-                              const Building*    building,
-                              const osg::Matrix& world2local) const
-{
-    return false; //addSimpleFootprint(output, building, world2local);
-}
-
-#if 0
-bool
-BuildingCompiler::addSimpleFootprint(CompilerOutput&    output,
-                                     const Building*    building,
-                                     const osg::Matrix& world2local) const
-{
-    if ( !building ) return false;
-
-    osg::Geometry* geom = new osg::Geometry();
-    geom->setUseVertexBufferObjects( true );
-    geom->setUseDisplayList( false );
-
-    osg::Vec3Array* v = new osg::Vec3Array();
-    geom->setVertexArray( v );
-
-    GeometryIterator iter( building->getGeometry() );
-    while( iter.hasMore() )
-    {
-        int ptr = v->size();
-        Geometry* poly = iter.next();
-        for(Geometry::iterator p = poly->begin(); p != poly->end(); ++p)
+        if ( building->modelURI().isSet() )
         {
-            v->push_back( (*p) * (building->getReferenceFrame() * world2local) );
+            addExternalModel( output, building, world2local, progress );
         }
-        geom->addPrimitiveSet( new osg::DrawArrays(GL_LINE_LOOP, ptr, poly->size()) );
+        else
+        {
+            addElevations( output, building, building->getElevations(), world2local );
+        }
     }
-
-    output.getMainGeode()->addDrawable( geom );
 
     return true;
 }
-#endif
+
+bool
+BuildingCompiler::addExternalModel(CompilerOutput&    output,
+                                   const Building*    building,
+                                   const osg::Matrix& world2local,
+                                   ProgressCallback*  progress) const
+{
+    osg::ref_ptr<osg::Node> node = building->getModelURI().getNode(_session->getDBOptions(), progress);
+    if ( node.valid() )
+    {
+        osg::MatrixTransform* xform = new osg::MatrixTransform( building->getReferenceFrame() * world2local );
+        xform->addChild( node.get() );
+        output.getExternalModelsGroup()->addChild( xform );
+    }
+    return node.valid();
+}
 
 bool
 BuildingCompiler::addElevations(CompilerOutput&        output,

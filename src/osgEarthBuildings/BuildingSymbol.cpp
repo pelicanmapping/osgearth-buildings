@@ -32,10 +32,11 @@ _floorHeight( 3.5f )
 }
 
 BuildingSymbol::BuildingSymbol(const BuildingSymbol& rhs,const osg::CopyOp& copyop) :
-Symbol      ( rhs, copyop ),
-_floorHeight( rhs._floorHeight ),
-_heightExpr ( rhs._heightExpr ),
-_tagsExpr   ( rhs._tagsExpr )
+Symbol       ( rhs, copyop ),
+_floorHeight ( rhs._floorHeight ),
+_heightExpr  ( rhs._heightExpr ),
+_modelURIExpr( rhs._modelURIExpr ),
+_tagsExpr    ( rhs._tagsExpr )
 {
     //nop
 }
@@ -48,6 +49,7 @@ BuildingSymbol::getConfig() const
     conf.addIfSet   ( "floor_height", _floorHeight );
     conf.addObjIfSet( "height",       _heightExpr );
     conf.addObjIfSet( "tags",         _tagsExpr );
+    conf.addObjIfSet( "model",        _modelURIExpr );
     conf.addIfSet   ( "library_name", _libraryName );
     return conf;
 }
@@ -58,6 +60,7 @@ BuildingSymbol::mergeConfig( const Config& conf )
     conf.getIfSet   ( "floor_height", _floorHeight );
     conf.getObjIfSet( "height",       _heightExpr );
     conf.getObjIfSet( "tags",         _tagsExpr );
+    conf.getObjIfSet( "model",        _modelURIExpr );
     conf.getIfSet   ( "library_name", _libraryName );
 }
 
@@ -74,6 +77,9 @@ BuildingSymbol::parseSLD(const Config& c, Style& style)
     }
     else if ( match(c.key(), "building-tags") ) {
         style.getOrCreate<BuildingSymbol>()->tags() = !c.value().empty() ? StringExpression(c.value()) : *defaults.tags();
+    }
+    else if ( match(c.key(), "building-model") ) {
+        style.getOrCreate<BuildingSymbol>()->modelURI() = !c.value().empty() ? StringExpression(c.value()) : *defaults.tags();
     }
     else if ( match(c.key(), "building-library") ) {
         style.getOrCreate<BuildingSymbol>()->library() = c.value();

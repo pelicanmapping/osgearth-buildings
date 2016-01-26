@@ -157,12 +157,13 @@ BuildingFactory::create(FeatureCursor*    input,
     if ( !reslib )
         reslib = _session->styles()->getDefaultResourceLibrary();
 
-    // Construct a context to use during the build process. 
-    // Seed the number scrambler with the geometry area.
-    // TODO: use a user-provided seed?
+    // Construct a context to use during the build process.
     BuildContext context;
     context.setDBOptions( _session->getDBOptions() );
     context.setResourceLibrary( reslib );
+
+    // URI context for external models
+    URIContext uriContext( _session->getDBOptions() );
 
     // iterate over all the input features
     while( input->hasMore() )
@@ -172,31 +173,47 @@ BuildingFactory::create(FeatureCursor*    input,
         if ( feature && feature->getGeometry() )
         {        
             // resolve selection values from the symbology:
-            float       height    = 0.0f; //minHeight;
+            optional<URI> modelURI;
+            float       height    = 0.0f;
             unsigned    numFloors = 0u;
             TagVector   tags;
 
             if ( buildingSymbol )
             {
+                // see if we are referencing an external model.
+                if ( buildingSymbol->modelURI().isSet() )
+                {
+                    StringExpression modelExpr = buildingSymbol->modelURI().get();
+                    std::string modelStr = feature->eval(modelExpr, _session.get());
+                    if (!modelStr.empty())
+                    {
+                        OE_WARN << "Model string = \"" << modelStr << "\"\n";
+                        modelURI = URI(modelStr, uriContext);
+                    }
+                }
+
                 // calculate height from expression. We do this first because
                 // a height of zero will cause us to skip the feature altogether.
-                NumericExpression heightExpr = buildingSymbol->height().get();
-                height = (float)feature->eval(heightExpr, _session.get());
-        
-                if (height > 0.0f )
+                if ( !modelURI.isSet() && buildingSymbol->height().isSet() )
                 {
-                    // calculate tags from expression:
-                    if ( buildingSymbol->tags().isSet() )
+                    NumericExpression heightExpr = buildingSymbol->height().get();
+                    height = (float)feature->eval(heightExpr, _session.get());
+        
+                    if (height > 0.0f )
                     {
-                        StringExpression tagsExpr = buildingSymbol->tags().get();
-                        std::string tagString = feature->eval(tagsExpr, _session.get());
-                        if ( !tagString.empty() )
-                            StringTokenizer(tagString, tags, " ", "\"", false);
+                        // calculate tags from expression:
+                        if ( buildingSymbol->tags().isSet() )
+                        {
+                            StringExpression tagsExpr = buildingSymbol->tags().get();
+                            std::string tagString = feature->eval(tagsExpr, _session.get());
+                            if ( !tagString.empty() )
+                                StringTokenizer(tagString, tags, " ", "\"", false);
+                        }
                     }
                 }
             }
 
-            if ( height > 0.0f )
+            if ( height > 0.0f || modelURI.isSet() )
             {
                 // Removing co-linear points will help produce a more "true"
                 // longest-edge for rotation and roof rectangle calcuations.
@@ -224,28 +241,40 @@ BuildingFactory::create(FeatureCursor*    input,
 
                 unsigned offset = output.size();
 
-                if ( _catalog.valid() )
-                {   
-                    float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
-                    height = std::max( height, minHeight );
-                    _catalog->createBuildings(feature, tags, height, context, output, progress);
-                }
-
-                else
+                if ( modelURI.isSet() )
                 {
-                    Building* building = createBuilding(feature, progress);
+                    Building* building = createExternalModelBuilding( feature, modelURI.get(), min, max );
                     if ( building )
                     {
                         output.push_back( building );
                     }
                 }
 
-                if ( min < FLT_MAX && max > -FLT_MAX )
+                else
                 {
-                    BuildingClamper clamper(min, max);
-                    for(unsigned i=offset; i<output.size(); ++i)
+                    if ( _catalog.valid() )
+                    {   
+                        float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
+                        height = std::max( height, minHeight );
+                        _catalog->createBuildings(feature, tags, height, context, output, progress);
+                    }
+
+                    else
                     {
-                        output[i]->accept( clamper );
+                        Building* building = createBuilding(feature, progress);
+                        if ( building )
+                        {
+                            output.push_back( building );
+                        }
+                    }
+
+                    if ( min < FLT_MAX && max > -FLT_MAX )
+                    {
+                        BuildingClamper clamper(min, max);
+                        for(unsigned i=offset; i<output.size(); ++i)
+                        {
+                            output[i]->accept( clamper );
+                        }
                     }
                 }
             }
@@ -253,6 +282,32 @@ BuildingFactory::create(FeatureCursor*    input,
     }
 
     return true;
+}
+
+Building*
+BuildingFactory::createExternalModelBuilding(Feature*   feature,
+                                             const URI& modelURI,
+                                             float      terrainMin,
+                                             float      terrainMax)
+{
+    if ( !feature || modelURI.empty() )
+        return 0L;
+
+    Geometry* geometry = feature->getGeometry();
+    if ( !geometry || !geometry->isValid() )
+        return 0L;
+
+    osg::ref_ptr<Building> building = new Building();
+    building->setModelURI( modelURI );
+
+    // Calculate a local reference frame for this building:
+    osg::Vec2d center2d = geometry->getBounds().center2d();
+    GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), terrainMin, ALTMODE_ABSOLUTE );
+    osg::Matrix local2world;
+    centerPoint.createLocalToWorld( local2world );
+    building->setReferenceFrame( local2world );
+
+    return building.release();
 }
 
 Building*

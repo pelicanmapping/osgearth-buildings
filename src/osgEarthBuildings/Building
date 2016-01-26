@@ -55,8 +55,6 @@ namespace osgEarth { namespace Buildings
         void setUID(UID uid) { _uid = uid; }
         UID getUID() const   { return _uid; }
 
-        //virtual Building* clone() const;
-
         /**
          * Reference frame for all coordinates used to define the building.
          */
@@ -107,6 +105,13 @@ namespace osgEarth { namespace Buildings
         float getMaxArea() const     { return _maxArea; }
 
         /**
+         * URI of an external model to use instead of creating geometry
+         */
+        void setModelURI(const URI& uri) { _modelURI = uri; }
+        const optional<URI>& modelURI() const { return _modelURI; }
+        const URI& getModelURI() const { return _modelURI.get(); }
+
+        /**
          * Build the internal structure of the building and its components.
          * You must call setFootprint() before calling this function.
          */
@@ -124,6 +129,7 @@ namespace osgEarth { namespace Buildings
 
         UID                     _uid;
         osg::ref_ptr<Polygon>   _footprint;
+        optional<URI>           _modelURI;
         ElevationVector         _elevations;
         osg::ref_ptr<Roof>      _roof;
         Zoning::Type            _zoning;
