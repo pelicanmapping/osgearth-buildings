@@ -43,7 +43,8 @@ namespace osgEarth { namespace Buildings
         optional<float>& floorHeight() { return _floorHeight; }
         const optional<float>& floorHeight() const { return _floorHeight; }
 
-        /** Expression resolving to the height (in meters) of a building. */
+        /** Expression resolving to the height (in meters) of a building.
+            A height of zero means the building will be discarded. */
         optional<NumericExpression>& height() { return _heightExpr; }
         const optional<NumericExpression>& height() const { return _heightExpr; }
 

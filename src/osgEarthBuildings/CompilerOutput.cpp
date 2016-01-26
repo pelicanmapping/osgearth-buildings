@@ -80,7 +80,7 @@ CompilerOutput::createSceneGraph(Session* session) const
     // debug information.
     if ( getDebugGroup()->getNumChildren() > 0 )
     {
-        detailLOD->addChild( getDebugGroup() );
+        root->addChild( getDebugGroup() );
     }
 
     // shader generation pass (before models)

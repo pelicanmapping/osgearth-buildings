@@ -182,7 +182,6 @@ BuildingFactory::create(FeatureCursor*    input,
                 // a height of zero will cause us to skip the feature altogether.
                 NumericExpression heightExpr = buildingSymbol->height().get();
                 height = (float)feature->eval(heightExpr, _session.get());
-
         
                 if (height > 0.0f )
                 {
