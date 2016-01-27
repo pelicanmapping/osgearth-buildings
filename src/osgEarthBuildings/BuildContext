@@ -31,7 +31,7 @@ namespace osgEarth { namespace Buildings
     class /*header-only*/ BuildContext
     {
     public:
-        BuildContext() : _seed(0) { }
+        BuildContext() : _seed(0), _terrainMin(0.0f), _terrainMax(0.0f) { }
 
         void setDBOptions(const osgDB::Options* dbo) { _dbo = dbo; }
         const osgDB::Options* getDBOptions() const   { return _dbo; }
@@ -39,6 +39,10 @@ namespace osgEarth { namespace Buildings
         /** Seeding value for pseudo-random number generation */
         void setSeed(unsigned seed) { _seed = seed; }
         unsigned getSeed() const    { return _seed; }
+
+        void setTerrainMinMax(float min, float max) { _terrainMin = min, _terrainMax = max; }
+        float getTerrainMin() const                 { return _terrainMin; }
+        float getTerrainMax() const                 { return _terrainMax; }
 
         /** Resource library for shared textures and models */
         void setResourceLibrary(ResourceLibrary* reslib) { _reslib = reslib; }
@@ -48,6 +52,8 @@ namespace osgEarth { namespace Buildings
         unsigned                           _seed;
         osg::ref_ptr<ResourceLibrary>      _reslib;
         osg::ref_ptr<const osgDB::Options> _dbo;
+        float                              _terrainMin;
+        float                              _terrainMax;
     };
 
 } } // namespace

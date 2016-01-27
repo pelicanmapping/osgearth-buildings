@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-#include "CustomRoofCompiler"
+#include "InstancedRoofCompiler"
 #include <osgEarthFeatures/Session>
 #include <osg/MatrixTransform>
 #include <osg/ComputeBoundsVisitor>
@@ -26,13 +26,13 @@ using namespace osgEarth::Features;
 using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
-#define LC "[CustomRoofCompiler] "
+#define LC "[InstancedRoofCompiler] "
 
 bool
-CustomRoofCompiler::compile(CompilerOutput&    output,
-                            const Building*    building,
-                            const Elevation*   elevation,
-                            const osg::Matrix& world2local) const
+InstancedRoofCompiler::compile(CompilerOutput&    output,
+                               const Building*    building,
+                               const Elevation*   elevation,
+                               const osg::Matrix& world2local) const
 {
     if ( !building ) return false;
     if ( !elevation ) return false;
@@ -72,10 +72,7 @@ CustomRoofCompiler::compile(CompilerOutput&    output,
         matrix.preMultScale( osg::Vec3d(spaceWidth/modelWidth, spaceHeight/modelHeight, 1.0f) );
 
         // translates model so it's centers on 0,0,0.
-        matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), elevation->getUppermostZ()-bbox.zMin()) );
-
-        // translate to the original center point.
-        //matrix.preMultTranslate( osg::Vec3d(modelCenter.x(), modelCenter.y(), elevation->getUppermostZ()) );
+        matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), elevation->getHeight() - bbox.zMin()) );
 
         output.addInstance( model, matrix * frame );
     }

@@ -97,7 +97,7 @@ namespace osgEarth { namespace Buildings
         virtual void cleanPolygon(Polygon* polygon);
 
         /** Creates a building meant to load an external model */
-        virtual Building* createExternalModelBuilding(Feature*, const URI& modelURI, float terrainMin, float terrainMax);
+        virtual Building* createExternalModelBuilding(Feature*, const URI& modelURI, BuildContext&);
 
         /** Add Elevation objects to a Building */
         virtual Building* createSampleBuilding(const Feature* feature);

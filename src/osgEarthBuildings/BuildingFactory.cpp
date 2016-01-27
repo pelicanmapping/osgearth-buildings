@@ -65,6 +65,17 @@ namespace
         float _min, _max;
         BuildingClamper(float min, float max) : _min(min), _max(max) { }
 
+        void apply(Building* building)
+        {
+            if ( building->getInstancedModelSymbol() )
+            {
+                osg::Matrix m = building->getReferenceFrame();
+                m.postMultTranslate(osg::Vec3d(0.0, 0.0, _min));
+                //building->setReferenceFrame( m );
+            }
+            traverse(building);
+        }
+
         void apply(Elevation* elev)
         {
             Elevation::Walls& walls = elev->getWalls();
@@ -76,25 +87,6 @@ namespace
                     f->left.upper.z()  += _min;
                     f->right.lower.z() += _min;
                     f->right.upper.z() += _min;
-#if 0
-                    if ( elev->isBasement() )
-                    {
-                        f->left.lower.z()  = _min;
-                        f->left.upper.z()  = _max;
-                        f->right.lower.z() = _min;
-                        f->right.upper.z() = _max;
-                    
-                        f->left.height  = _max - _min;
-                        f->right.height = _max - _min;
-                    }
-                    else
-                    {
-                        f->left.lower.z()  += _max;
-                        f->left.upper.z()  += _max;
-                        f->right.lower.z() += _max;
-                        f->right.upper.z() += _max;
-                    }
-#endif
                 }
             }
             traverse(elev);
@@ -173,10 +165,10 @@ BuildingFactory::create(FeatureCursor*    input,
         if ( feature && feature->getGeometry() )
         {        
             // resolve selection values from the symbology:
-            optional<URI> modelURI;
-            float       height    = 0.0f;
-            unsigned    numFloors = 0u;
-            TagVector   tags;
+            optional<URI> externalModelURI;
+            float         height    = 0.0f;
+            unsigned      numFloors = 0u;
+            TagVector     tags;
 
             if ( buildingSymbol )
             {
@@ -187,14 +179,13 @@ BuildingFactory::create(FeatureCursor*    input,
                     std::string modelStr = feature->eval(modelExpr, _session.get());
                     if (!modelStr.empty())
                     {
-                        OE_WARN << "Model string = \"" << modelStr << "\"\n";
-                        modelURI = URI(modelStr, uriContext);
+                        externalModelURI = URI(modelStr, uriContext);
                     }
                 }
 
                 // calculate height from expression. We do this first because
                 // a height of zero will cause us to skip the feature altogether.
-                if ( !modelURI.isSet() && buildingSymbol->height().isSet() )
+                if ( !externalModelURI.isSet() && buildingSymbol->height().isSet() )
                 {
                     NumericExpression heightExpr = buildingSymbol->height().get();
                     height = (float)feature->eval(heightExpr, _session.get());
@@ -213,12 +204,13 @@ BuildingFactory::create(FeatureCursor*    input,
                 }
             }
 
-            if ( height > 0.0f || modelURI.isSet() )
+            if ( height > 0.0f || externalModelURI.isSet() )
             {
                 // Removing co-linear points will help produce a more "true"
                 // longest-edge for rotation and roof rectangle calcuations.
                 feature->getGeometry()->removeColinearPoints();
 
+                // Transform the feature into the output SRS
                 if ( _outSRS.valid() )
                 {
                     feature->transform( _outSRS.get() );
@@ -231,27 +223,35 @@ BuildingFactory::create(FeatureCursor*    input,
                     continue;
                 }
 
-                // clamp to the terrain.
+                // Prepare for terrain clamping by finding the minimum and 
+                // maximum elevations under the feature:
                 float min = FLT_MAX, max = -FLT_MAX;
                 if ( needToClamp )
                 {
                     calculateTerrainMinMax(feature, min, max);
                 }
                 bool terrainMinMaxValid = (min < max);
+                
+                context.setTerrainMinMax(
+                    terrainMinMaxValid ? min : 0.0f,
+                    terrainMinMaxValid ? max : 0.0f );
 
                 unsigned offset = output.size();
 
-                if ( modelURI.isSet() )
+                // If this is an external model, set up a building referencing the model
+                if ( externalModelURI.isSet() )
                 {
-                    Building* building = createExternalModelBuilding( feature, modelURI.get(), min, max );
+                    Building* building = createExternalModelBuilding( feature, externalModelURI.get(), context );
                     if ( building )
                     {
                         output.push_back( building );
                     }
                 }
 
+                // Otherwise, we are creating a parametric building:
                 else
                 {
+                    // If using a catalog, ask it to create one or more buildings for this feature:
                     if ( _catalog.valid() )
                     {   
                         float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
@@ -259,21 +259,13 @@ BuildingFactory::create(FeatureCursor*    input,
                         _catalog->createBuildings(feature, tags, height, context, output, progress);
                     }
 
+                    // Otherwise, create a simple one by hand:
                     else
                     {
                         Building* building = createBuilding(feature, progress);
                         if ( building )
                         {
                             output.push_back( building );
-                        }
-                    }
-
-                    if ( min < FLT_MAX && max > -FLT_MAX )
-                    {
-                        BuildingClamper clamper(min, max);
-                        for(unsigned i=offset; i<output.size(); ++i)
-                        {
-                            output[i]->accept( clamper );
                         }
                     }
                 }
@@ -285,10 +277,9 @@ BuildingFactory::create(FeatureCursor*    input,
 }
 
 Building*
-BuildingFactory::createExternalModelBuilding(Feature*   feature,
-                                             const URI& modelURI,
-                                             float      terrainMin,
-                                             float      terrainMax)
+BuildingFactory::createExternalModelBuilding(Feature*      feature,
+                                             const URI&    modelURI,
+                                             BuildContext& context)
 {
     if ( !feature || modelURI.empty() )
         return 0L;
@@ -298,11 +289,12 @@ BuildingFactory::createExternalModelBuilding(Feature*   feature,
         return 0L;
 
     osg::ref_ptr<Building> building = new Building();
-    building->setModelURI( modelURI );
+    building->setExternalModelURI( modelURI );
 
-    // Calculate a local reference frame for this building:
+    // Calculate a local reference frame for this building.
+    // The frame clamps the building by including the terrain elevation that was passed in.
     osg::Vec2d center2d = geometry->getBounds().center2d();
-    GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), terrainMin, ALTMODE_ABSOLUTE );
+    GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), context.getTerrainMin(), ALTMODE_ABSOLUTE );
     osg::Matrix local2world;
     centerPoint.createLocalToWorld( local2world );
     building->setReferenceFrame( local2world );
@@ -325,7 +317,6 @@ BuildingFactory::createBuilding(Feature* feature, ProgressCallback* progress)
         // Calculate a local reference frame for this building:
         osg::Vec2d center2d = geometry->getBounds().center2d();
         GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), 0.0, ALTMODE_ABSOLUTE );
-
         osg::Matrix local2world, world2local;
         centerPoint.createLocalToWorld( local2world );
         world2local.invert( local2world );

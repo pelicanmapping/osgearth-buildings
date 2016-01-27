@@ -2,6 +2,7 @@
 <resources name="osgearth-buildings">
 
     <!-- Facades: residential -->
+    
     <skin name="facade.residential.sf.1" tags="facade residential singlefamily 2story">
 	    <url>facade/house-colonial.jpg</url>
 		<tiled>true</tiled>
@@ -239,10 +240,38 @@
     </model>    
     
     
-    <!-- CUSTOM ROOF MODELS -->
+    <!-- INSTANCED ROOF MODELS -->
         
-    <model name="roof.custom.cube" tags="roof custom residential">
+    <model name="roof.instanced.cube" tags="roof instanced residential">
         <url>models/cube_1m.flt</url>
     </model>  
+
+    
+    <!-- INSTANCED BUILDING MODELS -->
+
+<!--    
+    <model name="instance.residential.sf.1" tags="building instanced residential singlefamily">
+        <url>models/cube_1m.osgb</url>
+    </model>
+-->    
+    
+    <model name="instance.mak.sf.1" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/GarrisonCollonialClapboardWhite/GarrisonCollonialClapboardWhite.flt.(0,0,90).rot</url>
+    </model>
+    <model name="instance.mak.sf.2" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/GermanColonialStuccoTan/GermanColonialStuccoTan.flt.(0,0,90).rot</url>
+    </model>
+    <model name="instance.mak.sf.3" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/SecondEmpireVictorianClapboardGray/SecondEmpireVictorianClapboardGray.flt.(0,0,90).rot</url>
+    </model>
+    <model name="instance.mak.sf.4" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/SpanishColonialStuccoBeige/SpanishColonialStuccoBeige.flt.(0,0,90).rot</url>
+    </model>
+    <model name="instance.mak.sf.5" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/SpanishSingleStoryStuccoWhite/SpanishSingleStoryStuccoWhite.flt.(0,0,90).rot</url>
+    </model>
+    <model name="instance.mak.sf.6" tags="building instanced residential singlefamily">
+        <url>H:/data/mak/Houses/StickStyleBrickWhite/StickStyleBrickWhite.flt.(0,0,90).rot</url>
+    </model>
 
 </resources>

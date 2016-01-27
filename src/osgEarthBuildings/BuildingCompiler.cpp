@@ -36,7 +36,8 @@ _session( session )
     _elevationCompiler = new ElevationCompiler( session );
     _flatRoofCompiler = new FlatRoofCompiler( session );
     _gableRoofCompiler = new GableRoofCompiler( session );
-    _customRoofCompiler = new CustomRoofCompiler( session );
+    _instancedRoofCompiler = new InstancedRoofCompiler( session );
+    _instancedBuildingCompiler = new InstancedBuildingCompiler( session );
 }
 
 bool
@@ -60,9 +61,13 @@ BuildingCompiler::compile(const BuildingVector& input,
     {
         Building* building = i->get();
 
-        if ( building->modelURI().isSet() )
+        if ( building->externalModelURI().isSet() )
         {
             addExternalModel( output, building, world2local, progress );
+        }
+        else if ( building->getInstancedModelResource() )
+        {
+            _instancedBuildingCompiler->compile(building, output, world2local, progress);
         }
         else
         {
@@ -79,7 +84,7 @@ BuildingCompiler::addExternalModel(CompilerOutput&    output,
                                    const osg::Matrix& world2local,
                                    ProgressCallback*  progress) const
 {
-    osg::ref_ptr<osg::Node> node = building->getModelURI().getNode(_session->getDBOptions(), progress);
+    osg::ref_ptr<osg::Node> node = building->getExternalModelURI().getNode(_session->getDBOptions(), progress);
     if ( node.valid() )
     {
         osg::MatrixTransform* xform = new osg::MatrixTransform( building->getReferenceFrame() * world2local );
@@ -130,9 +135,9 @@ BuildingCompiler::addRoof(CompilerOutput& output, const Building* building, cons
         {
             return _gableRoofCompiler->compile(output, building, elevation, world2local);
         }
-        else if ( elevation->getRoof()->getType() == Roof::TYPE_CUSTOM )
+        else if ( elevation->getRoof()->getType() == Roof::TYPE_INSTANCED )
         {
-            return _customRoofCompiler->compile(output, building, elevation, world2local);
+            return _instancedRoofCompiler->compile(output, building, elevation, world2local);
         }
         else
         {

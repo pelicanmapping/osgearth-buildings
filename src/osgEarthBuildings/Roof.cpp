@@ -57,9 +57,9 @@ Roof::build(const Polygon* footprint, BuildContext& bc)
         resolveClutterModel( footprint, bc );
     }
 
-    if ( getType() == TYPE_CUSTOM )
+    if ( getType() == TYPE_INSTANCED )
     {
-        resolveCustomModel( footprint, bc );
+        resolveInstancedModel( footprint, bc );
     }
 
     return true;
@@ -141,11 +141,11 @@ Roof::resolveClutterModel(const Polygon* footprint, BuildContext& bc)
 }
 
 void
-Roof::resolveCustomModel(const Polygon* footprint, BuildContext& bc)
+Roof::resolveInstancedModel(const Polygon* footprint, BuildContext& bc)
 {
     if ( getModelSymbol() && bc.getResourceLibrary() )
     {
-        getModelSymbol()->addTags("custom roof");
+        getModelSymbol()->addTags("instanced roof");
         
         // resolve the resource.
         ModelResourceVector candidates;
@@ -157,7 +157,7 @@ Roof::resolveCustomModel(const Polygon* footprint, BuildContext& bc)
         }
         else
         {
-            OE_WARN << LC << "no matching custom model" << std::flush;
+            OE_WARN << LC << "no matching custom model\n" << std::flush;
         }
     }
 }

@@ -103,6 +103,8 @@ CompilerOutput::createSceneGraph(Session* session) const
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
         ModelNodes modelNodes;
 
+        OE_DEBUG << LC << "Tile Instances\n";
+
         for(InstanceMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
         {
             // look up or create the node corresponding to this instance:
@@ -118,6 +120,8 @@ CompilerOutput::createSceneGraph(Session* session) const
 
             if ( modelNode.valid() )
             {
+                OE_DEBUG << LC << "    " << i->first->name() << " = " << i->second.size() << "\n";
+
                 osg::Group* modelGroup = new osg::Group();
                 instances->addChild( modelGroup );
 
@@ -140,7 +144,10 @@ CompilerOutput::createSceneGraph(Session* session) const
 
         // finally add all the instance groups.
         detailLOD->addChild( instances, 0.0f, _detailRange );
+        //root->addChild( instances );
     }
+
+    OE_DEBUG << LC << "Radius = " << root->getBound().radius() << std::endl;
 
     return root.release();
 }

@@ -56,7 +56,7 @@ BuildingCatalog::createBuildings(Feature*              feature,
     { 
         // Calculate a local reference frame for this building:
         osg::Vec2d center2d = geometry->getBounds().center2d();
-        GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), 0.0, ALTMODE_ABSOLUTE );
+        GeoPoint centerPoint( feature->getSRS(), center2d.x(), center2d.y(), context.getTerrainMin(), ALTMODE_ABSOLUTE );
         osg::Matrix local2world, world2local;
         centerPoint.createLocalToWorld( local2world );
         world2local.invert( local2world );
@@ -207,8 +207,6 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
 
         Building* building = new Building();
 
-        osg::ref_ptr<SkinSymbol> skinSymbol;
-
         if ( b->hasValue("tags") )
         {
             building->addTags( b->value("tags") );
@@ -220,10 +218,19 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
         building->setMinArea( b->value("min_area", 0.0f) );
         building->setMaxArea( b->value("max_area", FLT_MAX) );
 
+        if ( b->value("instanced", false) == true )
+        {
+            ModelSymbol* ms = new ModelSymbol();
+            ms->addTags( "building instanced" );
+            if ( b->hasValue("tags") )
+                ms->addTags( b->value("tags") );
+            building->setInstancedModelSymbol( ms );
+        }
+
         const Config* elevations = b->child_ptr("elevations");
         if ( elevations )
         {
-            parseElevations( *elevations, building, 0L, building->getElevations(), skinSymbol.get(), progress );
+            parseElevations( *elevations, building, 0L, building->getElevations(), 0L, progress );
         }
 
         _buildingsTemplates.push_back( building );
@@ -328,8 +335,8 @@ BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
 
     if ( r->value("type") == "gable" )
         roof->setType( Roof::TYPE_GABLE );
-    else if ( r->value("type") == "custom" )
-        roof->setType( Roof::TYPE_CUSTOM );
+    else if ( r->value("type") == "instanced" )
+        roof->setType( Roof::TYPE_INSTANCED );
     else
         roof->setType( Roof::TYPE_FLAT );
 
