@@ -32,10 +32,29 @@ using namespace osgEarth::Buildings;
 CompilerOutput::CompilerOutput() :
 _range( FLT_MAX )
 {
-    _mainGeode = new osg::Geode();
-    _detailGeode = new osg::Geode();
+    _defaultGeode = new osg::Geode();
     _externalModelsGroup = new osg::Group();
     _debugGroup = new osg::Group();
+}
+
+void
+CompilerOutput::addDrawable(osg::Drawable* drawable)
+{
+    addDrawable( drawable, "" );
+}
+
+void
+CompilerOutput::addDrawable(osg::Drawable* drawable, const std::string& tag)
+{
+    if ( !drawable )
+        return;
+
+    osg::ref_ptr<osg::Geode>& geode = _geodes[tag];
+    if ( !geode.valid() )
+    {
+        geode = new osg::Geode();
+    }
+    geode->addDrawable( drawable );
 }
 
 void
@@ -52,16 +71,21 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
     // install the master matrix for this graph:
     osg::ref_ptr<osg::MatrixTransform> root = new osg::MatrixTransform( getLocalToWorld() );
 
-    // The Geode LOD holds each geode in its range.
-    osg::LOD* geodeLOD = new osg::LOD();
-    root->addChild( geodeLOD );
-    
-    // main geode:
-    geodeLOD->addChild( getMainGeode(), 0.0f, FLT_MAX );
+    // tagged geodes:
+    if ( !_geodes.empty() )
+    {
+        // The Geode LOD holds each geode in its range.
+        osg::LOD* geodeLOD = new osg::LOD();
+        root->addChild( geodeLOD );
 
-    // detail geode:
-    geodeLOD->addChild( getDetailGeode(), 0.0f, _range*0.5f ); // TODO
-
+        for(TaggedGeodes::const_iterator g = _geodes.begin(); g != _geodes.end(); ++g)
+        {
+            const std::string& tag = g->first;
+            const CompilerSettings::Bin* bin = settings.getBin(tag);
+            float maxRange = bin? _range*bin->lodScale : FLT_MAX;
+            geodeLOD->addChild( g->second.get(), 0.0f, maxRange );
+        }
+    }
 
     if ( _externalModelsGroup->getNumChildren() > 0 )
     {
@@ -77,14 +101,11 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
     
         // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data, kills precision
         osgUtil::Optimizer o;
-        o.optimize( root, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) & (~o.MERGE_GEOMETRY) );
-    }
-
-    // debug information.
-    if ( getDebugGroup()->getNumChildren() > 0 )
-    {
-        //root->addChild( getDebugGroup() );
-        geodeLOD->addChild( getDebugGroup(), 0.0f, FLT_MAX );
+        o.optimize( root,
+            o.COMBINE_ADJACENT_LODS |
+            o.SHARE_DUPLICATE_STATE |
+            o.STATIC_OBJECT_DETECTION );
+//            o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) & (~o.MERGE_GEOMETRY) );
     }
 
     // shader generation pass (before models)
@@ -151,7 +172,6 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
         DrawInstanced::install( instances->getOrCreateStateSet() );
 
         // finally add all the instance groups.
-        //detailLOD->addChild( instances, 0.0f, _detailRange );
         root->addChild( instances );
     }
 

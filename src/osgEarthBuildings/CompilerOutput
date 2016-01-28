@@ -24,6 +24,7 @@
 
 #include <osg/Geode>
 #include <osg/Matrix>
+#include <osgEarth/Containers>
 #include <osgEarthFeatures/Session>
 #include <osgEarthSymbology/ModelResource>
 
@@ -52,12 +53,12 @@ namespace osgEarth { namespace Buildings
         const osg::Matrix& getLocalToWorld() const { return _local2world; }
 
     public:
+        
+        /** Adds a drawable to the output. */
+        void addDrawable(osg::Drawable* drawable);
 
-        /** Geode holding main geometry */
-        osg::Geode* getMainGeode() const { return _mainGeode; }
-
-        /** Geode holding "detail" geometry */
-        osg::Geode* getDetailGeode() const { return _detailGeode; }
+        /** Adds a drawable, categorized under a tag. */
+        void addDrawable(osg::Drawable* drawable, const std::string& tag);
 
         /** Adds an instance of a model resource */
         void addInstance(ModelResource* model, const osg::Matrix& matrix);
@@ -72,9 +73,10 @@ namespace osgEarth { namespace Buildings
 
         osg::Matrix _local2world;
 
-        osg::ref_ptr<osg::Geode> _mainGeode;
-        osg::ref_ptr<osg::Geode> _detailGeode;
-
+        osg::ref_ptr<osg::Geode> _defaultGeode;
+        typedef fast_map<std::string, osg::ref_ptr<osg::Geode> > TaggedGeodes;
+        TaggedGeodes _geodes;
+        
         typedef std::vector<osg::Matrix> MatrixVector;
         typedef std::map< osg::ref_ptr<ModelResource>, MatrixVector > InstanceMap;
         InstanceMap _instances;

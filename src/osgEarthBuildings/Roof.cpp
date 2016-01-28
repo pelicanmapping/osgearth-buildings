@@ -35,6 +35,20 @@ _hasModelBox( false )
     //nop
 }
 
+Roof::Roof(const Roof& rhs)
+{
+    _type = rhs._type;
+    _parent = rhs._parent;
+    _hasModelBox = rhs._hasModelBox;
+    for(int i=0; i<4; ++i) _modelBox[i] = rhs._modelBox[i];
+    _skinSymbol = rhs._skinSymbol;
+    _skin = rhs._skin;
+    _modelSymbol = rhs._modelSymbol;
+    _model = rhs._model;
+    _tag = rhs._tag;
+    _color = rhs._color;
+}
+
 Config
 Roof::getConfig() const
 {

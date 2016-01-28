@@ -29,6 +29,7 @@ Parapet::Parapet() :
 _width( 0.0f )
 {
     _numFloors = 1u;
+    setTag("parapet");
 }
 
 Parapet::Parapet(const Parapet& rhs) :
@@ -53,6 +54,7 @@ Parapet::setWidth(float width)
     {
         _roof = new Roof();
         _roof->setType( Roof::TYPE_FLAT );
+        _roof->setTag("parapet");
     }
     else
     {

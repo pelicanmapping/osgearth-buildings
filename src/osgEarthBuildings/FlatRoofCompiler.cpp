@@ -240,7 +240,7 @@ FlatRoofCompiler::compile(CompilerOutput&    output,
     for(osg::Vec3Array::iterator v = verts->begin(); v != verts->end(); ++v)
         (*v) = (*v) * frame;
 
-    output.getMainGeode()->addDrawable( geom.get() );
+    output.addDrawable( geom.get(), roof->getTag() );
     
     // Load models:
     ModelResource* model = roof->getModelResource();

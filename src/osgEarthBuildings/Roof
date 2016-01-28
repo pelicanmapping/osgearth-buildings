@@ -49,6 +49,7 @@ namespace osgEarth { namespace Buildings
     public:
         /** Constructor */
         Roof();
+        Roof(const Roof& rhs);
 
         /** Roof type */
         void setType(const Type& type) { _type = type; }
@@ -92,6 +93,12 @@ namespace osgEarth { namespace Buildings
         ModelResource* getModelResource() const     { return _model.get(); }
 
         /**
+         * An optional tag that identifies this element to the compiler.
+         */
+        void setTag(const std::string& tag) { _tag = tag; }
+        const std::string& getTag() const   { return _tag; }
+
+        /**
          * Bounding polygon (4-point box) for rooftop models.
          * Available after calling build().
          */
@@ -114,6 +121,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<SkinResource>  _skin;
         osg::ref_ptr<ModelSymbol>   _modelSymbol;
         osg::ref_ptr<ModelResource> _model;
+        std::string                 _tag;
         bool                        _hasModelBox;
         osg::Vec3d                  _modelBox[4];
 

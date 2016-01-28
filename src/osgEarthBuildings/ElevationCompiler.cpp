@@ -249,10 +249,7 @@ ElevationCompiler::compile(CompilerOutput&    output,
         colors->push_back(osg::Vec4(1,1,1,1));
     }
     
-    if ( elevation->isDetail() )
-        output.getDetailGeode()->addDrawable( geom.get() );
-    else
-        output.getMainGeode()->addDrawable( geom.get() );
+    output.addDrawable( geom.get(), elevation->getTag() );
 
     return true;
 }

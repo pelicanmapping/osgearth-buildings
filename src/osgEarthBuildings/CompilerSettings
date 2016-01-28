@@ -49,7 +49,8 @@ namespace osgEarth { namespace Buildings
         const Bins& getBins() const { return _bins; }
         Bin& addBin();
 
-        /** Given a tag set, return the display bin. */
+        /** Given a tag or tag set, return the display bin. */
+        const Bin* getBin(const std::string& tag) const;
         const Bin* getBin(const TagSet& tags) const;
 
     public:

@@ -40,6 +40,19 @@ CompilerSettings::addBin()
 }
 
 const CompilerSettings::Bin*
+CompilerSettings::getBin(const std::string& tag) const
+{
+    for(Bins::const_iterator bin = _bins.begin(); bin != _bins.end(); ++bin)
+    {
+        if ( tag == bin->tag )
+        {
+            return &(*bin);
+        }
+    }
+    return 0L;
+}
+
+const CompilerSettings::Bin*
 CompilerSettings::getBin(const TagSet& tags) const
 {
     for(Bins::const_iterator bin = _bins.begin(); bin != _bins.end(); ++bin)

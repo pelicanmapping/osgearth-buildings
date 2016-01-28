@@ -159,7 +159,7 @@ GableRoofCompiler::compile(CompilerOutput&    output,
     // and finally the triangles.
     geom->addPrimitiveSet( new osg::DrawArrays(GL_TRIANGLES, 0, verts->size()) );
 
-    output.getMainGeode()->addDrawable( geom.get() );
+    output.addDrawable( geom.get(), roof->getTag() );
 
     return true;
 }

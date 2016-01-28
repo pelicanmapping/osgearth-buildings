@@ -58,6 +58,7 @@ _sinR            ( rhs._sinR ),
 _aabb            ( rhs._aabb ),
 _parent          ( rhs._parent ),
 _renderAABB      ( rhs._renderAABB ),
+_tag             ( rhs._tag ),
 _longEdgeMidpoint( rhs._longEdgeMidpoint ),
 _longEdgeInsideNormal( rhs._longEdgeInsideNormal )
 {
