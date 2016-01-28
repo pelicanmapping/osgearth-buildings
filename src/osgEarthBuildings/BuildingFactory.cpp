@@ -157,6 +157,21 @@ BuildingFactory::create(FeatureCursor*    input,
     // URI context for external models
     URIContext uriContext( _session->getDBOptions() );
 
+    double clampTime=0.0, symbolTime=0.0, preprocessTime=0.0, createTime=0.0;
+    OE_START_TIMER(total);
+
+    // Set up mutable expression instances:
+    optional<StringExpression>  modelExpr;
+    optional<NumericExpression> heightExpr;
+    optional<StringExpression>  tagsExpr;
+
+    if ( buildingSymbol )
+    {
+        modelExpr  = buildingSymbol->modelURI();
+        heightExpr = buildingSymbol->height();
+        tagsExpr   = buildingSymbol->tags();
+    }
+
     // iterate over all the input features
     while( input->hasMore() )
     {
@@ -172,11 +187,12 @@ BuildingFactory::create(FeatureCursor*    input,
 
             if ( buildingSymbol )
             {
+                OE_START_TIMER(symbol);
+
                 // see if we are referencing an external model.
-                if ( buildingSymbol->modelURI().isSet() )
+                if ( modelExpr.isSet() )
                 {
-                    StringExpression modelExpr = buildingSymbol->modelURI().get();
-                    std::string modelStr = feature->eval(modelExpr, _session.get());
+                    std::string modelStr = feature->eval(modelExpr.mutable_value(), _session.get());
                     if (!modelStr.empty())
                     {
                         externalModelURI = URI(modelStr, uriContext);
@@ -185,27 +201,29 @@ BuildingFactory::create(FeatureCursor*    input,
 
                 // calculate height from expression. We do this first because
                 // a height of zero will cause us to skip the feature altogether.
-                if ( !externalModelURI.isSet() && buildingSymbol->height().isSet() )
+                if ( !externalModelURI.isSet() && heightExpr.isSet() )
                 {
-                    NumericExpression heightExpr = buildingSymbol->height().get();
-                    height = (float)feature->eval(heightExpr, _session.get());
+                    height = (float)feature->eval(heightExpr.mutable_value(), _session.get());
         
-                    if (height > 0.0f )
+                    if ( height > 0.0f )
                     {
                         // calculate tags from expression:
-                        if ( buildingSymbol->tags().isSet() )
+                        if ( tagsExpr.isSet() )
                         {
-                            StringExpression tagsExpr = buildingSymbol->tags().get();
-                            std::string tagString = feature->eval(tagsExpr, _session.get());
+                            std::string tagString = feature->eval(tagsExpr.mutable_value(), _session.get());
                             if ( !tagString.empty() )
                                 StringTokenizer(tagString, tags, " ", "\"", false);
                         }
                     }
                 }
+
+                symbolTime += OE_GET_TIMER(symbol);
             }
 
             if ( height > 0.0f || externalModelURI.isSet() )
             {
+                OE_START_TIMER(preprocess);
+
                 // Removing co-linear points will help produce a more "true"
                 // longest-edge for rotation and roof rectangle calcuations.
                 feature->getGeometry()->removeColinearPoints();
@@ -236,7 +254,9 @@ BuildingFactory::create(FeatureCursor*    input,
                     terrainMinMaxValid ? min : 0.0f,
                     terrainMinMaxValid ? max : 0.0f );
 
-                unsigned offset = output.size();
+                preprocessTime += OE_GET_TIMER(preprocess);
+
+                OE_START_TIMER(create);
 
                 // If this is an external model, set up a building referencing the model
                 if ( externalModelURI.isSet() )
@@ -269,9 +289,20 @@ BuildingFactory::create(FeatureCursor*    input,
                         }
                     }
                 }
+
+                createTime += OE_GET_TIMER(create);
             }
         }
     }
+
+    double totalTime = OE_GET_TIMER(total);
+    OE_INFO << LC
+        << std::setprecision(2)
+        << "Total=" << totalTime << "s"
+        << ", PRE=" << preprocessTime*100./totalTime << "%"
+        << ", SYM=" << symbolTime*100./totalTime << "%"
+        << ", CRE=" << createTime*100./totalTime << "%"
+        << "\n";
 
     return true;
 }

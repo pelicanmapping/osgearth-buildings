@@ -166,7 +166,7 @@ namespace osgEarth { namespace Buildings
             float      cosAngle;
             float      height;            
         };
-        typedef std::list<Corner> Corners; // use a list to prevent iterator invalidation
+        typedef std::list<Corner> Corners; // use a list to prevent iterator invalidations
 
         // A Face joins two Corners.
         struct Face

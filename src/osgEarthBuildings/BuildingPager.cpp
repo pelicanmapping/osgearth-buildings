@@ -72,6 +72,8 @@ BuildingPager::setSession(Session* session)
 
             setMinLevel( minLOD.get() );
             setMaxLevel( maxLOD.get() );
+
+            OE_INFO << LC << "Min level = " << getMinLevel() << "; max level = " << getMaxLevel() << std::endl;
         }
     }
 }
@@ -110,65 +112,60 @@ BuildingPager::createNode(const TileKey& tileKey)
         return 0L;
     }
     
+    Registry::instance()->startActivity( Stringify() << "Buildings Tile " << tileKey.str() );
+
     OE_START_TIMER(start);
 
     OE_TEST << LC << tileKey.str() << ": createNode(" << tileKey.str() << ")\n";
+
+    osg::ref_ptr<osg::Node> node;
     
     // Create a cursor to iterator over the feature data:
     Query query;
     query.tileKey() = tileKey;
     osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
-    if ( !cursor.valid() || !cursor->hasMore() )
-    {
-        OE_DEBUG << LC << tileKey.str() << ":    Invalid or empty cursor for tile key\n";
-        return 0L;
-    }
-    
-    OE_START_TIMER(factory_create);
+    if ( cursor.valid() && cursor->hasMore() )
+    {    
+        OE_START_TIMER(factory_create);
 
-    osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
-    factory->setSession( _session.get() );
-    factory->setCatalog( _catalog.get() );
-    factory->setOutputSRS( _session->getMapSRS() );
+        osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+        factory->setSession( _session.get() );
+        factory->setCatalog( _catalog.get() );
+        factory->setOutputSRS( _session->getMapSRS() );
 
-    //const Style* style =
-    //    _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
+        //const Style* style =
+        //    _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
 
-    std::string styleName = Stringify() << tileKey.getLOD();
-    const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
+        std::string styleName = Stringify() << tileKey.getLOD();
+        const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
 
-    BuildingVector buildings;
-    if ( !factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
-    {
-        OE_WARN << LC << tileKey.str() << ":    Failed to create building data model\n";
-        return 0L;
-    }
-    OE_TEST << LC << tileKey.str() << ":    Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
+        BuildingVector buildings;
+        if ( factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
+        {
+            OE_TEST << LC << tileKey.str() << ":    Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
 
-    // Create OSG model from buildings.
-    OE_START_TIMER(compile);
+            // Create OSG model from buildings.
+            OE_START_TIMER(compile);
 
-    CompilerOutput output;
-    if ( !_compiler->compile(buildings, output) )
-    {
-        OE_WARN << LC << tileKey.str() << ":    Compile failed\n";
-        return 0L;
-    }  
+            CompilerOutput output;
+            if ( _compiler->compile(buildings, output) )
+            {
+                // set the distance at which details become visible.
+                osg::BoundingSphere tileBound = getBounds( tileKey );
+                output.setRange( tileBound.radius() * getRangeFactor() );
 
-    // set the distance at which details become visible.
-    osg::BoundingSphere tileBound = getBounds( tileKey );
-    output.setRange( tileBound.radius() * getRangeFactor() );
+                node = output.createSceneGraph(_session.get(), _compilerSettings);
+                if ( node.valid() )
+                {
+                    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
 
-    osg::ref_ptr<osg::Node> node = output.createSceneGraph(_session.get(), _compilerSettings);
-    if ( !node.valid() )
-    {
-        OE_WARN << LC << tileKey.str() << ":   Build Scene Graph failed\n";
-        return 0L;
+                    OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
+                }
+            }
+        }
     }
 
-    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
-
-    OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
+    Registry::instance()->endActivity( Stringify() << "Buildings Tile " << tileKey.str() );
 
     //todo
     return node.release();
