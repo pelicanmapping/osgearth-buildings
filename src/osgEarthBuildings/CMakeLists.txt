@@ -23,6 +23,7 @@ set(LIB_PUBLIC_HEADERS
     Common
     Compiler
     CompilerOutput
+    CompilerSettings
     InstancedBuildingCompiler
     InstancedRoofCompiler
     Elevation
@@ -46,6 +47,7 @@ set(LIB_COMMON_FILES
     BuildingVisitor.cpp
     Compiler.cpp
     CompilerOutput.cpp
+    CompilerSettings.cpp
     InstancedBuildingCompiler.cpp
     InstancedRoofCompiler.cpp
     Elevation.cpp

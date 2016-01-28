@@ -20,6 +20,7 @@
 #define OSGEARTH_BUILDINGS_BUILDING_OPTIONS_H
 
 #include "Common"
+#include "CompilerSettings"
 #include <osgEarthFeatures/FeatureSource>
 #include <osgEarthSymbology/StyleSheet>
 
@@ -43,17 +44,22 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<StyleSheet>& styles() { return _styles; }
         const osg::ref_ptr<StyleSheet>& styles() const { return _styles; }
 
-        /** Building LOD */
-        optional<unsigned>& lod() { return _lod; }
-        const optional<unsigned>& lod() const { return _lod; }
-
         /** Optional caching policy */
         optional<CachePolicy>& cachePolicy() { return _cachePolicy; }
         const optional<CachePolicy>& cachePolicy() const { return _cachePolicy; }
 
+        /** Whether building style LODs add geometry to lower LODs (additive=true)
+            instead of replacing them (additive=false). */
+        optional<bool>& additiveLODs() { return _additiveLODs; }
+        const optional<bool>& additiveLODs() const { return _additiveLODs; }
+
+        optional<CompilerSettings>& compilerSettings() { return _settings; }
+        const optional<CompilerSettings>& compilerSettings() const { return _settings; }
+
     public:
         BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
-            _lod.init( 13u );
+            _lod.init( 14u );
+            _additiveLODs.init(false);
             fromConfig( _conf );
         }
 
@@ -63,8 +69,9 @@ namespace osgEarth { namespace Buildings
             conf.updateObjIfSet("features",         _featureSourceOptions);
             conf.updateIfSet   ("building_catalog", _buildingCatalogURI);
             conf.updateObjIfSet("styles",           _styles);
-            conf.updateIfSet   ("lod",              _lod);
             conf.updateObjIfSet("cache_policy",     _cachePolicy);
+            conf.updateIfSet   ("additive_lods",    _additiveLODs);
+            conf.updateObjIfSet("settings",         _settings);
             return conf;
         }
 
@@ -79,8 +86,9 @@ namespace osgEarth { namespace Buildings
             conf.getObjIfSet("features",         _featureSourceOptions);
             conf.getIfSet   ("building_catalog", _buildingCatalogURI);
             conf.getObjIfSet("styles",           _styles);
-            conf.getIfSet   ("lod",              _lod);
             conf.getObjIfSet("cache_policy",     _cachePolicy);
+            conf.getIfSet   ("additive_lods",    _additiveLODs);
+            conf.getObjIfSet("settings",         _settings);
         }
 
         optional<FeatureSourceOptions> _featureSourceOptions;
@@ -88,6 +96,8 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<StyleSheet> _styles;
         optional<unsigned> _lod;
         optional<CachePolicy> _cachePolicy;
+        optional<bool> _additiveLODs;
+        optional<CompilerSettings> _settings;
     };
 } }
 

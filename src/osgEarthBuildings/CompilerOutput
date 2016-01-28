@@ -20,6 +20,8 @@
 #define OSGEARTH_BUILDINGS_COMPILER_OUTPUT_H
 
 #include "Common"
+#include "CompilerSettings"
+
 #include <osg/Geode>
 #include <osg/Matrix>
 #include <osgEarthFeatures/Session>
@@ -39,11 +41,17 @@ namespace osgEarth { namespace Buildings
     public:
         CompilerOutput();
 
-        void setDetailRange(float value) { _detailRange = value; }
-        float getDetailRange() const     { return _detailRange; }
+        /** Build and return a scene graph based on the output in this object. */
+        osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings) const;
 
+        void setRange(float value) { _range = value; }
+        float getRange() const     { return _range; }
+        
+        /** Delocatization matrix to apply to the entire output. */
         void setLocalToWorld(const osg::Matrix& m) { _local2world = m; }
         const osg::Matrix& getLocalToWorld() const { return _local2world; }
+
+    public:
 
         /** Geode holding main geometry */
         osg::Geode* getMainGeode() const { return _mainGeode; }
@@ -57,12 +65,10 @@ namespace osgEarth { namespace Buildings
         /** The group containing externally referenced models */
         osg::Group* getExternalModelsGroup() const { return _externalModelsGroup; }
 
+        /** Group holding debugging geometry */
         osg::Group* getDebugGroup() const { return _debugGroup; }
 
-        osg::Node* createSceneGraph(Session* session) const;
-
     protected:
-        //virtual ~CompilerOutput() { }
 
         osg::Matrix _local2world;
 
@@ -77,7 +83,7 @@ namespace osgEarth { namespace Buildings
 
         osg::ref_ptr<osg::Group> _debugGroup;
 
-        float _detailRange;
+        float _range;
     };
 } }
 

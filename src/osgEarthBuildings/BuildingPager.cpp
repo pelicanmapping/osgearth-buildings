@@ -31,24 +31,10 @@ using namespace osgEarth::Symbology;
 
 
 BuildingPager::BuildingPager(const Profile* profile) :
-SimplePager( profile ),
-_detailRangeFactor( 0.5f )
+SimplePager( profile )
 {
     _stateSetCache = new StateSetCache();
     setAdditive( false );
-}
-
-void
-BuildingPager::setLOD(unsigned lod)
-{
-    setMinLevel( lod );
-    setMaxLevel( lod );
-}
-
-void
-BuildingPager::setDetailRangeFactor(float value)
-{
-    _detailRangeFactor = value;
 }
 
 void
@@ -59,6 +45,34 @@ BuildingPager::setSession(Session* session)
     if ( session )
     {
         _compiler = new BuildingCompiler(session);
+
+        // Analyze the styles to determine the min and max LODs.
+        // Styles are named by LOD.
+        if ( _session->styles() )
+        {
+            optional<unsigned> minLOD(0u), maxLOD(0u);
+            for(unsigned i=0; i<30; ++i)
+            {
+                std::string styleName = Stringify() << i;
+                const Style* style = _session->styles()->getStyle(styleName, false);
+                if ( style )
+                {
+                    if ( !minLOD.isSet() )
+                    {
+                        minLOD = i;
+                    }
+                    else if ( !maxLOD.isSet() )
+                    {
+                        maxLOD = i;
+                    }
+                }
+            }
+            if ( minLOD.isSet() && !maxLOD.isSet() )
+                maxLOD = minLOD.get();
+
+            setMinLevel( minLOD.get() );
+            setMaxLevel( maxLOD.get() );
+        }
     }
 }
 
@@ -79,6 +93,12 @@ BuildingPager::setCacheBin(CacheBin* cacheBin, const CachePolicy& cp)
 {
     _cacheBin = cacheBin;
     _cachePolicy = cp;
+}
+
+void
+BuildingPager::setCompilerSettings(const CompilerSettings& settings)
+{
+    _compilerSettings = settings;
 }
 
 osg::Node*
@@ -111,8 +131,11 @@ BuildingPager::createNode(const TileKey& tileKey)
     factory->setCatalog( _catalog.get() );
     factory->setOutputSRS( _session->getMapSRS() );
 
-    const Style* style =
-        _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
+    //const Style* style =
+    //    _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
+
+    std::string styleName = Stringify() << tileKey.getLOD();
+    const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
 
     BuildingVector buildings;
     if ( !factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
@@ -130,13 +153,13 @@ BuildingPager::createNode(const TileKey& tileKey)
     {
         OE_WARN << LC << tileKey.str() << ":    Compile failed\n";
         return 0L;
-    }
+    }  
 
     // set the distance at which details become visible.
     osg::BoundingSphere tileBound = getBounds( tileKey );
-    output.setDetailRange( tileBound.radius() * getRangeFactor() * 0.2f );
+    output.setRange( tileBound.radius() * getRangeFactor() );
 
-    osg::ref_ptr<osg::Node> node = output.createSceneGraph(_session.get());
+    osg::ref_ptr<osg::Node> node = output.createSceneGraph(_session.get(), _compilerSettings);
     if ( !node.valid() )
     {
         OE_WARN << LC << tileKey.str() << ":   Build Scene Graph failed\n";

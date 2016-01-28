@@ -10,7 +10,7 @@
     
     <extensions>
     
-        <buildings lod="14">
+        <buildings>
         
             <features driver="ogr"
                       build_spatial_index="true"
@@ -24,7 +24,7 @@
                     <url>../data/catalog/catalog.xml</url>
                 </library>
                 <style type="text/css">
-                    default {
+                    14 {
                         building-height:   getHeight();
                         building-library:  buildings;
                         altitude-clamping: terrain;

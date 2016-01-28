@@ -52,7 +52,7 @@ namespace osgEarth { namespace Buildings
         optional<StringExpression>& tags() { return _tagsExpr; }
         const optional<StringExpression>& tags() const { return _tagsExpr; }
 
-        /** Expression resolving to an external model URI to use instead of creating geometry */
+        /** Expression resolving to an external model to use instead of creating geometry */
         optional<StringExpression>& modelURI() { return _modelURIExpr; }
         const optional<StringExpression>& modelURI() const { return _modelURIExpr; }
 

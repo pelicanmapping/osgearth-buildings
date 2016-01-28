@@ -30,7 +30,7 @@ using namespace osgEarth::Buildings;
 #define LC "[CompilerOutput] "
 
 CompilerOutput::CompilerOutput() :
-_detailRange( FLT_MAX )
+_range( FLT_MAX )
 {
     _mainGeode = new osg::Geode();
     _detailGeode = new osg::Geode();
@@ -45,26 +45,23 @@ CompilerOutput::addInstance(ModelResource* model, const osg::Matrix& matrix)
 }
 
 osg::Node*
-CompilerOutput::createSceneGraph(Session* session) const
+CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& settings) const
 {
     osg::ref_ptr<StateSetCache> _sscache = new StateSetCache();
 
     // install the master matrix for this graph:
     osg::ref_ptr<osg::MatrixTransform> root = new osg::MatrixTransform( getLocalToWorld() );
+
+    // The Geode LOD holds each geode in its range.
+    osg::LOD* geodeLOD = new osg::LOD();
+    root->addChild( geodeLOD );
     
-    // add the main geode.
-    if ( getMainGeode()->getNumDrawables() > 0 )
-    {
-        root->addChild( getMainGeode() );
-    }
-    
-    // add the detail geode with a closer LOD range.
-    osg::LOD* detailLOD = new osg::LOD();
-    if ( getDetailGeode()->getNumDrawables() > 0 )
-    {
-        detailLOD->addChild( getDetailGeode(), 0.0f, _detailRange );
-    }
-    root->addChild( detailLOD );
+    // main geode:
+    geodeLOD->addChild( getMainGeode(), 0.0f, FLT_MAX );
+
+    // detail geode:
+    geodeLOD->addChild( getDetailGeode(), 0.0f, _range*0.5f ); // TODO
+
 
     if ( _externalModelsGroup->getNumChildren() > 0 )
     {
@@ -86,7 +83,8 @@ CompilerOutput::createSceneGraph(Session* session) const
     // debug information.
     if ( getDebugGroup()->getNumChildren() > 0 )
     {
-        root->addChild( getDebugGroup() );
+        //root->addChild( getDebugGroup() );
+        geodeLOD->addChild( getDebugGroup(), 0.0f, FLT_MAX );
     }
 
     // shader generation pass (before models)
@@ -97,7 +95,7 @@ CompilerOutput::createSceneGraph(Session* session) const
     if ( session && session->getResourceCache() )
     {
         // group to hold all instanced models:
-        osg::Group* instances = new osg::Group();
+        osg::LOD* instances = new osg::LOD();
 
         // keeps one copy of each instanced model per resource:
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
@@ -107,12 +105,15 @@ CompilerOutput::createSceneGraph(Session* session) const
 
         for(InstanceMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
         {
+            ModelResource* res = i->first.get();
+
             // look up or create the node corresponding to this instance:
-            osg::ref_ptr<osg::Node>& modelNode = modelNodes[i->first.get()];
+            osg::ref_ptr<osg::Node>& modelNode = modelNodes[res];
             if ( !modelNode.valid() )
             {
                 // first time, clone it and shadergen it.
-                if ( session->getResourceCache()->cloneOrCreateInstanceNode(i->first.get(), modelNode) )
+                // TODO: check cloneOrCreate..why is it not const Resource?
+                if ( session->getResourceCache()->cloneOrCreateInstanceNode(res, modelNode) )
                 {
                     Registry::instance()->shaderGenerator().run( modelNode.get(), _sscache.get() );
                 }
@@ -120,19 +121,26 @@ CompilerOutput::createSceneGraph(Session* session) const
 
             if ( modelNode.valid() )
             {
-                OE_DEBUG << LC << "    " << i->first->name() << " = " << i->second.size() << "\n";
+                OE_DEBUG << LC << "    " << res->name() << " = " << i->second.size() << "\n";
 
                 osg::Group* modelGroup = new osg::Group();
-                instances->addChild( modelGroup );
 
                 // Build a normal scene graph based on MatrixTransforms, and then convert it 
                 // over to use instancing if it's available.
-                for(MatrixVector::const_iterator m = i->second.begin(); m != i->second.end(); ++m)
+                const MatrixVector& mats = i->second;
+                for(MatrixVector::const_iterator m = mats.begin(); m != mats.end(); ++m)
                 {
                     osg::MatrixTransform* modelxform = new osg::MatrixTransform( *m );
                     modelxform->addChild( modelNode.get() );
                     modelGroup->addChild( modelxform );
                 }
+
+                // check for a display bin for this model resource:
+                const CompilerSettings::Bin* bin = settings.getBin( res->tags() );
+                float lodScale = bin ? bin->lodScale : 1.0f;
+
+                float maxRange = std::max( _range*lodScale, modelGroup->getBound().radius() ); 
+                instances->addChild( modelGroup, 0.0, maxRange );
 
                 // fails gracefully if instancing is not available:
                 DrawInstanced::convertGraphToUseDrawInstanced( modelGroup );
@@ -143,8 +151,8 @@ CompilerOutput::createSceneGraph(Session* session) const
         DrawInstanced::install( instances->getOrCreateStateSet() );
 
         // finally add all the instance groups.
-        detailLOD->addChild( instances, 0.0f, _detailRange );
-        //root->addChild( instances );
+        //detailLOD->addChild( instances, 0.0f, _detailRange );
+        root->addChild( instances );
     }
 
     OE_DEBUG << LC << "Radius = " << root->getBound().radius() << std::endl;

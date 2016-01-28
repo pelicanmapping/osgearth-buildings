@@ -96,11 +96,11 @@ BuildingExtension::connect(MapNode* mapNode)
     }
 
     BuildingPager* pager = new BuildingPager( featureProfile );
-    pager->setSession      ( session.get() );
-    pager->setFeatureSource( features.get() );
-    pager->setCatalog      ( catalog.get() );
-    pager->setLOD          ( _options.lod().get() );
-    pager->setCacheBin     ( _cacheBin.get(), _cachePolicy.get() );
+    pager->setSession         ( session.get() );
+    pager->setFeatureSource   ( features.get() );
+    pager->setCatalog         ( catalog.get() );
+    pager->setCacheBin        ( _cacheBin.get(), _cachePolicy.get() );
+    pager->setCompilerSettings( _options.compilerSettings().get() );
     pager->build();
 
     mapNode->addChild( pager );    
