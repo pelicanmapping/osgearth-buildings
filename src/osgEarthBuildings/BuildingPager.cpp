@@ -104,7 +104,7 @@ BuildingPager::setCompilerSettings(const CompilerSettings& settings)
 }
 
 osg::Node*
-BuildingPager::createNode(const TileKey& tileKey)
+BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 {
     if ( !_session.valid() || !_compiler.valid() || !_features.valid() )
     {
@@ -133,14 +133,11 @@ BuildingPager::createNode(const TileKey& tileKey)
         factory->setCatalog( _catalog.get() );
         factory->setOutputSRS( _session->getMapSRS() );
 
-        //const Style* style =
-        //    _session->styles() ? _session->styles()->getDefaultStyle() : 0L;
-
         std::string styleName = Stringify() << tileKey.getLOD();
         const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
 
         BuildingVector buildings;
-        if ( factory->create(cursor.get(), tileKey.getExtent(), style, buildings) )
+        if ( factory->create(cursor.get(), tileKey.getExtent(), style, buildings, progress) )
         {
             OE_TEST << LC << tileKey.str() << ":    Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
 
@@ -148,7 +145,7 @@ BuildingPager::createNode(const TileKey& tileKey)
             OE_START_TIMER(compile);
 
             CompilerOutput output;
-            if ( _compiler->compile(buildings, output) )
+            if ( _compiler->compile(buildings, output, progress) )
             {
                 // set the distance at which details become visible.
                 osg::BoundingSphere tileBound = getBounds( tileKey );
@@ -162,6 +159,14 @@ BuildingPager::createNode(const TileKey& tileKey)
                     OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
                 }
             }
+            else
+            {
+                OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
+            }
+        }
+        else
+        {
+            OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
         }
     }
 

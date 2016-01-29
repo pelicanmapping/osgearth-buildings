@@ -58,42 +58,6 @@ BuildingFactory::cropToCentroid(const Feature* feature, const GeoExtent& extent)
     return extent.contains(centroid);
 }
 
-namespace
-{
-    struct BuildingClamper : public BuildingVisitor
-    {
-        float _min, _max;
-        BuildingClamper(float min, float max) : _min(min), _max(max) { }
-
-        void apply(Building* building)
-        {
-            if ( building->getInstancedModelSymbol() )
-            {
-                osg::Matrix m = building->getReferenceFrame();
-                m.postMultTranslate(osg::Vec3d(0.0, 0.0, _min));
-                //building->setReferenceFrame( m );
-            }
-            traverse(building);
-        }
-
-        void apply(Elevation* elev)
-        {
-            Elevation::Walls& walls = elev->getWalls();
-            for(Elevation::Walls::iterator w = walls.begin(); w != walls.end(); ++w)
-            {
-                for(Elevation::Faces::iterator f = w->faces.begin(); f != w->faces.end(); ++f)
-                {
-                    f->left.lower.z()  += _min;
-                    f->left.upper.z()  += _min;
-                    f->right.lower.z() += _min;
-                    f->right.upper.z() += _min;
-                }
-            }
-            traverse(elev);
-        }
-    };
-}
-
 void
 BuildingFactory::calculateTerrainMinMax(Feature* feature, float& min, float& max)
 {
@@ -175,6 +139,12 @@ BuildingFactory::create(FeatureCursor*    input,
     // iterate over all the input features
     while( input->hasMore() )
     {
+        if ( progress && progress->isCanceled() )
+        {
+            progress->message() = "in BuildingFactory::create";
+            return false;
+        }
+
         // for each feature, check that it's a polygon
         Feature* feature = input->nextFeature();
         if ( feature && feature->getGeometry() )
@@ -248,6 +218,7 @@ BuildingFactory::create(FeatureCursor*    input,
                 {
                     calculateTerrainMinMax(feature, min, max);
                 }
+
                 bool terrainMinMaxValid = (min < max);
                 
                 context.setTerrainMinMax(

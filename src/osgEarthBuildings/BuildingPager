@@ -57,7 +57,7 @@ namespace osgEarth { namespace Buildings
 
     public: // SimplePager
 
-        osg::Node* createNode(const TileKey& key);
+        osg::Node* createNode(const TileKey& key, ProgressCallback* progress);
 
     protected:
 

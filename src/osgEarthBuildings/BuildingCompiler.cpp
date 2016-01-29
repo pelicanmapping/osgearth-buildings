@@ -59,6 +59,12 @@ BuildingCompiler::compile(const BuildingVector& input,
 
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
+        if ( progress && progress->isCanceled() )
+        {
+            progress->message() = "in BuildingCompiler::compile()";
+            return false;
+        }
+
         Building* building = i->get();
 
         if ( building->externalModelURI().isSet() )
