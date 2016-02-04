@@ -132,9 +132,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         return 0L;
     }
     
-    Registry::instance()->startActivity( Stringify() << "Buildings Tile " << tileKey.str() );
+    std::string activityName("Buildings " + tileKey.str());
+    Registry::instance()->startActivity(activityName);
 
-    OE_START_TIMER(start);
+    OE_START_TIMER(total);
 
     OE_TEST << LC << tileKey.str() << ": createNode(" << tileKey.str() << ")\n";
 
@@ -145,9 +146,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     query.tileKey() = tileKey;
     osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
     if ( cursor.valid() && cursor->hasMore() )
-    {    
-        OE_START_TIMER(factory_create);
-
+    {
         osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
         factory->setSession( _session.get() );
         factory->setCatalog( _catalog.get() );
@@ -160,8 +159,6 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         if ( factory->create(cursor.get(), tileKey.getExtent(), style, buildings, progress) )
         {
             // Create OSG model from buildings.
-            OE_START_TIMER(compile);
-
             CompilerOutput output;
             if ( _compiler->compile(buildings, output, progress) )
             {
@@ -182,12 +179,13 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         }
     }
 
-    Registry::instance()->endActivity( Stringify() << "Buildings " << tileKey.str() );
+    Registry::instance()->endActivity(activityName);
 
-    double totalTime = OE_GET_TIMER(start);
+
+    float totalTime = OE_GET_TIMER(total);
 
     // STATS:
-    if ( progress )
+    if ( progress && !progress->stats().empty() )
     {
         std::stringstream buf;
         buf << "Key = " << tileKey.str() << " : TIME = " << (int)(1000.0*totalTime) << " ms" << std::endl;

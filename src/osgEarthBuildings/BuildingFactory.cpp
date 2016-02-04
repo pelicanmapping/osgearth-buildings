@@ -84,8 +84,6 @@ BuildingFactory::calculateTerrainMinMax(Feature* feature, float& min, float& max
     }
 }
 
-#define REPORT(name,timer) if(progress) { progress->stats()[name] += OE_GET_TIMER(timer); }
-
 bool
 BuildingFactory::create(FeatureCursor*    input,
                         const GeoExtent&  cropTo,
@@ -273,15 +271,6 @@ BuildingFactory::create(FeatureCursor*    input,
     }
 
     double totalTime = OE_GET_TIMER(total);
-
-    //OE_INFO << LC
-    //    << std::setprecision(2)
-    //    << "Total=" << totalTime << "s"
-    //    << ", XFM=" << xformTime*100./totalTime << "%"
-    //    << ", CLP=" << clampTime*100./totalTime << "%"
-    //    << ", SYM=" << symbolTime*100./totalTime << "%"
-    //    << ", CRE=" << createTime*100./totalTime << "%"
-    //    << "\n";
 
     if ( progress )
     {
