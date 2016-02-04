@@ -84,6 +84,8 @@ BuildingFactory::calculateTerrainMinMax(Feature* feature, float& min, float& max
     }
 }
 
+#define REPORT(name,timer) if(progress) { progress->stats()[name] += OE_GET_TIMER(timer); }
+
 bool
 BuildingFactory::create(FeatureCursor*    input,
                         const GeoExtent&  cropTo,
@@ -121,7 +123,7 @@ BuildingFactory::create(FeatureCursor*    input,
     // URI context for external models
     URIContext uriContext( _session->getDBOptions() );
 
-    double clampTime=0.0, symbolTime=0.0, preprocessTime=0.0, createTime=0.0;
+    double xformTime=0.0, clampTime=0.0, symbolTime=0.0, createTime=0.0;
     OE_START_TIMER(total);
 
     // Set up mutable expression instances:
@@ -192,7 +194,7 @@ BuildingFactory::create(FeatureCursor*    input,
 
             if ( height > 0.0f || externalModelURI.isSet() )
             {
-                OE_START_TIMER(preprocess);
+                OE_START_TIMER(xform);
 
                 // Removing co-linear points will help produce a more "true"
                 // longest-edge for rotation and roof rectangle calcuations.
@@ -211,8 +213,11 @@ BuildingFactory::create(FeatureCursor*    input,
                     continue;
                 }
 
+                xformTime += OE_GET_TIMER(xform);
+
                 // Prepare for terrain clamping by finding the minimum and 
                 // maximum elevations under the feature:
+                OE_START_TIMER(clamp);
                 float min = FLT_MAX, max = -FLT_MAX;
                 if ( needToClamp )
                 {
@@ -225,7 +230,8 @@ BuildingFactory::create(FeatureCursor*    input,
                     terrainMinMaxValid ? min : 0.0f,
                     terrainMinMaxValid ? max : 0.0f );
 
-                preprocessTime += OE_GET_TIMER(preprocess);
+                clampTime += OE_GET_TIMER(clamp);
+
 
                 OE_START_TIMER(create);
 
@@ -267,13 +273,24 @@ BuildingFactory::create(FeatureCursor*    input,
     }
 
     double totalTime = OE_GET_TIMER(total);
-    OE_INFO << LC
-        << std::setprecision(2)
-        << "Total=" << totalTime << "s"
-        << ", PRE=" << preprocessTime*100./totalTime << "%"
-        << ", SYM=" << symbolTime*100./totalTime << "%"
-        << ", CRE=" << createTime*100./totalTime << "%"
-        << "\n";
+
+    //OE_INFO << LC
+    //    << std::setprecision(2)
+    //    << "Total=" << totalTime << "s"
+    //    << ", XFM=" << xformTime*100./totalTime << "%"
+    //    << ", CLP=" << clampTime*100./totalTime << "%"
+    //    << ", SYM=" << symbolTime*100./totalTime << "%"
+    //    << ", CRE=" << createTime*100./totalTime << "%"
+    //    << "\n";
+
+    if ( progress )
+    {
+        progress->stats()["factory.xform"]  = xformTime;
+        progress->stats()["factory.clamp"]  = clampTime;
+        progress->stats()["factory.symbol"] = symbolTime;
+        progress->stats()["factory.create"] = createTime;
+        //progress->stats()["factory.total"]  = totalTime;
+    }
 
     return true;
 }

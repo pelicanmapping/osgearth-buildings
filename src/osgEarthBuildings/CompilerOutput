@@ -25,6 +25,7 @@
 #include <osg/Geode>
 #include <osg/Matrix>
 #include <osgEarth/Containers>
+#include <osgEarth/Progress>
 #include <osgEarthFeatures/Session>
 #include <osgEarthSymbology/ModelResource>
 
@@ -43,7 +44,7 @@ namespace osgEarth { namespace Buildings
         CompilerOutput();
 
         /** Build and return a scene graph based on the output in this object. */
-        osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings) const;
+        osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings, ProgressCallback*) const;
 
         void setRange(float value) { _range = value; }
         float getRange() const     { return _range; }

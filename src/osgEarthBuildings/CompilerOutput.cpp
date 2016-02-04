@@ -64,8 +64,12 @@ CompilerOutput::addInstance(ModelResource* model, const osg::Matrix& matrix)
 }
 
 osg::Node*
-CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& settings) const
+CompilerOutput::createSceneGraph(Session*                session,
+                                 const CompilerSettings& settings,
+                                 ProgressCallback*       progress) const
 {
+    OE_START_TIMER(total);
+
     osg::ref_ptr<StateSetCache> _sscache = new StateSetCache();
 
     // install the master matrix for this graph:
@@ -93,6 +97,7 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
     }
     
     // Run an optimization pass before adding any debug data or models
+    OE_START_TIMER(optimize);
     {
         // because the default merge limit is 10000 and there's no other way to change it
         osgUtil::Optimizer::MergeGeometryVisitor mgv;
@@ -105,14 +110,17 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
             o.COMBINE_ADJACENT_LODS |
             o.SHARE_DUPLICATE_STATE |
             o.STATIC_OBJECT_DETECTION );
-//            o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) & (~o.MERGE_GEOMETRY) );
     }
+    float optimizeTime = OE_GET_TIMER(optimize);
 
+    OE_START_TIMER(shadergen);
     // shader generation pass (before models)
     Registry::instance()->shaderGenerator().run( root, "Buildings", _sscache.get() );
+    float shaderGenTime = OE_GET_TIMER(shadergen);
     
 
     // install the model instances, creating one instance group for each model.
+    OE_START_TIMER(instances);
     if ( session && session->getResourceCache() )
     {
         // group to hold all instanced models:
@@ -121,8 +129,6 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
         // keeps one copy of each instanced model per resource:
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
         ModelNodes modelNodes;
-
-        OE_DEBUG << LC << "Tile Instances\n";
 
         for(InstanceMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
         {
@@ -174,8 +180,15 @@ CompilerOutput::createSceneGraph(Session* session, const CompilerSettings& setti
         // finally add all the instance groups.
         root->addChild( instances );
     }
+    float instanceTime = OE_GET_TIMER(instances);
 
-    OE_DEBUG << LC << "Radius = " << root->getBound().radius() << std::endl;
+    if ( progress )
+    {
+        progress->stats()["out.optimize" ] = optimizeTime;
+        progress->stats()["out.shadergen"] = shaderGenTime;
+        progress->stats()["out.instances"] = instanceTime;
+        progress->stats()["out.total"]     = OE_GET_TIMER(total);
+    }
 
     return root.release();
 }

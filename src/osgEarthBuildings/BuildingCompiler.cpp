@@ -45,6 +45,8 @@ BuildingCompiler::compile(const BuildingVector& input,
                           CompilerOutput&       output,
                           ProgressCallback*     progress)
 {
+    OE_START_TIMER(total);
+
     // Use the first building as our global reference frame. In usual practice,
     // we will probably have a anchor point for a group of buildings (a tile)
     // that we can pass in here and use.
@@ -79,6 +81,11 @@ BuildingCompiler::compile(const BuildingVector& input,
         {
             addElevations( output, building, building->getElevations(), world2local );
         }
+    }
+
+    if ( progress )
+    {
+        progress->stats()["compile.total"] = OE_GET_TIMER(total);
     }
 
     return true;

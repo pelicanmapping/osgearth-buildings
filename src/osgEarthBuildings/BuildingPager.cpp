@@ -30,11 +30,31 @@ using namespace osgEarth::Symbology;
 #define OE_TEST OE_DEBUG
 
 
+namespace
+{
+    // Callback to force building threads onto the high-latency pager queue.
+    struct HighLatencyFileLocationCallback : public osgDB::FileLocationCallback
+    {
+        Location fileLocation(const std::string& filename, const osgDB::Options* options)
+        {
+            return REMOTE_FILE;
+        }
+
+        bool useFileCache() const { return false; }
+    };
+}
+
+
 BuildingPager::BuildingPager(const Profile* profile) :
 SimplePager( profile )
 {
     _stateSetCache = new StateSetCache();
+
+    // Replace tiles with higher LODs.
     setAdditive( false );
+
+    // Force building generation onto the high latency queue.
+    setFileLocationCallback( new HighLatencyFileLocationCallback() );
 }
 
 void
@@ -139,8 +159,6 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         BuildingVector buildings;
         if ( factory->create(cursor.get(), tileKey.getExtent(), style, buildings, progress) )
         {
-            OE_TEST << LC << tileKey.str() << ":    Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(factory_create) << "s" << std::endl;
-
             // Create OSG model from buildings.
             OE_START_TIMER(compile);
 
@@ -151,13 +169,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 osg::BoundingSphere tileBound = getBounds( tileKey );
                 output.setRange( tileBound.radius() * getRangeFactor() );
 
-                node = output.createSceneGraph(_session.get(), _compilerSettings);
-                if ( node.valid() )
-                {
-                    OE_TEST << LC << tileKey.str() << ":    Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
-
-                    OE_TEST << LC << tileKey.str() << ":    Total time = " << OE_GET_TIMER(start) << "s" << std::endl;
-                }
+                node = output.createSceneGraph(_session.get(), _compilerSettings, progress);
             }
             else
             {
@@ -170,7 +182,28 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         }
     }
 
-    Registry::instance()->endActivity( Stringify() << "Buildings Tile " << tileKey.str() );
+    Registry::instance()->endActivity( Stringify() << "Buildings " << tileKey.str() );
+
+    double totalTime = OE_GET_TIMER(start);
+
+    // STATS:
+    if ( progress )
+    {
+        std::stringstream buf;
+        buf << "Key = " << tileKey.str() << " : TIME = " << (int)(1000.0*totalTime) << " ms" << std::endl;
+
+        for(ProgressCallback::Stats::const_iterator i = progress->stats().begin(); i != progress->stats().end(); ++i)
+        { 
+            buf
+                << "    " 
+                << std::setw(15) << i->first
+                << std::setw(6) << (int)(1000.0*i->second) << " ms"
+                << std::setw(6) << (int)(100.0*i->second/totalTime) << "%"
+                << std::endl;
+        }
+
+        OE_INFO << LC << buf.str() << std::endl;
+    }
 
     //todo
     return node.release();
