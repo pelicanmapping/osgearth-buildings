@@ -27,6 +27,7 @@
 #include <osgEarth/Containers>
 #include <osgEarth/Progress>
 #include <osgEarthFeatures/Session>
+#include <osgEarthFeatures/FeatureIndex>
 #include <osgEarthSymbology/ModelResource>
 
 namespace osgEarth { namespace Buildings 
@@ -50,8 +51,18 @@ namespace osgEarth { namespace Buildings
         float getRange() const     { return _range; }
         
         /** Delocatization matrix to apply to the entire output. */
-        void setLocalToWorld(const osg::Matrix& m) { _local2world = m; }
+        void setLocalToWorld(const osg::Matrix& m);
         const osg::Matrix& getLocalToWorld() const { return _local2world; }
+        const osg::Matrix& getWorldToLocal() const { return _world2local; }
+
+        /** Feature index to use (optional) */
+        void setIndex(FeatureIndexBuilder* index) { _index = index; }
+        FeatureIndexBuilder* getIndex()           { return _index; }
+
+        /** Sets the currently active feature (for indexing purposes). If an index is set,
+            calls to addDrawable or addInstance will prompt the indexer to tag the new
+            data with this feature. */
+        void setCurrentFeature(Feature* f) { _currentFeature = f; }
 
     public:
         
@@ -72,7 +83,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
 
-        osg::Matrix _local2world;
+        osg::Matrix _local2world, _world2local;
 
         osg::ref_ptr<osg::Geode> _defaultGeode;
         typedef fast_map<std::string, osg::ref_ptr<osg::Geode> > TaggedGeodes;
@@ -85,6 +96,10 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<osg::Group> _externalModelsGroup;
 
         osg::ref_ptr<osg::Group> _debugGroup;
+
+        FeatureIndexBuilder* _index;
+
+        Feature* _currentFeature;
 
         float _range;
     };

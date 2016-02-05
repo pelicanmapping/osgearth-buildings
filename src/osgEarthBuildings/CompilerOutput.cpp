@@ -30,11 +30,20 @@ using namespace osgEarth::Buildings;
 #define LC "[CompilerOutput] "
 
 CompilerOutput::CompilerOutput() :
-_range( FLT_MAX )
+_range( FLT_MAX ),
+_index( 0L ),
+_currentFeature( 0L )
 {
     _defaultGeode = new osg::Geode();
     _externalModelsGroup = new osg::Group();
     _debugGroup = new osg::Group();
+}
+
+void
+CompilerOutput::setLocalToWorld(const osg::Matrix& m)
+{
+    _local2world = m;
+    _world2local.invert(m);
 }
 
 void
@@ -55,12 +64,19 @@ CompilerOutput::addDrawable(osg::Drawable* drawable, const std::string& tag)
         geode = new osg::Geode();
     }
     geode->addDrawable( drawable );
+
+    if ( _index && _currentFeature )
+    {
+        _index->tagDrawable( drawable, _currentFeature );
+    }
 }
 
 void
 CompilerOutput::addInstance(ModelResource* model, const osg::Matrix& matrix)
 {
     _instances[model].push_back( matrix );
+
+    //TODO: index it. the vector needs to be a vector of pair<matrix,feature>
 }
 
 osg::Node*
@@ -111,12 +127,12 @@ CompilerOutput::createSceneGraph(Session*                session,
             o.SHARE_DUPLICATE_STATE |
             o.STATIC_OBJECT_DETECTION );
     }
-    float optimizeTime = OE_GET_TIMER(optimize);
+    double optimizeTime = OE_GET_TIMER(optimize);
 
     OE_START_TIMER(shadergen);
     // shader generation pass (before models)
     Registry::instance()->shaderGenerator().run( root, "Buildings", _sscache.get() );
-    float shaderGenTime = OE_GET_TIMER(shadergen);
+    double shaderGenTime = OE_GET_TIMER(shadergen);
     
 
     // install the model instances, creating one instance group for each model.
@@ -180,14 +196,14 @@ CompilerOutput::createSceneGraph(Session*                session,
         // finally add all the instance groups.
         root->addChild( instances );
     }
-    float instanceTime = OE_GET_TIMER(instances);
+    double instanceTime = OE_GET_TIMER(instances);
 
-    if ( progress )
+    if ( progress && progress->collectStats() )
     {
-        progress->stats()["out.optimize" ] = optimizeTime;
-        progress->stats()["out.shadergen"] = shaderGenTime;
-        progress->stats()["out.instances"] = instanceTime;
-        progress->stats()["out.total"]     = OE_GET_TIMER(total);
+        progress->stats("out.optimize" ) = optimizeTime;
+        progress->stats("out.shadergen") = shaderGenTime;
+        progress->stats("out.instances") = instanceTime;
+        progress->stats("out.total")     = OE_GET_TIMER(total);
     }
 
     return root.release();

@@ -81,6 +81,22 @@ namespace osgEarth { namespace Buildings
             const Style*      style,
             BuildingVector&   output,
             ProgressCallback* progress =0L);
+        
+        /**
+         * Given a single feature, produce a correspond set of Building objects.
+         * @param[in ] input    Input feature
+         * @param[in ] cropTo   Extent to which to crop features (based on centroid).
+         *                      Set to GeoExtent::INVALID to disable cropping.
+         * @param[in ] style    Style to apply when creating buildings
+         * @param[out] output   Resulting building data models
+         * @param[in ] progress Progress/error tracking token
+         */
+        virtual bool create(
+            Feature*          input,
+            const GeoExtent&  cropTo,
+            const Style*      style,
+            BuildingVector&   output,
+            ProgressCallback* progress =0L);
 
         /**
          * Create a building object form a feature.

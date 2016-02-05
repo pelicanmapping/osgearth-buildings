@@ -53,13 +53,19 @@ namespace osgEarth { namespace Buildings
         optional<bool>& additiveLODs() { return _additiveLODs; }
         const optional<bool>& additiveLODs() const { return _additiveLODs; }
 
+        /** LOD bins and other rendering settings */
         optional<CompilerSettings>& compilerSettings() { return _settings; }
         const optional<CompilerSettings>& compilerSettings() const { return _settings; }
+
+        /** Whether to tag features for indexing (default is false) */
+        optional<bool>& createIndex() { return _createIndex; }
+        const optional<bool>& createIndex() const { return _createIndex; }
 
     public:
         BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
             _lod.init( 14u );
             _additiveLODs.init(false);
+            _createIndex.init(false);
             fromConfig( _conf );
         }
 
@@ -72,6 +78,7 @@ namespace osgEarth { namespace Buildings
             conf.updateObjIfSet("cache_policy",     _cachePolicy);
             conf.updateIfSet   ("additive_lods",    _additiveLODs);
             conf.updateObjIfSet("settings",         _settings);
+            conf.updateIfSet   ("create_index",     _createIndex);
             return conf;
         }
 
@@ -89,6 +96,7 @@ namespace osgEarth { namespace Buildings
             conf.getObjIfSet("cache_policy",     _cachePolicy);
             conf.getIfSet   ("additive_lods",    _additiveLODs);
             conf.getObjIfSet("settings",         _settings);
+            conf.getIfSet   ("create_index",     _createIndex);
         }
 
         optional<FeatureSourceOptions> _featureSourceOptions;
@@ -98,6 +106,7 @@ namespace osgEarth { namespace Buildings
         optional<CachePolicy> _cachePolicy;
         optional<bool> _additiveLODs;
         optional<CompilerSettings> _settings;
+        optional<bool> _createIndex;
     };
 } }
 

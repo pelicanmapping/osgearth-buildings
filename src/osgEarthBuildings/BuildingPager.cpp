@@ -46,7 +46,8 @@ namespace
 
 
 BuildingPager::BuildingPager(const Profile* profile) :
-SimplePager( profile )
+SimplePager( profile ),
+_index     ( 0L )
 {
     _stateSetCache = new StateSetCache();
 
@@ -123,6 +124,12 @@ BuildingPager::setCompilerSettings(const CompilerSettings& settings)
     _compilerSettings = settings;
 }
 
+void BuildingPager::setIndex(FeatureIndexBuilder* index)
+{
+    _index = index;
+}
+
+#if 0
 osg::Node*
 BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 {
@@ -131,6 +138,8 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         OE_WARN << LC << "Misconfiguration error; make sure Session and FeatureSource are set\n";
         return 0L;
     }
+
+    progress->collectStats() = true;
     
     std::string activityName("Buildings " + tileKey.str());
     Registry::instance()->startActivity(activityName);
@@ -160,6 +169,8 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         {
             // Create OSG model from buildings.
             CompilerOutput output;
+            output.setIndex( _index );
+
             if ( _compiler->compile(buildings, output, progress) )
             {
                 // set the distance at which details become visible.
@@ -185,7 +196,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     float totalTime = OE_GET_TIMER(total);
 
     // STATS:
-    if ( progress && !progress->stats().empty() )
+    if ( progress && progress->collectStats() )
     {
         std::stringstream buf;
         buf << "Key = " << tileKey.str() << " : TIME = " << (int)(1000.0*totalTime) << " ms" << std::endl;
@@ -206,3 +217,121 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     //todo
     return node.release();
 }
+
+#else
+
+osg::Node*
+BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
+{
+    if ( !_session.valid() || !_compiler.valid() || !_features.valid() )
+    {
+        OE_WARN << LC << "Misconfiguration error; make sure Session and FeatureSource are set\n";
+        return 0L;
+    }
+
+    progress->collectStats() = true;
+    OE_START_TIMER(total);
+    unsigned numFeatures = 0;
+    
+    std::string activityName("Buildings " + tileKey.str());
+    Registry::instance()->startActivity(activityName);
+
+    // result:
+    osg::ref_ptr<osg::Node> node;
+    
+    // Create a cursor to iterator over the feature data:
+    Query query;
+    query.tileKey() = tileKey;
+    osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
+    if ( cursor.valid() && cursor->hasMore() )
+    {
+        osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+
+        factory->setSession( _session.get() );
+        factory->setCatalog( _catalog.get() );
+        factory->setOutputSRS( _session->getMapSRS() );
+
+        std::string styleName = Stringify() << tileKey.getLOD();
+        const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
+        
+        bool canceled = false;
+
+        // Holds all the final output.
+        CompilerOutput output;
+        output.setIndex( _index );
+
+        while( cursor->hasMore() && !canceled )
+        {
+            Feature* feature = cursor->nextFeature();
+            numFeatures++;
+
+            BuildingVector buildings;
+            if ( !factory->create(feature, tileKey.getExtent(), style, buildings, progress) )
+                canceled = true;
+
+            if ( !canceled && !buildings.empty() )
+            {
+                if ( output.getLocalToWorld().isIdentity() )
+                {
+                    output.setLocalToWorld( buildings.front()->getReferenceFrame() );
+                }
+
+                // for indexing, if enabled:
+                output.setCurrentFeature( feature );
+
+                for(BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
+                {
+                    if ( !_compiler->compile(buildings, output, progress) )
+                        canceled = true;
+                }
+            }
+        }
+
+        if ( !canceled )
+        {
+            // set the distance at which details become visible.
+            osg::BoundingSphere tileBound = getBounds( tileKey );
+            output.setRange( tileBound.radius() * getRangeFactor() );
+            node = output.createSceneGraph(_session.get(), _compilerSettings, progress);
+        }
+        else
+        {
+            OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
+        }
+    }
+
+    Registry::instance()->endActivity(activityName);
+
+    double totalTime = OE_GET_TIMER(total);
+
+    // STATS:
+    if ( progress && progress->collectStats() && !progress->stats().empty() && numFeatures > 0)
+    {
+        std::stringstream buf;
+        buf << "Key = " << tileKey.str() 
+            << " : Features = " << numFeatures 
+            << ", Time = " << (int)(1000.0*totalTime) 
+            << " ms, Avg = " << std::setprecision(3) << (1000.0*(totalTime/(double)numFeatures)) << " ms"
+            << std::endl;
+
+        for(ProgressCallback::Stats::const_iterator i = progress->stats().begin(); i != progress->stats().end(); ++i)
+        { 
+            buf
+                << "    " 
+                << std::setw(15) << i->first
+                << std::setw(6) << (int)(1000.0*i->second) << " ms"
+                << std::setw(6) << (int)(100.0*i->second/totalTime) << "%"
+                << std::endl;
+        }
+
+        OE_INFO << LC << buf.str() << std::endl;
+
+        // clear them when we are done.
+        progress->stats().clear();
+    }
+
+    //todo
+    return node.release();
+}
+
+#endif

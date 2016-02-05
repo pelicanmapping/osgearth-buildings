@@ -272,13 +272,207 @@ BuildingFactory::create(FeatureCursor*    input,
 
     double totalTime = OE_GET_TIMER(total);
 
-    if ( progress )
+    if ( progress && progress->collectStats() )
     {
-        progress->stats()["factory.xform"]  = xformTime;
-        progress->stats()["factory.clamp"]  = clampTime;
-        progress->stats()["factory.symbol"] = symbolTime;
-        progress->stats()["factory.create"] = createTime;
-        //progress->stats()["factory.total"]  = totalTime;
+        progress->stats("factory.xform")  = xformTime;
+        progress->stats("factory.clamp")  = clampTime;
+        progress->stats("factory.symbol") = symbolTime;
+        progress->stats("factory.create") = createTime;
+    }
+
+    return true;
+}
+
+bool
+BuildingFactory::create(Feature*          feature,
+                        const GeoExtent&  cropTo,
+                        const Style*      style,
+                        BuildingVector&   output,
+                        ProgressCallback* progress)
+{
+    if ( !feature || !feature->getGeometry() )
+        return false;
+
+    double xformTime=0.0, clampTime=0.0, symbolTime=0.0, createTime=0.0;
+    OE_START_TIMER(total);
+
+    // TODO: for the single-feature version here, consider a token or other way
+    // to compute all this common stuff up front. This was not necessary for the
+    // FeatureCursor variation. -gw
+
+    bool needToClamp = 
+        style &&
+        style->has<AltitudeSymbol>() &&
+        style->get<AltitudeSymbol>()->clamping() != AltitudeSymbol::CLAMP_NONE;
+
+    // Find the building symbol if there is one; this will tell us how to 
+    // resolve building heights, among other things.
+    const BuildingSymbol* buildingSymbol =
+        style ? style->get<BuildingSymbol>() :
+        _session->styles() ? _session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
+        0L;
+        
+    // Pull a resource library if one is defined.
+    ResourceLibrary* reslib = 0L;
+    if (buildingSymbol && buildingSymbol->library().isSet())
+        reslib = _session->styles()->getResourceLibrary(buildingSymbol->library().get());
+    if ( !reslib )
+        reslib = _session->styles()->getDefaultResourceLibrary();
+
+    // Construct a context to use during the build process.
+    BuildContext context;
+    context.setDBOptions( _session->getDBOptions() );
+    context.setResourceLibrary( reslib );
+
+    // URI context for external models
+    URIContext uriContext( _session->getDBOptions() );
+
+    // Set up mutable expression instances:
+    optional<StringExpression>  modelExpr;
+    optional<NumericExpression> heightExpr;
+    optional<StringExpression>  tagsExpr;
+
+    if ( buildingSymbol )
+    {
+        modelExpr  = buildingSymbol->modelURI();
+        heightExpr = buildingSymbol->height();
+        tagsExpr   = buildingSymbol->tags();
+    }
+
+    if ( progress && progress->isCanceled() )
+    {
+        progress->message() = "in BuildingFactory::create";
+        return false;
+    }
+
+    // resolve selection values from the symbology:
+    optional<URI> externalModelURI;
+    float         height    = 0.0f;
+    unsigned      numFloors = 0u;
+    TagVector     tags;
+
+    if ( buildingSymbol )
+    {
+        OE_START_TIMER(symbol);
+
+        // see if we are referencing an external model.
+        if ( modelExpr.isSet() )
+        {
+            std::string modelStr = feature->eval(modelExpr.mutable_value(), _session.get());
+            if (!modelStr.empty())
+            {
+                externalModelURI = URI(modelStr, uriContext);
+            }
+        }
+
+        // calculate height from expression. We do this first because
+        // a height of zero will cause us to skip the feature altogether.
+        if ( !externalModelURI.isSet() && heightExpr.isSet() )
+        {
+            height = (float)feature->eval(heightExpr.mutable_value(), _session.get());
+        
+            if ( height > 0.0f )
+            {
+                // calculate tags from expression:
+                if ( tagsExpr.isSet() )
+                {
+                    std::string tagString = feature->eval(tagsExpr.mutable_value(), _session.get());
+                    if ( !tagString.empty() )
+                        StringTokenizer(tagString, tags, " ", "\"", false);
+                }
+            }
+        }
+
+        symbolTime = OE_GET_TIMER(symbol);
+    }
+
+    if ( height > 0.0f || externalModelURI.isSet() )
+    {
+        OE_START_TIMER(xform);
+
+        // Removing co-linear points will help produce a more "true"
+        // longest-edge for rotation and roof rectangle calcuations.
+        feature->getGeometry()->removeColinearPoints();
+
+        // Transform the feature into the output SRS
+        if ( _outSRS.valid() )
+        {
+            feature->transform( _outSRS.get() );
+        }
+
+        // this ensures that the feature's centroid is in our bounding
+        // extent, so that a feature doesn't end up in multiple extents
+        if ( !cropToCentroid(feature, cropTo) )
+        {
+            return true;
+        }
+
+        xformTime = OE_GET_TIMER(xform);
+
+        // Prepare for terrain clamping by finding the minimum and 
+        // maximum elevations under the feature:
+        OE_START_TIMER(clamp);
+                
+        float min = FLT_MAX, max = -FLT_MAX;
+        if ( needToClamp )
+        {
+            calculateTerrainMinMax(feature, min, max);
+        }
+
+        bool terrainMinMaxValid = (min < max);
+                
+        context.setTerrainMinMax(
+            terrainMinMaxValid ? min : 0.0f,
+            terrainMinMaxValid ? max : 0.0f );
+
+        clampTime = OE_GET_TIMER(clamp);
+
+
+        OE_START_TIMER(create);
+
+        // If this is an external model, set up a building referencing the model
+        if ( externalModelURI.isSet() )
+        {
+            Building* building = createExternalModelBuilding( feature, externalModelURI.get(), context );
+            if ( building )
+            {
+                output.push_back( building );
+            }
+        }
+
+        // Otherwise, we are creating a parametric building:
+        else
+        {
+            // If using a catalog, ask it to create one or more buildings for this feature:
+            if ( _catalog.valid() )
+            {   
+                float minHeight = terrainMinMaxValid ? max-min+3.0f : 3.0f;
+                height = std::max( height, minHeight );
+                _catalog->createBuildings(feature, tags, height, context, output, progress);
+            }
+
+            // Otherwise, create a simple one by hand:
+            else
+            {
+                Building* building = createBuilding(feature, progress);
+                if ( building )
+                {
+                    output.push_back( building );
+                }
+            }
+        }
+
+        createTime = OE_GET_TIMER(create);
+    }
+
+    double totalTime = OE_GET_TIMER(total);
+
+    if ( progress && progress->collectStats() )
+    {
+        progress->stats("factory.xform")  += xformTime;
+        progress->stats("factory.clamp")  += clampTime;
+        progress->stats("factory.symbol") += symbolTime;
+        progress->stats("factory.create") += createTime;
     }
 
     return true;

@@ -50,6 +50,7 @@ BuildingCompiler::compile(const BuildingVector& input,
     // Use the first building as our global reference frame. In usual practice,
     // we will probably have a anchor point for a group of buildings (a tile)
     // that we can pass in here and use.
+#if 0
     osg::Matrix local2world, world2local;
     if ( !input.empty() )
     {
@@ -58,6 +59,7 @@ BuildingCompiler::compile(const BuildingVector& input,
     world2local.invert(local2world);
 
     output.setLocalToWorld( local2world );
+#endif
 
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
@@ -71,21 +73,21 @@ BuildingCompiler::compile(const BuildingVector& input,
 
         if ( building->externalModelURI().isSet() )
         {
-            addExternalModel( output, building, world2local, progress );
+            addExternalModel( output, building, output.getWorldToLocal(), progress );
         }
         else if ( building->getInstancedModelResource() )
         {
-            _instancedBuildingCompiler->compile(building, output, world2local, progress);
+            _instancedBuildingCompiler->compile(building, output, output.getWorldToLocal(), progress);
         }
         else
         {
-            addElevations( output, building, building->getElevations(), world2local );
+            addElevations( output, building, building->getElevations(), output.getWorldToLocal() );
         }
     }
 
-    if ( progress )
+    if ( progress && progress->collectStats() )
     {
-        progress->stats()["compile.total"] = OE_GET_TIMER(total);
+        progress->stats("compile.total") += OE_GET_TIMER(total);
     }
 
     return true;

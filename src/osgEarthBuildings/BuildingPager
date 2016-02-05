@@ -27,6 +27,7 @@
 #include <osgEarth/CacheBin>
 #include <osgEarth/StateSetCache>
 #include <osgEarthFeatures/FeatureSource>
+#include <osgEarthFeatures/FeatureIndex>
 #include <osgEarthUtil/SimplePager>
 
 namespace osgEarth { namespace Buildings
@@ -55,6 +56,9 @@ namespace osgEarth { namespace Buildings
         /** Settings the dictate how the compiler builds the scene graph */
         void setCompilerSettings(const CompilerSettings& settings);
 
+        /** Feature index to populate */
+        void setIndex(FeatureIndexBuilder* index);
+
     public: // SimplePager
 
         osg::Node* createNode(const TileKey& key, ProgressCallback* progress);
@@ -65,14 +69,15 @@ namespace osgEarth { namespace Buildings
 
     private:
 
-        osg::ref_ptr<Session>          _session;
-        osg::ref_ptr<FeatureSource>    _features;
-        osg::ref_ptr<BuildingCatalog>  _catalog;
-        osg::ref_ptr<StateSetCache>    _stateSetCache;
-        osg::ref_ptr<CacheBin>         _cacheBin;
-        CachePolicy                    _cachePolicy;
-        osg::ref_ptr<BuildingCompiler> _compiler;
-        CompilerSettings               _compilerSettings;
+        osg::ref_ptr<Session>             _session;
+        osg::ref_ptr<FeatureSource>       _features;
+        osg::ref_ptr<BuildingCatalog>     _catalog;
+        osg::ref_ptr<StateSetCache>       _stateSetCache;
+        osg::ref_ptr<CacheBin>            _cacheBin;
+        CachePolicy                       _cachePolicy;
+        osg::ref_ptr<BuildingCompiler>    _compiler;
+        CompilerSettings                  _compilerSettings;
+        FeatureIndexBuilder*              _index;
     };
 
 } } // namespace

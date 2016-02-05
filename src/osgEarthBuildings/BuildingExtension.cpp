@@ -23,6 +23,7 @@
 #include "BuildingPager"
 
 #include <osgEarth/Registry>
+#include <osgEarthFeatures/FeatureSourceIndexNode>
 
 using namespace osgEarth;
 using namespace osgEarth::Buildings;
@@ -103,7 +104,31 @@ BuildingExtension::connect(MapNode* mapNode)
     pager->setCompilerSettings( _options.compilerSettings().get() );
     pager->build();
 
-    mapNode->addChild( pager );    
+    if ( _options.createIndex() == true )
+    {
+        // create a feature index.
+        FeatureSourceIndex* index = new FeatureSourceIndex(
+            features,
+            Registry::objectIndex(),
+            FeatureSourceIndexOptions() );
+
+        // ..and a node to house it.
+        FeatureSourceIndexNode* inode = new FeatureSourceIndexNode( index );
+
+        // tell the pager to generate an index
+        pager->setIndex( inode );
+
+        // install in the scene graph.
+        inode->addChild( pager );
+        mapNode->addChild( inode );
+    }
+
+    else
+    {
+        // install in the scene graph.
+        mapNode->addChild( pager );    
+    }
+
     return true;
 }
 
