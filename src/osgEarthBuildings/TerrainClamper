@@ -53,6 +53,10 @@ namespace osgEarth { namespace Buildings
         /** Creates a terrain envelope to use for elevation queries in a certain area. */
         TerrainEnvelope* createEnvelope(const GeoExtent& extent, unsigned lod);
 
+        /** Maximum number of elevation tiles to cache */
+        void setMaxEntries(unsigned maxEntries) { _maxEntries = maxEntries; }
+        unsigned getMaxEntries() const          { return _maxEntries; }
+
 
     protected:
         virtual ~TerrainClamper() { }
@@ -77,13 +81,16 @@ namespace osgEarth { namespace Buildings
         };
 
         typedef std::map<TileKey, osg::ref_ptr<Tile> > Tiles;
+        typedef std::vector<osg::ref_ptr<Tile> > QuerySet;
+        typedef std::list<TileKey> KeyLRU;
+
         Tiles             _tiles;
         Threading::Mutex  _tilesMutex;
-        typedef std::vector<osg::ref_ptr<Tile> > QuerySet;
+        KeyLRU            _lru;
+        unsigned          _entries;
+        unsigned          _maxEntries;
 
-        // return:
-        // 0 = not ready yet, try again later
-        // 1 = complete: output=null, failure. output!=null, success.
+        // safely fetch a tile from the central repo, loading from map if necessary
         bool getTile(const TileKey& key, osg::ref_ptr<Tile>& output);
 
         // safely popluate the tile; called when Tile._status = IN_PROGRESS

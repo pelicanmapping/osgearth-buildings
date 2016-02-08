@@ -24,7 +24,8 @@ using namespace osgEarth::Buildings;
 
 #define LC "[TerrainClamper] "
 
-TerrainClamper::TerrainClamper()
+TerrainClamper::TerrainClamper() :
+_maxEntries( 200u )
 {
     //nop
 }
@@ -73,7 +74,17 @@ TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
     osg::ref_ptr<Tile>& tile = _tiles[key];
     if ( !tile.valid() )
     {
+        // a new tile; status -> EMPTY
         tile = new Tile();
+
+        // update the LRU:
+        _lru.push_front( key );
+        ++_entries;
+        if ( _entries > _maxEntries )
+        {
+            _lru.pop_back();
+            --_entries;
+        }
     }
        
     if ( tile->_status == STATUS_EMPTY )
@@ -93,6 +104,15 @@ TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
     {
         //OE_INFO << "  getTile(" << key.str() << ") -> available\n";
         out = tile.get();
+
+        // update the LRU:
+        KeyLRU::iterator i = std::find(_lru.begin(), _lru.end(), key);
+        if ( i != _lru.end() && i != _lru.begin() )
+        {
+            _lru.erase( i );
+            _lru.push_front( key );
+        }
+
         _tilesMutex.unlock();
         return true;
     }
@@ -128,22 +148,29 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& o
         }
     }
 
+    // find the minimal collection of tiles (in the map frame's profile) that cover
+    // the requested extent (which might be in a different profile).
     std::vector<TileKey> keys;
     _frame.getProfile()->getIntersectingTiles(extent, lod, keys);
     
+    // for each coverage key, fetch the corresponding elevation tile and add it to
+    // the output list.
     for(int i=0; i<keys.size(); ++i)
     {
         OE_START_TIMER(get);
 
-        const double timeout = 10.0;
+        const double timeout = 30.0;
         osg::ref_ptr<Tile> tile;
         while( getTile(keys[i], tile) && !tile.valid() && OE_GET_TIMER(get) < timeout)
         {
+            // condition: another thread is working on fetching the tile from the map,
+            // so wait and try again later. Do this until we succeed or time out.
             OpenThreads::Thread::YieldCurrentThread();
         }
 
         if ( !tile.valid() && OE_GET_TIMER(get) >= timeout )
         {
+            // this means we timed out trying to fetch the map tile.
             OE_WARN << LC << "Timout fetching tile " << keys[i].str() << std::endl;
         }
 
@@ -151,6 +178,7 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& o
         {
             if ( tile->_hf.valid() )
             {
+                // got a valid tile, so push it to the query set.
                 output.push_back( tile.get() );
             }
             else
