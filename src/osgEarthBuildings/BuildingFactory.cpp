@@ -33,7 +33,8 @@ using namespace osgEarth::Symbology;
 
 BuildingFactory::BuildingFactory()
 {
-    _session = new Session(0L);
+    _clamper = new TerrainClamper();
+    setSession( new Session(0L) );
 }
 
 void
@@ -42,8 +43,7 @@ BuildingFactory::setSession(Session* session)
     _session = session;
     if ( session )
     {
-        _eq.setMapFrame( session->createMapFrame() );
-        _eq.setFallBackOnNoData( true );
+        _clamper->setSession( session );
     }
 }
 
@@ -58,38 +58,14 @@ BuildingFactory::cropToCentroid(const Feature* feature, const GeoExtent& extent)
     return extent.contains(centroid);
 }
 
-void
-BuildingFactory::calculateTerrainMinMax(Feature* feature, float& min, float& max)
-{
-    if ( !feature || !feature->getGeometry() )
-        return;
-
-    float maxRes = 0.0f;
-
-    GeometryIterator gi(feature->getGeometry(), false);
-    while(gi.hasMore())
-    {
-        Geometry* part = gi.next();
-        std::vector<double> elevations;
-        elevations.reserve( part->size() );
-        if ( _eq.getElevations(part->asVector(), feature->getSRS(), elevations, maxRes) )
-        {
-            for(unsigned i=0; i<elevations.size(); ++i)
-            {
-                float e = elevations[i];
-                if ( e < min ) min = e;
-                if ( e > max ) max = e;
-            }
-        }
-    }
-}
-
+#if 0
 bool
-BuildingFactory::create(FeatureCursor*    input,
-                        const GeoExtent&  cropTo,
-                        const Style*      style,
-                        BuildingVector&   output,
-                        ProgressCallback* progress)
+BuildingFactory::create(FeatureCursor*         input,
+                        const GeoExtent&       cropTo,
+                        const TerrainEnvelope* terrain,
+                        const Style*           style,
+                        BuildingVector&        output,
+                        ProgressCallback*      progress)
 {
     if ( !input )
         return false;
@@ -213,16 +189,14 @@ BuildingFactory::create(FeatureCursor*    input,
 
                 xformTime += OE_GET_TIMER(xform);
 
+
                 // Prepare for terrain clamping by finding the minimum and 
                 // maximum elevations under the feature:
                 OE_START_TIMER(clamp);
                 float min = FLT_MAX, max = -FLT_MAX;
-                if ( needToClamp )
-                {
-                    calculateTerrainMinMax(feature, min, max);
-                }
-
-                bool terrainMinMaxValid = (min < max);
+                bool terrainMinMaxValid =
+                    needToClamp &&
+                    _clamper->getMinMaxElevation(envelope.get(), feature, min, max);
                 
                 context.setTerrainMinMax(
                     terrainMinMaxValid ? min : 0.0f,
@@ -282,13 +256,15 @@ BuildingFactory::create(FeatureCursor*    input,
 
     return true;
 }
+#endif
 
 bool
-BuildingFactory::create(Feature*          feature,
-                        const GeoExtent&  cropTo,
-                        const Style*      style,
-                        BuildingVector&   output,
-                        ProgressCallback* progress)
+BuildingFactory::create(Feature*               feature,
+                        const GeoExtent&       cropTo,
+                        const TerrainEnvelope* terrain,
+                        const Style*           style,
+                        BuildingVector&        output,
+                        ProgressCallback*      progress)
 {
     if ( !feature || !feature->getGeometry() )
         return false;
@@ -301,6 +277,7 @@ BuildingFactory::create(Feature*          feature,
     // FeatureCursor variation. -gw
 
     bool needToClamp = 
+        terrain &&
         style &&
         style->has<AltitudeSymbol>() &&
         style->get<AltitudeSymbol>()->clamping() != AltitudeSymbol::CLAMP_NONE;
@@ -409,17 +386,15 @@ BuildingFactory::create(Feature*          feature,
 
         xformTime = OE_GET_TIMER(xform);
 
+
         // Prepare for terrain clamping by finding the minimum and 
         // maximum elevations under the feature:
         OE_START_TIMER(clamp);
                 
         float min = FLT_MAX, max = -FLT_MAX;
-        if ( needToClamp )
-        {
-            calculateTerrainMinMax(feature, min, max);
-        }
-
-        bool terrainMinMaxValid = (min < max);
+        bool terrainMinMaxValid =
+            needToClamp &&
+            terrain->getElevationExtrema(feature, min, max);
                 
         context.setTerrainMinMax(
             terrainMinMaxValid ? min : 0.0f,

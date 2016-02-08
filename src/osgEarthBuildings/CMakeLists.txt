@@ -33,6 +33,7 @@ set(LIB_PUBLIC_HEADERS
     GableRoofCompiler
     Parapet
     Roof
+    TerrainClamper
     Zoning
 )
 
@@ -57,6 +58,7 @@ set(LIB_COMMON_FILES
     GableRoofCompiler.cpp
     Parapet.cpp
     Roof.cpp
+    TerrainClamper.cpp
 )
 
 

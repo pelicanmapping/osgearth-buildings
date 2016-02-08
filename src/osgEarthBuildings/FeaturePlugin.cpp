@@ -122,10 +122,9 @@ namespace osgEarth { namespace Buildings
             factory->setCatalog( cat.get() );
 
             BuildingVector buildings;
-            if ( !factory->create(cursor.get(), GeoExtent::INVALID, 0L, buildings) )
+            while(cursor->hasMore())
             {
-                OE_WARN << LC << "Failed to create building data model\n";
-                return ReadResult::ERROR_IN_READING_FILE;
+                factory->create(cursor->nextFeature(), GeoExtent::INVALID, 0L, 0L, buildings);
             }
             OE_INFO << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(start) << "s" << std::endl;
 
@@ -143,18 +142,11 @@ namespace osgEarth { namespace Buildings
             {
                 OE_START_TIMER(optimize);
 
-#if 1
                 // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
                 osgUtil::Optimizer o;
                 o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
                 
                 node->setDataVariance( node->DYNAMIC ); // keeps the OSG optimizer from 
-#else
-                osgUtil::Optimizer::MergeGeometryVisitor mgv;
-                mgv.setTargetMaximumNumberOfVertices(1024000);
-                node->accept( mgv );
-                node->setDataVariance( node->DYNAMIC );
-#endif
 
                 OE_INFO << LC << "Optimized in " << std::setprecision(3) << OE_GET_TIMER(optimize) << "s" << std::endl;
 

@@ -56,6 +56,8 @@ _index     ( 0L )
 
     // Force building generation onto the high latency queue.
     setFileLocationCallback( new HighLatencyFileLocationCallback() );
+
+    _profile = ::getenv("OSGEARTH_BUILDINGS_PROFILE") != 0L;
 }
 
 void
@@ -66,6 +68,9 @@ BuildingPager::setSession(Session* session)
     if ( session )
     {
         _compiler = new BuildingCompiler(session);
+
+        _clamper = new TerrainClamper();
+        _clamper->setSession( session );
 
         // Analyze the styles to determine the min and max LODs.
         // Styles are named by LOD.
@@ -139,7 +144,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         return 0L;
     }
 
-    progress->collectStats() = true;
+    progress->collectStats() = _profile;
     
     std::string activityName("Buildings " + tileKey.str());
     Registry::instance()->startActivity(activityName);
@@ -229,7 +234,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         return 0L;
     }
 
-    progress->collectStats() = true;
+    progress->collectStats() = _profile;
     OE_START_TIMER(total);
     unsigned numFeatures = 0;
     
@@ -249,6 +254,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
         factory->setSession( _session.get() );
         factory->setCatalog( _catalog.get() );
+        factory->setClamper( _clamper.get() );
         factory->setOutputSRS( _session->getMapSRS() );
 
         std::string styleName = Stringify() << tileKey.getLOD();
@@ -260,13 +266,20 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         CompilerOutput output;
         output.setIndex( _index );
 
+        // Prepare the terrain envelope, for clamping.
+        // TODO: review the LOD selection..
+        OE_START_TIMER(envelope);
+        osg::ref_ptr<TerrainEnvelope> envelope = factory->getClamper()->createEnvelope( tileKey.getExtent(), tileKey.getLOD() ); //13u );
+        if ( progress && progress->collectStats() )
+            progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
+
         while( cursor->hasMore() && !canceled )
         {
             Feature* feature = cursor->nextFeature();
             numFeatures++;
 
             BuildingVector buildings;
-            if ( !factory->create(feature, tileKey.getExtent(), style, buildings, progress) )
+            if ( !factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, progress) )
                 canceled = true;
 
             if ( !canceled && !buildings.empty() )
@@ -296,7 +309,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         }
         else
         {
-            OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
+            //OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
         }
     }
 

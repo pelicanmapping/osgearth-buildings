@@ -23,6 +23,7 @@
 #include "BuildingFactory"
 #include "BuildingCompiler"
 #include "CompilerSettings"
+#include "TerrainClamper"
 
 #include <osgEarth/CacheBin>
 #include <osgEarth/StateSetCache>
@@ -78,6 +79,8 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<BuildingCompiler>    _compiler;
         CompilerSettings                  _compilerSettings;
         FeatureIndexBuilder*              _index;
+        osg::ref_ptr<TerrainClamper>      _clamper;
+        bool                              _profile;
     };
 
 } } // namespace
