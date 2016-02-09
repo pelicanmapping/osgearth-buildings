@@ -59,6 +59,9 @@ InstancedRoofCompiler::compile(CompilerOutput&    output,
         float modelHeight = bbox.yMax() - bbox.yMin();
         osg::Vec3f modelCenter = bbox.center();
 
+        float xRatio = spaceWidth/modelWidth;
+        float yRatio = spaceHeight/modelHeight;
+
         osg::Matrix matrix;
 
         osg::Vec3d spaceCenter = space.center();
@@ -69,10 +72,14 @@ InstancedRoofCompiler::compile(CompilerOutput&    output,
         matrix.preMult( elevation->getRotation() );
 
         // scale the model to match the dimensions of the AABB.
-        matrix.preMultScale( osg::Vec3d(spaceWidth/modelWidth, spaceHeight/modelHeight, 1.0f) );
+        matrix.preMultScale( osg::Vec3d(xRatio, yRatio, 1.0) );
 
         // translates model so it's centers on 0,0,0.
         matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), elevation->getHeight() - bbox.zMin()) );
+        
+        // scale the height of the roof model so it's in line with the x and y scaling:
+        float minRatio = std::min(1.0f, std::min(xRatio, yRatio) );
+        matrix.preMultScale( osg::Vec3d(1.0, 1.0, minRatio) );
 
         output.addInstance( model, matrix * frame );
     }
