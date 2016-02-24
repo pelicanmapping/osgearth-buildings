@@ -211,6 +211,10 @@
         <url>models/red_flag.osg.10.scale</url>
     </model>
         
+    <model name="roof.asdasd" tags="roof clutter">
+        <url>H:/devel/osg/OpenSceneGraph-Data/cessnafire.osg</url>
+    </model>
+        
     <model name="roof.ac" tags="roof clutter">
         <url>models/ac.osgb</url>
     </model>
@@ -241,10 +245,43 @@
     
     
     <!-- INSTANCED ROOF MODELS -->
-        
+
+    <!--
     <model name="roof.instanced.cube" tags="roof instanced residential">
         <url>models/cube_1m.flt</url>
     </model>  
+    -->
+    
+    <model name="roof.instanced.matt1" tags="roof instanced residential">
+        <url>models/roof/matt/barn.flt</url>
+    </model>  
+    <model name="roof.instanced.matt2" tags="roof instanced residential">
+        <url>models/roof/matt/cross-gable.flt</url>
+    </model>  
+    <model name="roof.instanced.matt3" tags="roof instanced residential">
+        <url>models/roof/matt/dutch-hip.flt</url>
+    </model>  
+    <model name="roof.instanced.matt4" tags="roof instanced residential">
+        <url>models/roof/matt/flat.flt</url>
+    </model>  
+    <model name="roof.instanced.matt5" tags="roof instanced residential">
+        <url>models/roof/matt/gable.flt</url>
+    </model>   
+    <model name="roof.instanced.matt6" tags="roof instanced residential">
+        <url>models/roof/matt/industrial.flt</url>
+    </model>  
+    <model name="roof.instanced.matt7" tags="roof instanced residential">
+        <url>models/roof/matt/jenkins-head.flt</url>
+    </model>   
+    <model name="roof.instanced.matt8" tags="roof instanced residential">
+        <url>models/roof/matt/mansard.flt</url>
+    </model> 
+    <model name="roof.instanced.matt9" tags="roof instanced residential">
+        <url>models/roof/matt/pagoda.flt</url>
+    </model> 
+    <model name="roof.instanced.matt10" tags="roof instanced residential">
+        <url>models/roof/matt/salt-box.flt</url>
+    </model> 
 
     
     <!-- INSTANCED BUILDING MODELS -->

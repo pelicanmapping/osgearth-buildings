@@ -61,11 +61,21 @@ namespace osgEarth { namespace Buildings
         optional<bool>& createIndex() { return _createIndex; }
         const optional<bool>& createIndex() const { return _createIndex; }
 
+        /** Paging priority offset (relative to terrain) */
+        optional<float>& priorityOffset() { return _priorityOffset; }
+        const optional<float>& priorityOffset() const { return _priorityOffset; }
+
+        /** Paging priority scale (relative to terrain) */
+        optional<float>& priorityScale() { return _priorityScale; }
+        const optional<float>& priorityScale() const { return _priorityScale; }
+
     public:
         BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
             _lod.init( 14u );
             _additiveLODs.init(false);
             _createIndex.init(false);
+            _priorityOffset.init(0.0f);
+            _priorityScale.init(1.0f);
             fromConfig( _conf );
         }
 
@@ -79,6 +89,8 @@ namespace osgEarth { namespace Buildings
             conf.updateIfSet   ("additive_lods",    _additiveLODs);
             conf.updateObjIfSet("settings",         _settings);
             conf.updateIfSet   ("create_index",     _createIndex);
+            conf.updateIfSet   ("priority_offset",  _priorityOffset);
+            conf.updateIfSet   ("priority_scale",   _priorityScale);
             return conf;
         }
 
@@ -97,6 +109,8 @@ namespace osgEarth { namespace Buildings
             conf.getIfSet   ("additive_lods",    _additiveLODs);
             conf.getObjIfSet("settings",         _settings);
             conf.getIfSet   ("create_index",     _createIndex);
+            conf.getIfSet   ("priority_offset",  _priorityOffset);
+            conf.getIfSet   ("priority_scale",   _priorityScale);
         }
 
         optional<FeatureSourceOptions> _featureSourceOptions;
@@ -107,6 +121,8 @@ namespace osgEarth { namespace Buildings
         optional<bool> _additiveLODs;
         optional<CompilerSettings> _settings;
         optional<bool> _createIndex;
+        optional<float> _priorityOffset;
+        optional<float> _priorityScale;
     };
 } }
 

@@ -30,14 +30,15 @@ namespace osgEarth { namespace Buildings
     using namespace osgEarth;
 
     class OSGEARTHBUILDINGS_EXPORT BuildingExtension : public Extension,
-                                                       public ExtensionInterface<MapNode>
+                                                       public ExtensionInterface<MapNode>,
+                                                       public BuildingOptions
     {
     public:
         META_Object(osgEarthBuildings, BuildingExtension);
 
         /** constructor */
         BuildingExtension();
-        BuildingExtension(const BuildingOptions& );
+        BuildingExtension(const BuildingOptions&);
 
         /** destructor */
         virtual ~BuildingExtension();
@@ -57,7 +58,6 @@ namespace osgEarth { namespace Buildings
     private:
         osg::ref_ptr<osg::Group> _root;
         osg::ref_ptr<const osgDB::Options> _dbo;
-        const BuildingOptions              _options;
 
         osg::ref_ptr<CacheBin> _cacheBin;
         optional<CachePolicy>  _cachePolicy;

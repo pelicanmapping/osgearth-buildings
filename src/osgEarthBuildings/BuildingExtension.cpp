@@ -39,7 +39,7 @@ BuildingExtension::BuildingExtension()
 }
 
 BuildingExtension::BuildingExtension(const BuildingOptions& options) :
-_options(options)
+BuildingOptions(options)
 {
     //nop
 }
@@ -64,7 +64,7 @@ BuildingExtension::connect(MapNode* mapNode)
     OE_START_TIMER(start);
 
     // Load the features source.
-    osg::ref_ptr<FeatureSource> features = FeatureSourceFactory::create(_options.featureOptions().get());
+    osg::ref_ptr<FeatureSource> features = FeatureSourceFactory::create(featureOptions().get());
     if ( !features.valid() )
     {
         OE_WARN << LC << "Failed to create feature source\n";
@@ -75,12 +75,12 @@ BuildingExtension::connect(MapNode* mapNode)
     features->initialize(_dbo.get());
 
     // Set up a feature session with a cache:
-    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), _options.styles().get(), features, _dbo.get() );
+    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _dbo.get() );
     session->setResourceCache( new ResourceCache(_dbo.get()) );
 
     // Load the building catalog:
     osg::ref_ptr<BuildingCatalog> catalog = new BuildingCatalog();
-    if ( !catalog->load(_options.buildingCatalog().get(), _dbo.get(), 0L) )
+    if ( !catalog->load(buildingCatalog().get(), _dbo.get(), 0L) )
     {
         OE_WARN << LC << "Failed to load the buildings catalog\n";
         catalog = 0L;
@@ -101,10 +101,12 @@ BuildingExtension::connect(MapNode* mapNode)
     pager->setFeatureSource   ( features.get() );
     pager->setCatalog         ( catalog.get() );
     pager->setCacheBin        ( _cacheBin.get(), _cachePolicy.get() );
-    pager->setCompilerSettings( _options.compilerSettings().get() );
+    pager->setCompilerSettings( compilerSettings().get() );
+    pager->setPriorityOffset  ( priorityOffset().get() );
+    pager->setPriorityScale   ( priorityScale().get() );
     pager->build();
 
-    if ( _options.createIndex() == true )
+    if ( createIndex() == true )
     {
         // create a feature index.
         FeatureSourceIndex* index = new FeatureSourceIndex(
@@ -150,9 +152,9 @@ BuildingExtension::initializeCaching()
         CachePolicy::fromOptions(_dbo.get(), _cachePolicy);
 
         // check for an overriding cache policy in this extension:
-        if ( _options.cachePolicy().isSet() )
+        if ( cachePolicy().isSet() )
         {
-            _cachePolicy->mergeAndOverride( _options.cachePolicy() );
+            _cachePolicy->mergeAndOverride( cachePolicy() );
         }
 
         // finally resolve with global overrides:
@@ -163,7 +165,7 @@ BuildingExtension::initializeCaching()
             Cache* cache = Cache::get(_dbo.get());
             if ( cache )
             {
-                Config conf = _options.getConfig();
+                Config conf = getConfig();
                 conf.remove( "cache_policy" );
                 std::string hash = Stringify() << "buildings." << hashString(conf.toJSON(false));
                 _cacheBin = cache->addBin( hash );
