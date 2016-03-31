@@ -49,8 +49,6 @@ BuildingPager::BuildingPager(const Profile* profile) :
 SimplePager( profile ),
 _index     ( 0L )
 {
-    _stateSetCache = new StateSetCache();
-
     // Replace tiles with higher LODs.
     setAdditive( false );
 
@@ -58,6 +56,9 @@ _index     ( 0L )
     setFileLocationCallback( new HighLatencyFileLocationCallback() );
 
     _profile = ::getenv("OSGEARTH_BUILDINGS_PROFILE") != 0L;
+
+    // An object cache for shared resources like textures, atlases, and instanced models.
+    _artCache = new osgDB::ObjectCache();
 }
 
 void
@@ -134,6 +135,18 @@ void BuildingPager::setIndex(FeatureIndexBuilder* index)
     _index = index;
 }
 
+bool
+BuildingPager::cacheReadsEnabled() const
+{
+    return _cacheBin.valid() && _cachePolicy.isCacheReadable();
+}
+
+bool
+BuildingPager::cacheWritesEnabled() const
+{
+    return _cacheBin.valid() && _cachePolicy.isCacheWriteable();
+}
+
 osg::Node*
 BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 {
@@ -154,74 +167,100 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
     // result:
     osg::ref_ptr<osg::Node> node;
-    
-    // Create a cursor to iterator over the feature data:
-    Query query;
-    query.tileKey() = tileKey;
-    osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor( query );
-    if ( cursor.valid() && cursor->hasMore() )
+
+    // name for this output block:
+
+    // Holds all the final output.
+    CompilerOutput output;
+    output.setName(tileKey.str());
+    output.setTileKey(tileKey);
+    output.setIndex(_index);
+    output.setArtCache(_artCache.get());
+
+    bool caching = true;
+
+    // Try to load from the cache.
+    if (cacheReadsEnabled())
     {
-        osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
+        node = output.readFromCache(_cacheBin.get(), progress);
+    }
 
-        factory->setSession( _session.get() );
-        factory->setCatalog( _catalog.get() );
-        factory->setClamper( _clamper.get() );
-        factory->setOutputSRS( _session->getMapSRS() );
-
-        std::string styleName = Stringify() << tileKey.getLOD();
-        const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
-        
-        bool canceled = false;
-
-        // Holds all the final output.
-        CompilerOutput output;
-        output.setIndex( _index );
-
-        // Prepare the terrain envelope, for clamping.
-        // TODO: review the LOD selection..
-        OE_START_TIMER(envelope);
-        osg::ref_ptr<TerrainEnvelope> envelope = factory->getClamper()->createEnvelope( tileKey.getExtent(), tileKey.getLOD() ); //13u );
-        if ( progress && progress->collectStats() )
-            progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
-
-        while( cursor->hasMore() && !canceled )
+    if (!node.valid())
+    {
+        // Create a cursor to iterator over the feature data:
+        Query query;
+        query.tileKey() = tileKey;
+        osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor(query);
+        if (cursor.valid() && cursor->hasMore())
         {
-            Feature* feature = cursor->nextFeature();
-            numFeatures++;
+            osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
 
-            BuildingVector buildings;
-            if ( !factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, progress) )
-                canceled = true;
+            factory->setSession(_session.get());
+            factory->setCatalog(_catalog.get());
+            factory->setClamper(_clamper.get());
+            factory->setOutputSRS(_session->getMapSRS());
 
-            if ( !canceled && !buildings.empty() )
+            std::string styleName = Stringify() << tileKey.getLOD();
+            const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
+
+            bool canceled = false;
+
+            // Prepare the terrain envelope, for clamping.
+            // TODO: review the LOD selection..
+            OE_START_TIMER(envelope);
+            osg::ref_ptr<TerrainEnvelope> envelope = factory->getClamper()->createEnvelope(tileKey.getExtent(), tileKey.getLOD());
+            if (progress && progress->collectStats())
+                progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
+
+            while (cursor->hasMore() && !canceled)
             {
-                if ( output.getLocalToWorld().isIdentity() )
-                {
-                    output.setLocalToWorld( buildings.front()->getReferenceFrame() );
-                }
+                Feature* feature = cursor->nextFeature();
+                numFeatures++;
 
-                // for indexing, if enabled:
-                output.setCurrentFeature( feature );
+                BuildingVector buildings;
+                if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, progress))
+                    canceled = true;
 
-                for(BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
+                if (!canceled && !buildings.empty())
                 {
-                    if ( !_compiler->compile(buildings, output, progress) )
-                        canceled = true;
+                    if (output.getLocalToWorld().isIdentity())
+                    {
+                        output.setLocalToWorld(buildings.front()->getReferenceFrame());
+                    }
+
+                    // for indexing, if enabled:
+                    output.setCurrentFeature(feature);
+
+                    for (BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
+                    {
+                        if (!_compiler->compile(buildings, output, progress))
+                            canceled = true;
+                    }
                 }
+            }
+
+            if (!canceled)
+            {
+                // set the distance at which details become visible.
+                osg::BoundingSphere tileBound = getBounds(tileKey);
+                output.setRange(tileBound.radius() * getRangeFactor());
+                node = output.createSceneGraph(_session.get(), _compilerSettings, progress);
+            }
+            else
+            {
+                //OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
             }
         }
 
-        if ( !canceled )
+        if (node.valid() && cacheWritesEnabled())
         {
-            // set the distance at which details become visible.
-            osg::BoundingSphere tileBound = getBounds( tileKey );
-            output.setRange( tileBound.radius() * getRangeFactor() );
-            node = output.createSceneGraph(_session.get(), _compilerSettings, progress);
+            output.writeToCache(node, _cacheBin.get(), progress);
         }
-        else
-        {
-            //OE_INFO << LC << "Tile " << tileKey.str() << " was canceled " << progress->message() << "\n";
-        }
+    }
+
+    if (node.valid())
+    {
+        output.postProcess(node.get(), progress);
     }
 
     Registry::instance()->endActivity(activityName);

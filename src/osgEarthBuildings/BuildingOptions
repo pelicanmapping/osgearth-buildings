@@ -69,6 +69,10 @@ namespace osgEarth { namespace Buildings
         optional<float>& priorityScale() { return _priorityScale; }
         const optional<float>& priorityScale() const { return _priorityScale; }
 
+        /** Cache identifier; defaults to a hash of this options structure */
+        optional<std::string>& cacheId() { return _cacheId; }
+        const optional<std::string>& cacheId() const { return _cacheId;  }
+
     public:
         BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
             _lod.init( 14u );
@@ -91,6 +95,7 @@ namespace osgEarth { namespace Buildings
             conf.updateIfSet   ("create_index",     _createIndex);
             conf.updateIfSet   ("priority_offset",  _priorityOffset);
             conf.updateIfSet   ("priority_scale",   _priorityScale);
+            conf.updateIfSet   ("cacheid",          _cacheId);
             return conf;
         }
 
@@ -111,6 +116,7 @@ namespace osgEarth { namespace Buildings
             conf.getIfSet   ("create_index",     _createIndex);
             conf.getIfSet   ("priority_offset",  _priorityOffset);
             conf.getIfSet   ("priority_scale",   _priorityScale);
+            conf.getIfSet   ("cacheid",          _cacheId);
         }
 
         optional<FeatureSourceOptions> _featureSourceOptions;
@@ -123,6 +129,7 @@ namespace osgEarth { namespace Buildings
         optional<bool> _createIndex;
         optional<float> _priorityOffset;
         optional<float> _priorityScale;
+        optional<std::string> _cacheId;
     };
 } }
 

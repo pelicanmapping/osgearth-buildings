@@ -31,6 +31,9 @@
 #include <osgEarthFeatures/FeatureIndex>
 #include <osgEarthUtil/SimplePager>
 
+#include <osgDB/ObjectCache>
+
+
 namespace osgEarth { namespace Buildings
 {
     using namespace osgEarth::Features;
@@ -73,7 +76,6 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<Session>             _session;
         osg::ref_ptr<FeatureSource>       _features;
         osg::ref_ptr<BuildingCatalog>     _catalog;
-        osg::ref_ptr<StateSetCache>       _stateSetCache;
         osg::ref_ptr<CacheBin>            _cacheBin;
         CachePolicy                       _cachePolicy;
         osg::ref_ptr<BuildingCompiler>    _compiler;
@@ -81,6 +83,10 @@ namespace osgEarth { namespace Buildings
         FeatureIndexBuilder*              _index;
         osg::ref_ptr<TerrainClamper>      _clamper;
         bool                              _profile;
+        osg::ref_ptr<osgDB::ObjectCache>  _artCache;
+
+        bool cacheReadsEnabled() const;
+        bool cacheWritesEnabled() const;
     };
 
 } } // namespace

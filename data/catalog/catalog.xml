@@ -211,10 +211,6 @@
         <url>models/red_flag.osg.10.scale</url>
     </model>
         
-    <model name="roof.asdasd" tags="roof clutter">
-        <url>H:/devel/osg/OpenSceneGraph-Data/cessnafire.osg</url>
-    </model>
-        
     <model name="roof.ac" tags="roof clutter">
         <url>models/ac.osgb</url>
     </model>

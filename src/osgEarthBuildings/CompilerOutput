@@ -44,6 +44,21 @@ namespace osgEarth { namespace Buildings
     public:
         CompilerOutput();
 
+        /** Name of this compiler output */
+        void setName(const std::string& name) { _name = name; }
+
+        /** Tile key of data that results in this output */
+        void setTileKey(const TileKey& key) { _key = key; }
+
+        /** Cache to use for external resources like textures */
+        void setArtCache(osgDB::ObjectCache* cache) { _artCache = cache; }
+
+        /** Read output from a cache bin */
+        osg::Node* readFromCache(CacheBin* cache, ProgressCallback* progress) const;
+
+        /** Write output to a cache bin */
+        void writeToCache(osg::Node*, CacheBin* cache, ProgressCallback*) const;
+
         /** Build and return a scene graph based on the output in this object. */
         osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings, ProgressCallback*) const;
 
@@ -63,6 +78,9 @@ namespace osgEarth { namespace Buildings
             calls to addDrawable or addInstance will prompt the indexer to tag the new
             data with this feature. */
         void setCurrentFeature(Feature* f) { _currentFeature = f; }
+
+
+        void postProcess(osg::Node* node, ProgressCallback* progress) const;
 
     public:
         
@@ -102,6 +120,16 @@ namespace osgEarth { namespace Buildings
         Feature* _currentFeature;
 
         float _range;
+
+        TileKey _key;
+        std::string _name;
+        osg::ref_ptr<osgDB::ObjectCache> _artCache;
+
+        mutable Threading::Mutex _cacheAccessMutex;
+
+        void prepareForCaching(osg::Node*) const;
+
+        std::string createCacheKey() const;
     };
 } }
 

@@ -167,8 +167,13 @@ BuildingExtension::initializeCaching()
             {
                 Config conf = getConfig();
                 conf.remove( "cache_policy" );
-                std::string hash = Stringify() << "buildings." << hashString(conf.toJSON(false));
-                _cacheBin = cache->addBin( hash );
+                std::string binName;
+                if (cacheId().isSet() && !cacheId()->empty())
+                    binName = Stringify() << "buildings." << cacheId().get();
+                else
+                    binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
+
+                _cacheBin = cache->addBin( binName );
             }
         }                
     }
