@@ -54,7 +54,7 @@ namespace osgEarth { namespace Buildings
         void setArtCache(osgDB::ObjectCache* cache) { _artCache = cache; }
 
         /** Read output from a cache bin */
-        osg::Node* readFromCache(CacheBin* cache, ProgressCallback* progress) const;
+        osg::Node* readFromCache(CacheBin* cache, const CachePolicy& policy, ProgressCallback* progress) const;
 
         /** Write output to a cache bin */
         void writeToCache(osg::Node*, CacheBin* cache, ProgressCallback*) const;

@@ -182,7 +182,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // Try to load from the cache.
     if (cacheReadsEnabled())
     {
-        node = output.readFromCache(_cacheBin.get(), progress);
+        node = output.readFromCache(_cacheBin.get(), _cachePolicy, progress);
     }
 
     if (!node.valid())

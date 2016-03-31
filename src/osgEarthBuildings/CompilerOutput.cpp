@@ -117,7 +117,7 @@ CompilerOutput::createCacheKey() const
 }
 
 osg::Node*
-CompilerOutput::readFromCache(CacheBin* cacheBin, ProgressCallback* progress) const
+CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, ProgressCallback* progress) const
 {
     //return 0L;
     if ( !cacheBin ) return 0L;
@@ -139,7 +139,13 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, ProgressCallback* progress) co
     osgEarth::ReadResult result = cacheBin->readObject(cacheKey, readOptions.get());
     if (result.succeeded())
     {
-        OE_INFO << "Loaded " << _name << " from the cache (key = " << cacheKey << ")\n";
+        if (policy.isExpired(result.lastModifiedTime()))
+        {
+            OE_DEBUG << LC << "Tile " << _name << " is cached but expired.\n";
+            return 0L;
+        }
+
+        OE_INFO << LC << "Loaded " << _name << " from the cache (key = " << cacheKey << ")\n";
         return result.releaseNode();
     }
 
