@@ -76,7 +76,11 @@ BuildingExtension::connect(MapNode* mapNode)
 
     // Set up a feature session with a cache:
     osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _dbo.get() );
-    session->setResourceCache( new ResourceCache(_dbo.get()) );
+    
+    // Install a resource cache that we will use for instanced models,
+    // but not for skins; b/c we want to cache skin statesets per tile. So there is
+    // a separate resource cache in the CompilerOutput class for that.
+    session->setResourceCache( new ResourceCache() );
 
     // Load the building catalog:
     osg::ref_ptr<BuildingCatalog> catalog = new BuildingCatalog();

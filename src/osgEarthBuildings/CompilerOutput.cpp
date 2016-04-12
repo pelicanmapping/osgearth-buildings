@@ -25,6 +25,7 @@
 #include <osgEarth/DrawInstanced>
 #include <osgEarth/Registry>
 #include <osgDB/WriteFile>
+#include <set>
 
 using namespace osgEarth;
 using namespace osgEarth::Buildings;
@@ -49,6 +50,8 @@ _currentFeature( 0L )
 
     _debugGroup = new osg::Group();
     _debugGroup->setName(DEBUG_ROOT);
+
+    _resourceCache = new ResourceCache();
 }
 
 void
@@ -117,7 +120,7 @@ CompilerOutput::createCacheKey() const
 }
 
 osg::Node*
-CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, ProgressCallback* progress) const
+CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, const osgDB::Options* readOptions, ProgressCallback* progress) const
 {
     //return 0L;
     if ( !cacheBin ) return 0L;
@@ -126,17 +129,12 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, Pro
     if (cacheKey.empty())
         return 0L;
 
-    // set up the reader to store shared texture images in the art cache.
-    osg::ref_ptr<osgDB::Options> readOptions = new osgDB::Options();
-    readOptions->setObjectCache(_artCache.get());
-    readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
-
-    Threading::ScopedMutexLock lock(_cacheAccessMutex);
+    //Threading::ScopedMutexLock lock(_cacheAccessMutex);
 
     // read from the cache.
     osg::ref_ptr<osg::Node> node;
 
-    osgEarth::ReadResult result = cacheBin->readObject(cacheKey, readOptions.get());
+    osgEarth::ReadResult result = cacheBin->readObject(cacheKey, readOptions);
     if (result.succeeded())
     {
         if (policy.isExpired(result.lastModifiedTime()))
@@ -167,7 +165,7 @@ CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallba
 
     prepareForCaching(node);
 
-    Threading::ScopedMutexLock lock(_cacheAccessMutex);
+    //Threading::ScopedMutexLock lock(_cacheAccessMutex);
 
     osg::ref_ptr<osgDB::Options> writeOptions = new osgDB::Options();
     writeOptions->setPluginStringData("Compressor", "zlib");
@@ -188,6 +186,7 @@ CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallba
 osg::Node*
 CompilerOutput::createSceneGraph(Session*                session,
                                  const CompilerSettings& settings,
+                                 const osgDB::Options*   readOptions,
                                  ProgressCallback*       progress) const
 {
     OE_START_TIMER(total);
@@ -218,26 +217,19 @@ CompilerOutput::createSceneGraph(Session*                session,
     }
     
     // Run an optimization pass before adding any debug data or models
+    // NOTE: be careful; don't mess with state during optimization.
     OE_START_TIMER(optimize);
     {
         // because the default merge limit is 10000 and there's no other way to change it
         osgUtil::Optimizer::MergeGeometryVisitor mgv;
         mgv.setTargetMaximumNumberOfVertices( 250000u );
         root->accept( mgv );
-    
-        // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data, kills precision
-        osgUtil::Optimizer o;
-        o.optimize( root,
-            o.COMBINE_ADJACENT_LODS |
-            o.SHARE_DUPLICATE_STATE |
-            o.STATIC_OBJECT_DETECTION );
     }
     double optimizeTime = OE_GET_TIMER(optimize);
 
-
+    
     // install the model instances, creating one instance group for each model.
     OE_START_TIMER(instances);
-    if ( session && session->getResourceCache() )
     {
         // group to hold all instanced models:
         osg::LOD* instances = new osg::LOD();
@@ -248,10 +240,6 @@ CompilerOutput::createSceneGraph(Session*                session,
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
         ModelNodes modelNodes;
 
-        osg::ref_ptr<osgDB::Options> proxyOptions = new osgDB::Options();
-        proxyOptions->setObjectCache(_artCache.get());
-        proxyOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
-
         for(InstanceMap::const_iterator i = _instances.begin(); i != _instances.end(); ++i)
         {
             ModelResource* res = i->first.get();
@@ -259,8 +247,12 @@ CompilerOutput::createSceneGraph(Session*                session,
             // look up or create the node corresponding to this instance:
             osg::ref_ptr<osg::Node>& modelNode = modelNodes[res];
             if (!modelNode.valid())
-            {
-                if (!session->getResourceCache()->cloneOrCreateInstanceNode(res, modelNode))
+            {                
+                // Instance models use the GLOBAL resource cache, so that an instance model gets
+                // loaded only once. Then it's cloned for each tile. That way the shader generator
+                // will never touch live data. (Note that texture images are memory-cached in the
+                // readOptions.)
+                if (!session->getResourceCache()->cloneOrCreateInstanceNode(res, modelNode, readOptions))
                 {
                     OE_WARN << LC << "Failed to materialize resource " << res->uri()->full() << "\n";
                 }

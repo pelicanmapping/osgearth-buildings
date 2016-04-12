@@ -106,7 +106,7 @@ namespace osgEarth { namespace Buildings
 
             osg::ref_ptr<Session> session = new Session(0L);
             session->setStyles( sheet );
-            session->setResourceCache( new ResourceCache(options) );
+            //session->setResourceCache( new ResourceCache(options) );
 
             // Load the building catalog:
             osg::ref_ptr<BuildingCatalog> cat = new BuildingCatalog();
@@ -124,7 +124,7 @@ namespace osgEarth { namespace Buildings
             BuildingVector buildings;
             while(cursor->hasMore())
             {
-                factory->create(cursor->nextFeature(), GeoExtent::INVALID, 0L, 0L, buildings);
+                factory->create(cursor->nextFeature(), GeoExtent::INVALID, 0L, 0L, buildings, 0L);
             }
             OE_INFO << LC << "Created " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(start) << "s" << std::endl;
 
@@ -132,9 +132,9 @@ namespace osgEarth { namespace Buildings
             OE_START_TIMER(compile);
             CompilerOutput output;
             osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
-            compiler->compile(buildings, output);
+            compiler->compile(buildings, output, 0L);
 
-            osg::Node* node = output.createSceneGraph( session, CompilerSettings(), 0L );
+            osg::Node* node = output.createSceneGraph( session, CompilerSettings(), 0L, 0L );
 
             OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
 

@@ -41,10 +41,11 @@ namespace osgEarth { namespace Buildings
 
     public:
         virtual bool compile(
-            CompilerOutput&    output,
-            const Building*    building,
-            const Elevation*   elevation,            
-            const osg::Matrix& world2local) const;
+            CompilerOutput&       output,
+            const Building*       building,
+            const Elevation*      elevation,            
+            const osg::Matrix&    world2local,
+            const osgDB::Options* readOptions) const;
 
     protected:
         osg::ref_ptr<Session> _session;

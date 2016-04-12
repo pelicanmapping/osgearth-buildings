@@ -43,6 +43,7 @@ _session( session )
 bool
 BuildingCompiler::compile(const BuildingVector& input,
                           CompilerOutput&       output,
+                          const osgDB::Options* readOptions,
                           ProgressCallback*     progress)
 {
     OE_START_TIMER(total);
@@ -73,7 +74,7 @@ BuildingCompiler::compile(const BuildingVector& input,
 
         if ( building->externalModelURI().isSet() )
         {
-            addExternalModel( output, building, output.getWorldToLocal(), progress );
+            addExternalModel( output, building, output.getWorldToLocal(), readOptions, progress );
         }
         else if ( building->getInstancedModelResource() )
         {
@@ -81,7 +82,7 @@ BuildingCompiler::compile(const BuildingVector& input,
         }
         else
         {
-            addElevations( output, building, building->getElevations(), output.getWorldToLocal() );
+            addElevations( output, building, building->getElevations(), output.getWorldToLocal(), readOptions);
         }
     }
 
@@ -94,12 +95,15 @@ BuildingCompiler::compile(const BuildingVector& input,
 }
 
 bool
-BuildingCompiler::addExternalModel(CompilerOutput&    output,
-                                   const Building*    building,
-                                   const osg::Matrix& world2local,
-                                   ProgressCallback*  progress) const
+BuildingCompiler::addExternalModel(CompilerOutput&       output,
+                                   const Building*       building,
+                                   const osg::Matrix&    world2local,
+                                   const osgDB::Options* readOptions,
+                                   ProgressCallback*     progress) const
 {
-    osg::ref_ptr<osg::Node> node = building->getExternalModelURI().getNode(_session->getDBOptions(), progress);
+    // TODO: perhaps disable the image caching for an external model, 
+    //       since it probably won't be shared?
+    osg::ref_ptr<osg::Node> node = building->getExternalModelURI().getNode(readOptions, progress);
     if ( node.valid() )
     {
         osg::MatrixTransform* xform = new osg::MatrixTransform( building->getReferenceFrame() * world2local );
@@ -113,7 +117,8 @@ bool
 BuildingCompiler::addElevations(CompilerOutput&        output,
                                 const Building*        building,
                                 const ElevationVector& elevations,
-                                const osg::Matrix&     world2local) const
+                                const osg::Matrix&     world2local,
+                                const osgDB::Options*  readOptions) const
 {
     if ( !building ) return false;
 
@@ -124,16 +129,16 @@ BuildingCompiler::addElevations(CompilerOutput&        output,
     {
         const Elevation* elevation = e->get();
      
-        _elevationCompiler->compile( output, building, elevation, world2local );
+        _elevationCompiler->compile( output, building, elevation, world2local, readOptions);
 
         if ( elevation->getRoof() )
         {
-            addRoof( output, building, elevation, world2local );
+            addRoof( output, building, elevation, world2local, readOptions );
         }
 
         if ( !elevation->getElevations().empty() )
         {
-            addElevations( output, building, elevation->getElevations(), world2local );
+            addElevations( output, building, elevation->getElevations(), world2local, readOptions );
         }
 
     } // elevations loop
@@ -142,21 +147,25 @@ BuildingCompiler::addElevations(CompilerOutput&        output,
 }
 
 bool
-BuildingCompiler::addRoof(CompilerOutput& output, const Building* building, const Elevation* elevation, const osg::Matrix& world2local) const
+BuildingCompiler::addRoof(CompilerOutput&       output, 
+                          const Building*       building, 
+                          const Elevation*      elevation, 
+                          const osg::Matrix&    world2local, 
+                          const osgDB::Options* readOptions) const
 {
     if ( elevation && elevation->getRoof() )
     {
         if ( elevation->getRoof()->getType() == Roof::TYPE_GABLE )
         {
-            return _gableRoofCompiler->compile(output, building, elevation, world2local);
+            return _gableRoofCompiler->compile(output, building, elevation, world2local, readOptions);
         }
         else if ( elevation->getRoof()->getType() == Roof::TYPE_INSTANCED )
         {
-            return _instancedRoofCompiler->compile(output, building, elevation, world2local);
+            return _instancedRoofCompiler->compile(output, building, elevation, world2local, readOptions);
         }
         else
         {
-            return _flatRoofCompiler->compile(output, building, elevation, world2local);
+            return _flatRoofCompiler->compile(output, building, elevation, world2local, readOptions);
         }
     }
     return false;

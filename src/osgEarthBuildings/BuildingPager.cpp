@@ -168,22 +168,35 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // result:
     osg::ref_ptr<osg::Node> node;
 
-    // name for this output block:
+
+    // I/O Options to use throughout the build process.
+    // Install an "art cache" in the read options so that images can be 
+    // shared throughout the creation process. This is critical for sharing 
+    // textures and especially for texture atlas usage.
+    osg::ref_ptr<osgDB::Options> readOptions = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
+    readOptions->setObjectCache(_artCache.get());
+    readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
+
 
     // Holds all the final output.
     CompilerOutput output;
     output.setName(tileKey.str());
     output.setTileKey(tileKey);
     output.setIndex(_index);
-    output.setArtCache(_artCache.get());
 
     bool caching = true;
+
+    // Test. Using a mutex here avoids any and all threading issues.
+    //static Threading::Mutex blocker;
+    //Threading::ScopedMutexLock lock(blocker);
 
     // Try to load from the cache.
     if (cacheReadsEnabled())
     {
-        node = output.readFromCache(_cacheBin.get(), _cachePolicy, progress);
+        node = output.readFromCache(_cacheBin.get(), _cachePolicy, readOptions, progress);
     }
+
+    bool fromCache = node.valid();
 
     if (!node.valid())
     {
@@ -218,8 +231,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 numFeatures++;
 
                 BuildingVector buildings;
-                if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, progress))
+                if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, readOptions, progress))
+                {
                     canceled = true;
+                }
 
                 if (!canceled && !buildings.empty())
                 {
@@ -233,8 +248,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
                     for (BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
                     {
-                        if (!_compiler->compile(buildings, output, progress))
+                        if (!_compiler->compile(buildings, output, readOptions, progress))
+                        {
                             canceled = true;
+                        }
                     }
                 }
             }
@@ -244,7 +261,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 // set the distance at which details become visible.
                 osg::BoundingSphere tileBound = getBounds(tileKey);
                 output.setRange(tileBound.radius() * getRangeFactor());
-                node = output.createSceneGraph(_session.get(), _compilerSettings, progress);
+                node = output.createSceneGraph(_session.get(), _compilerSettings, readOptions, progress);
             }
             else
             {

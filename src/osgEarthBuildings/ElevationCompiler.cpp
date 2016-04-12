@@ -29,10 +29,11 @@ using namespace osgEarth::Buildings;
 
 
 bool
-ElevationCompiler::compile(CompilerOutput&    output,
-                           const Building*    building,
-                           const Elevation*   elevation,
-                           const osg::Matrix& world2local) const
+ElevationCompiler::compile(CompilerOutput&       output,
+                           const Building*       building,
+                           const Elevation*      elevation,
+                           const osg::Matrix&    world2local,
+                           const osgDB::Options* readOptions) const
 {
     if ( !building ) return false;
     if ( !elevation ) return false;
@@ -60,10 +61,9 @@ ElevationCompiler::compile(CompilerOutput&    output,
     osg::ref_ptr<osg::StateSet> stateSet;
     if ( skin )
     {
-        if ( _session->getResourceCache() )
-        {
-            _session->getResourceCache()->getOrCreateStateSet(skin, stateSet);
-        }
+        // use the tile's local resource cache for skin statesets to prevent
+        // sharing statesets with live data.
+        output.getLocalResourceCache()->getOrCreateStateSet(skin, stateSet, readOptions);
 
         texWidth = skin->imageWidth().get();
         texHeight = skin->imageHeight().get();

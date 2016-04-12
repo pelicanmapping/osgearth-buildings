@@ -29,10 +29,11 @@ using namespace osgEarth::Buildings;
 #define LC "[InstancedRoofCompiler] "
 
 bool
-InstancedRoofCompiler::compile(CompilerOutput&    output,
-                               const Building*    building,
-                               const Elevation*   elevation,
-                               const osg::Matrix& world2local) const
+InstancedRoofCompiler::compile(CompilerOutput&       output,
+                               const Building*       building,
+                               const Elevation*      elevation,
+                               const osg::Matrix&    world2local,
+                               const osgDB::Options* readOptions) const
 {
     if ( !building ) return false;
     if ( !elevation ) return false;

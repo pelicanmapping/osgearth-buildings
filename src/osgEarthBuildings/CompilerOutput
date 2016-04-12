@@ -50,17 +50,14 @@ namespace osgEarth { namespace Buildings
         /** Tile key of data that results in this output */
         void setTileKey(const TileKey& key) { _key = key; }
 
-        /** Cache to use for external resources like textures */
-        void setArtCache(osgDB::ObjectCache* cache) { _artCache = cache; }
-
         /** Read output from a cache bin */
-        osg::Node* readFromCache(CacheBin* cache, const CachePolicy& policy, ProgressCallback* progress) const;
+        osg::Node* readFromCache(CacheBin* cache, const CachePolicy& policy, const osgDB::Options* readOptions, ProgressCallback* progress) const;
 
         /** Write output to a cache bin */
         void writeToCache(osg::Node*, CacheBin* cache, ProgressCallback*) const;
 
         /** Build and return a scene graph based on the output in this object. */
-        osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings, ProgressCallback*) const;
+        osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings, const osgDB::Options* readOptions, ProgressCallback*) const;
 
         void setRange(float value) { _range = value; }
         float getRange() const     { return _range; }
@@ -73,6 +70,9 @@ namespace osgEarth { namespace Buildings
         /** Feature index to use (optional) */
         void setIndex(FeatureIndexBuilder* index) { _index = index; }
         FeatureIndexBuilder* getIndex()           { return _index; }
+        
+        /** Access to the dedicated resource cache for this compiler output */
+        ResourceCache* getLocalResourceCache() const { return _resourceCache.get(); }
 
         /** Sets the currently active feature (for indexing purposes). If an index is set,
             calls to addDrawable or addInstance will prompt the indexer to tag the new
@@ -115,6 +115,9 @@ namespace osgEarth { namespace Buildings
 
         osg::ref_ptr<osg::Group> _debugGroup;
 
+        // caches catalog resources like skins and instanced models for this output object.
+        osg::ref_ptr<ResourceCache> _resourceCache;
+
         FeatureIndexBuilder* _index;
 
         Feature* _currentFeature;
@@ -123,8 +126,8 @@ namespace osgEarth { namespace Buildings
 
         TileKey _key;
         std::string _name;
-        osg::ref_ptr<osgDB::ObjectCache> _artCache;
-
+        
+        // temporary - testing
         mutable Threading::Mutex _cacheAccessMutex;
 
         void prepareForCaching(osg::Node*) const;

@@ -264,6 +264,7 @@ BuildingFactory::create(Feature*               feature,
                         const TerrainEnvelope* terrain,
                         const Style*           style,
                         BuildingVector&        output,
+                        const osgDB::Options*  readOptions,
                         ProgressCallback*      progress)
 {
     if ( !feature || !feature->getGeometry() )
@@ -298,11 +299,11 @@ BuildingFactory::create(Feature*               feature,
 
     // Construct a context to use during the build process.
     BuildContext context;
-    context.setDBOptions( _session->getDBOptions() );
+    context.setDBOptions( readOptions ); //_session->getDBOptions() );
     context.setResourceLibrary( reslib );
 
     // URI context for external models
-    URIContext uriContext( _session->getDBOptions() );
+    URIContext uriContext( readOptions ); //_session->getDBOptions() );
 
     // Set up mutable expression instances:
     optional<StringExpression>  modelExpr;

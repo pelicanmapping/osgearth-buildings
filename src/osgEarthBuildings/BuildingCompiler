@@ -53,6 +53,7 @@ namespace osgEarth { namespace Buildings
         virtual bool compile(
             const BuildingVector& input,
             CompilerOutput&       output,
+            const osgDB::Options* readOptions,
             ProgressCallback*     progress =0L);
 
     protected:
@@ -60,11 +61,11 @@ namespace osgEarth { namespace Buildings
 
         const Style& getStyle() const;
 
-        virtual bool addExternalModel(CompilerOutput&, const Building*,  const osg::Matrix&, ProgressCallback*) const;
+        virtual bool addExternalModel(CompilerOutput&, const Building*, const osg::Matrix&, const osgDB::Options* readOptions, ProgressCallback*) const;
 
-        virtual bool addElevations(CompilerOutput&, const Building*, const ElevationVector&, const osg::Matrix&) const;
+        virtual bool addElevations(CompilerOutput&, const Building*, const ElevationVector&, const osg::Matrix&, const osgDB::Options* readOptions) const;
 
-        virtual bool addRoof(CompilerOutput&, const Building*, const Elevation*, const osg::Matrix&) const;
+        virtual bool addRoof(CompilerOutput&, const Building*, const Elevation*, const osg::Matrix&, const osgDB::Options* readOptions) const;
 
     protected:
         osg::ref_ptr<Session>                   _session;
