@@ -209,7 +209,7 @@ namespace
                 if (!osgEarth::startsWith(path, "oe_img_"))
                 {
                     std::string cacheKey = Stringify() << "oe_img_" << std::hex << osgEarth::hashString(path);
-                    image.setFileName(cacheKey);
+                    image.setFileName(cacheKey + ".osgb");
                     image.setWriteHint(osg::Image::WriteHint::EXTERNAL_FILE);
 
                     CacheBin::RecordStatus rs = _bin->getRecordStatus(cacheKey);

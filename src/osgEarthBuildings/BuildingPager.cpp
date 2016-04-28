@@ -20,6 +20,7 @@
 #include <osgEarth/Registry>
 #include <osgEarthSymbology/Query>
 #include <osgUtil/Optimizer>
+#include <osg/Version>
 
 #define LC "[BuildingPager] "
 
@@ -77,8 +78,13 @@ _index     ( 0L )
     // An object cache for shared resources like textures, atlases, and instanced models.
     _artCache = new osgDB::ObjectCache();
 
+#if OSG_VERSION_GREATER_OR_EQUAL(3,5,1)
+    // Read this to see why the version check exists:
+    // https://github.com/openscenegraph/OpenSceneGraph/commit/5b17e3bc2a0c02cf84d891bfdccf14f170ee0ec8
+
     // This callack expires unused items from the art cache periodically
     this->addCullCallback(new TendArtCacheCallback(_artCache.get()));
+#endif
 }
 
 void
