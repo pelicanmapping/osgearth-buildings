@@ -138,8 +138,6 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, con
     if (cacheKey.empty())
         return 0L;
 
-    //Threading::ScopedMutexLock lock(_cacheAccessMutex);
-
     // read from the cache.
     osg::ref_ptr<osg::Node> node;
 
@@ -164,6 +162,8 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, con
 
 namespace
 {
+#define IMAGE_PREFIX "i_"
+
     struct WriteImagesToCache : public osgEarth::TextureAndImageVisitor
     {
         CacheBin*         _bin;
@@ -194,22 +194,25 @@ namespace
 
         void apply(osg::Image& image)
         {
-            //image.setWriteHint(osg::Image::WriteHint::EXTERNAL_FILE);
-
             std::string path = image.getFileName();
             if (path.empty())
             {
                 OE_WARN << LC << "ERROR image with blank filename.\n";
             }
 
-            if (!osgEarth::startsWith(path, "oe_img_"))
+            if (!osgEarth::startsWith(path, IMAGE_PREFIX))
             {
+                // take a plugin-global mutex to avoid two threads altering the image
+                // at the same time
                 Threading::ScopedMutexLock lock(_mutex);
 
-                if (!osgEarth::startsWith(path, "oe_img_"))
+                if (!osgEarth::startsWith(path, IMAGE_PREFIX))
                 {
-                    std::string cacheKey = Stringify() << "oe_img_" << std::hex << osgEarth::hashString(path);
-                    image.setFileName(cacheKey + ".osgb");
+                    std::string cacheKey = Stringify() << IMAGE_PREFIX << std::hex << osgEarth::hashString(path);
+
+                    // TODO: adding the .osgb here works with the file system cache only.
+                    // We need to use a pseudoloader to route this load to a cache bin
+                    image.setFileName(cacheKey + ".osgearth_cachebin");
                     image.setWriteHint(osg::Image::WriteHint::EXTERNAL_FILE);
 
                     CacheBin::RecordStatus rs = _bin->getRecordStatus(cacheKey);
@@ -248,26 +251,16 @@ CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallba
 
     prepareForCaching(node);
 
-    //Threading::ScopedMutexLock lock(_cacheAccessMutex);
-
     osg::ref_ptr<osgDB::Options> writeOptions = new osgDB::Options();
     writeOptions->setPluginStringData("Compressor", "zlib");
     writeOptions->setPluginStringData("WriteImageHint", "UseExternal");
-    //writeOptions->setPluginStringData("WriteImageHint", "IncludeData");   // works, but very slow to write
-    //writeOptions->setPluginStringData("WriteImageHint", "IncludeFile");   // no good - crashes OSG
 
-    // Custom image cacher.
+    // Write any referenced images to the cache:
     WriteImagesToCache writeImages(cacheBin, writeOptions.get(), *_globalMutex);
     node->accept(writeImages);
-    
-#if 0
-    std::string name = _name;
-    osgEarth::replaceIn(name, "/", "_");
-    std::string file = "cache/buildings.osm/" + name + ".osgt";
-    osgDB::writeNodeFile(*node, file, writeOptions.get());
-#else
+
+    // Write the node to the cache:
     cacheBin->write(cacheKey, node, writeOptions.get());
-#endif
 
     OE_INFO << LC << "Wrote " << _name << " to cache (key = " << cacheKey << ")\n";
 }

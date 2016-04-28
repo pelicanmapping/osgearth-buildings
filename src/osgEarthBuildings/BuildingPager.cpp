@@ -202,7 +202,13 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     osg::ref_ptr<osgDB::Options> readOptions = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
     readOptions->setObjectCache(_artCache.get());
     readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
-
+    
+    // install the cache bin in the read options, so we can resolve external references
+    // to images, etc. stored in the same cache bin
+    if (_cacheBin.valid())
+    {
+        _cacheBin->put(readOptions.get());
+    }
 
     // Holds all the final output.
     CompilerOutput output;
