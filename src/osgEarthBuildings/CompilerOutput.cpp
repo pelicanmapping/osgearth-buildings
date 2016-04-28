@@ -24,6 +24,7 @@
 #include <osgEarth/ShaderGenerator>
 #include <osgEarth/DrawInstanced>
 #include <osgEarth/Registry>
+#include <osgEarth/ImageUtils>
 #include <osgDB/WriteFile>
 #include <set>
 
@@ -43,7 +44,8 @@ using namespace osgEarth::Buildings;
 CompilerOutput::CompilerOutput() :
 _range( FLT_MAX ),
 _index( 0L ),
-_currentFeature( 0L )
+_currentFeature( 0L ),
+_globalMutex( 0L )
 {
     _externalModelsGroup = new osg::Group();
     _externalModelsGroup->setName(EXTERNALS_ROOT);
@@ -97,6 +99,12 @@ CompilerOutput::addInstance(ModelResource* model, const osg::Matrix& matrix)
 std::string
 CompilerOutput::createCacheKey() const
 {
+#if 1
+    if (_key.valid())
+    {
+        return Stringify() << _key.getLOD() << "_" << _key.getTileX() << "_" << _key.getTileY();
+    }
+#else
     if (_key.valid())
     {
         unsigned x, y;
@@ -109,6 +117,7 @@ CompilerOutput::createCacheKey() const
         osgEarth::replaceIn(key2, "/", "_");
         return Stringify() << _key.getLOD() << "_" << xbin << "_" << ybin << "/" << key2;
     }
+#endif
     else if (!_name.empty())
     {
         return _name;
@@ -153,6 +162,80 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, con
     }
 }
 
+namespace
+{
+    struct WriteImagesToCache : public osgEarth::TextureAndImageVisitor
+    {
+        CacheBin*         _bin;
+        osgDB::Options*   _writeOptions;
+        Threading::Mutex& _mutex;
+
+        WriteImagesToCache(CacheBin* bin, osgDB::Options* writeOptions, Threading::Mutex& mutex)
+            : TextureAndImageVisitor(), _bin(bin), _writeOptions(writeOptions), _mutex(mutex)
+        {
+            setTraversalMode( TRAVERSE_ALL_CHILDREN );
+            setNodeMaskOverride( ~0L );
+        }
+
+        void apply(osg::Texture& texture)
+        {
+            if (texture.getNumImages() == 0 || texture.getImage(0) == 0L)
+            {
+                OE_WARN << LC << "Texture " << texture.getName() << " has NULL images!\n";
+            }
+
+            if (texture.getTextureWidth() > 100000)
+            {
+                OE_WARN << LC << "What's up doc!\n";
+                exit(0);
+            }
+            TextureAndImageVisitor::apply(texture);
+        }
+
+        void apply(osg::Image& image)
+        {
+            //image.setWriteHint(osg::Image::WriteHint::EXTERNAL_FILE);
+
+            std::string path = image.getFileName();
+            if (path.empty())
+            {
+                OE_WARN << LC << "ERROR image with blank filename.\n";
+            }
+
+            if (!osgEarth::startsWith(path, "oe_img_"))
+            {
+                Threading::ScopedMutexLock lock(_mutex);
+
+                if (!osgEarth::startsWith(path, "oe_img_"))
+                {
+                    std::string cacheKey = Stringify() << "oe_img_" << std::hex << osgEarth::hashString(path);
+                    image.setFileName(cacheKey);
+                    image.setWriteHint(osg::Image::WriteHint::EXTERNAL_FILE);
+
+                    CacheBin::RecordStatus rs = _bin->getRecordStatus(cacheKey);
+                    if (rs != CacheBin::STATUS_OK)
+                    {
+                        // The OSGB serializer won't actually write the image data without this:
+                        osg::ref_ptr<osgDB::Options> dbo = osg::clone(_writeOptions);
+                        dbo->setPluginStringData("WriteImageHint", "IncludeData");
+
+                        OE_INFO << LC << "Writing image \"" << path << "\" to the cache as \"" << cacheKey << "\"\n";
+
+                        if (!_bin->write(cacheKey, &image, dbo.get()))
+                        {
+                            OE_WARN << LC << "...error, write failed!\n";
+                        }
+                    }
+                    else
+                    {
+                        //OE_INFO << LC << "..Image \"" << path << "\" already cached\n";
+                    }
+                }
+            }
+        }
+    };
+}
+
 void
 CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallback* progress) const
 {
@@ -170,6 +253,12 @@ CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallba
     osg::ref_ptr<osgDB::Options> writeOptions = new osgDB::Options();
     writeOptions->setPluginStringData("Compressor", "zlib");
     writeOptions->setPluginStringData("WriteImageHint", "UseExternal");
+    //writeOptions->setPluginStringData("WriteImageHint", "IncludeData");   // works, but very slow to write
+    //writeOptions->setPluginStringData("WriteImageHint", "IncludeFile");   // no good - crashes OSG
+
+    // Custom image cacher.
+    WriteImagesToCache writeImages(cacheBin, writeOptions.get(), *_globalMutex);
+    node->accept(writeImages);
     
 #if 0
     std::string name = _name;
@@ -435,9 +524,9 @@ namespace
                     {
                         osg::Texture* tex = dynamic_cast<osg::Texture*>(sa);
                         if (tex)
-                        {
-                            tex->setUnRefImageDataAfterApply(false);
-                            
+                        {              
+                            tex->setUnRefImageDataAfterApply(false);               
+
                             // OSG's DatabasePager attaches "marker objects" to Textures' UserData when it runs a
                             // FindCompileableGLObjectsVisitor. This operation is not thread-safe; it doesn't
                             // account for the possibility that the texture may already be in use elsewhere.
@@ -459,7 +548,9 @@ namespace
                                 {
                                     osg::Image* image = texClone->getImage(k);
                                     if ( image )
+                                    {
                                         applyUserData(*image);
+                                    }
                                 }
 
                                 applyUserData(*texClone);

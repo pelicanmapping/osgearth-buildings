@@ -42,6 +42,23 @@ namespace
 
         bool useFileCache() const { return false; }
     };
+
+    struct TendArtCacheCallback : public osg::NodeCallback
+    {
+        TendArtCacheCallback(osgDB::ObjectCache* cache) : _cache(cache) { }
+
+        void operator()(osg::Node* node, osg::NodeVisitor* nv)
+        {
+            if (nv->getFrameStamp())
+            {
+                _cache->updateTimeStampOfObjectsInCacheWithExternalReferences(nv->getFrameStamp()->getReferenceTime());
+                _cache->removeExpiredObjectsInCache(10.0);
+            }
+            traverse(node, nv);
+        }        
+        
+        osg::ref_ptr<osgDB::ObjectCache> _cache;
+    };
 }
 
 
@@ -59,6 +76,9 @@ _index     ( 0L )
 
     // An object cache for shared resources like textures, atlases, and instanced models.
     _artCache = new osgDB::ObjectCache();
+
+    // This callack expires unused items from the art cache periodically
+    this->addCullCallback(new TendArtCacheCallback(_artCache.get()));
 }
 
 void
@@ -183,6 +203,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     output.setName(tileKey.str());
     output.setTileKey(tileKey);
     output.setIndex(_index);
+    output.setGlobalMutex(&_globalMutex);
 
     bool caching = true;
 

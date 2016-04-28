@@ -84,6 +84,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<TerrainClamper>      _clamper;
         bool                              _profile;
         osg::ref_ptr<osgDB::ObjectCache>  _artCache;
+        Threading::Mutex                  _globalMutex;
 
         bool cacheReadsEnabled() const;
         bool cacheWritesEnabled() const;

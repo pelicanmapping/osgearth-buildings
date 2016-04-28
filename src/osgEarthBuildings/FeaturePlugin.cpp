@@ -143,8 +143,8 @@ namespace osgEarth { namespace Buildings
                 OE_START_TIMER(optimize);
 
                 // Note: FLATTEN_STATIC_TRANSFORMS is bad for geospatial data
-                osgUtil::Optimizer o;
-                o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
+                //osgUtil::Optimizer o;
+                //o.optimize( node, o.DEFAULT_OPTIMIZATIONS & (~o.FLATTEN_STATIC_TRANSFORMS) );
                 
                 node->setDataVariance( node->DYNAMIC ); // keeps the OSG optimizer from 
 

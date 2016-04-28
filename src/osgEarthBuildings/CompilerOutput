@@ -50,6 +50,9 @@ namespace osgEarth { namespace Buildings
         /** Tile key of data that results in this output */
         void setTileKey(const TileKey& key) { _key = key; }
 
+        /** Sets a global mutex to use for synchronization */
+        void setGlobalMutex(Threading::Mutex* mutex) { _globalMutex = mutex; }
+
         /** Read output from a cache bin */
         osg::Node* readFromCache(CacheBin* cache, const CachePolicy& policy, const osgDB::Options* readOptions, ProgressCallback* progress) const;
 
@@ -126,8 +129,9 @@ namespace osgEarth { namespace Buildings
 
         TileKey _key;
         std::string _name;
+
+        Threading::Mutex* _globalMutex;
         
-        // temporary - testing
         mutable Threading::Mutex _cacheAccessMutex;
 
         void prepareForCaching(osg::Node*) const;
