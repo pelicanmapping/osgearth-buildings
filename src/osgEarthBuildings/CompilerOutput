@@ -82,7 +82,7 @@ namespace osgEarth { namespace Buildings
             data with this feature. */
         void setCurrentFeature(Feature* f) { _currentFeature = f; }
 
-
+        /** Run on the result of cretaeSceneGraph or readFromCache to install VPs. */
         void postProcess(osg::Node* node, ProgressCallback* progress) const;
 
     public:
@@ -133,8 +133,6 @@ namespace osgEarth { namespace Buildings
         Threading::Mutex* _globalMutex;
         
         mutable Threading::Mutex _cacheAccessMutex;
-
-        void prepareForCaching(osg::Node*) const;
 
         std::string createCacheKey() const;
     };

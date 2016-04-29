@@ -44,6 +44,9 @@ namespace
         bool useFileCache() const { return false; }
     };
 
+    // Callback that culls unused stuff from the ObjectCache.
+    // Unfortunately we cannot use this in OSG < 3.5.1 because of an OSG threading bug;
+    // https://github.com/openscenegraph/OpenSceneGraph/commit/5b17e3bc2a0c02cf84d891bfdccf14f170ee0ec8 
     struct TendArtCacheCallback : public osg::NodeCallback
     {
         TendArtCacheCallback(osgDB::ObjectCache* cache) : _cache(cache) { }
@@ -217,6 +220,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     output.setIndex(_index);
     output.setGlobalMutex(&_globalMutex);
 
+    bool canceled = false;
     bool caching = true;
 
     // Test. Using a mutex here avoids any and all threading issues.
@@ -224,20 +228,22 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     //Threading::ScopedMutexLock lock(blocker);
 
     // Try to load from the cache.
-    if (cacheReadsEnabled())
+    if (cacheReadsEnabled() && !canceled)
     {
         node = output.readFromCache(_cacheBin.get(), _cachePolicy, readOptions, progress);
     }
 
     bool fromCache = node.valid();
 
-    if (!node.valid())
+    canceled = canceled || (progress && progress->isCanceled());
+
+    if (!node.valid() && !canceled)
     {
         // Create a cursor to iterator over the feature data:
         Query query;
         query.tileKey() = tileKey;
         osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor(query);
-        if (cursor.valid() && cursor->hasMore())
+        if (cursor.valid() && cursor->hasMore() && !canceled)
         {
             osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();
 
@@ -248,8 +254,6 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
             std::string styleName = Stringify() << tileKey.getLOD();
             const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
-
-            bool canceled = false;
 
             // Prepare the terrain envelope, for clamping.
             // TODO: review the LOD selection..
@@ -302,13 +306,13 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             }
         }
 
-        if (node.valid() && cacheWritesEnabled())
+        if (node.valid() && cacheWritesEnabled() && !canceled)
         {
             output.writeToCache(node, _cacheBin.get(), progress);
         }
     }
-
-    if (node.valid())
+    
+    if (node.valid() && !canceled)
     {
         output.postProcess(node.get(), progress);
     }
@@ -343,6 +347,13 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         progress->stats().clear();
     }
 
-    //todo
-    return node.release();
+    if (canceled)
+    {
+        OE_INFO << LC << "Building tile " << tileKey.str() << " - canceled\n";
+        return 0L;
+    }
+    else
+    {
+        return node.release();
+    }
 }
