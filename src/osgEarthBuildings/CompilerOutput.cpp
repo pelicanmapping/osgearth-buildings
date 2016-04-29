@@ -177,21 +177,6 @@ namespace
             setNodeMaskOverride( ~0L );
         }
 
-        void apply(osg::Texture& texture)
-        {
-            if (texture.getNumImages() == 0 || texture.getImage(0) == 0L)
-            {
-                OE_WARN << LC << "Texture " << texture.getName() << " has NULL images!\n";
-            }
-
-            if (texture.getTextureWidth() > 100000)
-            {
-                OE_WARN << LC << "What's up doc!\n";
-                exit(0);
-            }
-            TextureAndImageVisitor::apply(texture);
-        }
-
         void apply(osg::Image& image)
         {
             std::string path = image.getFileName();
