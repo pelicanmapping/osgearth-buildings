@@ -205,6 +205,9 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     osg::ref_ptr<osgDB::Options> readOptions = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
     readOptions->setObjectCache(_artCache.get());
     readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
+
+    // TESTING:
+    //OE_INFO << LC << "Art cache size = " << ((MyObjectCache*)(_artCache.get()))->getSize() << "\n";
     
     // install the cache bin in the read options, so we can resolve external references
     // to images, etc. stored in the same cache bin
@@ -218,19 +221,19 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     output.setName(tileKey.str());
     output.setTileKey(tileKey);
     output.setIndex(_index);
-    output.setGlobalMutex(&_globalMutex);
 
     bool canceled = false;
     bool caching = true;
 
-    // Test. Using a mutex here avoids any and all threading issues.
-    //static Threading::Mutex blocker;
-    //Threading::ScopedMutexLock lock(blocker);
-
     // Try to load from the cache.
     if (cacheReadsEnabled() && !canceled)
     {
+        OE_START_TIMER(readCache);
+
         node = output.readFromCache(_cacheBin.get(), _cachePolicy, readOptions, progress);
+
+        if (progress && progress->collectStats())
+            progress->stats("pager.readCache") = OE_GET_TIMER(readCache);
     }
 
     bool fromCache = node.valid();
@@ -308,13 +311,23 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
         if (node.valid() && cacheWritesEnabled() && !canceled)
         {
+            OE_START_TIMER(writeCache);
+
             output.writeToCache(node, _cacheBin.get(), progress);
+
+            if (progress && progress->collectStats())
+                progress->stats("pager.writeCache") = OE_GET_TIMER(writeCache);
         }
     }
     
     if (node.valid() && !canceled)
     {
+        OE_START_TIMER(postProcess);
+
         output.postProcess(node.get(), progress);
+
+        if (progress && progress->collectStats())
+            progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);
     }
 
     Registry::instance()->endActivity(activityName);
@@ -322,7 +335,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     double totalTime = OE_GET_TIMER(total);
 
     // STATS:
-    if ( progress && progress->collectStats() && !progress->stats().empty() && numFeatures > 0)
+    if ( progress && progress->collectStats() && !progress->stats().empty() && (fromCache ||numFeatures > 0))
     {
         std::stringstream buf;
         buf << "Key = " << tileKey.str() 

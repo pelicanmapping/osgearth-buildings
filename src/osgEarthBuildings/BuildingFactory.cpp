@@ -299,11 +299,11 @@ BuildingFactory::create(Feature*               feature,
 
     // Construct a context to use during the build process.
     BuildContext context;
-    context.setDBOptions( readOptions ); //_session->getDBOptions() );
+    context.setDBOptions( readOptions );
     context.setResourceLibrary( reslib );
 
     // URI context for external models
-    URIContext uriContext( readOptions ); //_session->getDBOptions() );
+    URIContext uriContext( readOptions );
 
     // Set up mutable expression instances:
     optional<StringExpression>  modelExpr;
@@ -396,6 +396,11 @@ BuildingFactory::create(Feature*               feature,
         bool terrainMinMaxValid =
             needToClamp &&
             terrain->getElevationExtrema(feature, min, max);
+
+        //if (!terrainMinMaxValid)
+        //{
+        //    OE_WARN << LC << "A feature failed to clamp.\n";
+        //}
                 
         context.setTerrainMinMax(
             terrainMinMaxValid ? min : 0.0f,

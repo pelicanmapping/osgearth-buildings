@@ -44,8 +44,7 @@ using namespace osgEarth::Buildings;
 CompilerOutput::CompilerOutput() :
 _range( FLT_MAX ),
 _index( 0L ),
-_currentFeature( 0L ),
-_globalMutex( 0L )
+_currentFeature( 0L )
 {
     _externalModelsGroup = new osg::Group();
     _externalModelsGroup->setName(EXTERNALS_ROOT);
@@ -214,9 +213,9 @@ CompilerOutput::createSceneGraph(Session*                session,
     OE_START_TIMER(optimize);
     {
         // because the default merge limit is 10000 and there's no other way to change it
-        osgUtil::Optimizer::MergeGeometryVisitor mgv;
-        mgv.setTargetMaximumNumberOfVertices( 250000u );
-        root->accept( mgv );
+        osgUtil::Optimizer::MergeGeometryVisitor mergeGeometry;
+        mergeGeometry.setTargetMaximumNumberOfVertices( 250000u );
+        root->accept( mergeGeometry );
     }
     double optimizeTime = OE_GET_TIMER(optimize);
 

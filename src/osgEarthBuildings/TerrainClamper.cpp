@@ -25,7 +25,7 @@ using namespace osgEarth::Buildings;
 #define LC "[TerrainClamper] "
 
 TerrainClamper::TerrainClamper() :
-_maxEntries( 200u )
+_maxEntries( 200000u ) //200u )
 {
     //nop
 }
@@ -209,6 +209,8 @@ TerrainEnvelope::getElevationExtrema(const Feature* feature, float& min, float& 
 
     min = FLT_MAX, max = -FLT_MAX;
 
+    unsigned count = 0;
+
     ConstGeometryIterator gi(feature->getGeometry(), false);
     while(gi.hasMore())
     {
@@ -222,6 +224,7 @@ TerrainEnvelope::getElevationExtrema(const Feature* feature, float& min, float& 
                 TerrainClamper::Tile* tile = q->get();
                 if ( tile->_bounds.contains(v->x(), v->y()) )
                 {
+                    ++count;
                     float elevation;
                     if ( tile->_hf.getElevation(0L, v->x(), v->y(), INTERP_BILINEAR, 0L, elevation) )
                     {
@@ -234,5 +237,28 @@ TerrainEnvelope::getElevationExtrema(const Feature* feature, float& min, float& 
         }
     }
 
-    return (min < max);
+    // If none of the feature points clamped, try the feature centroid.
+    // It's possible (but improbable) that the feature encloses the envelope
+    if (min > max)
+    {
+        osg::Vec2d v = feature->getGeometry()->getBounds().center2d();
+
+        // TODO: consider speed of this vs. Profile::createTileKey + std::map lookup
+        for (TerrainClamper::QuerySet::const_iterator q = _tiles.begin(); q != _tiles.end(); ++q)
+        {
+            TerrainClamper::Tile* tile = q->get();
+            if (tile->_bounds.contains(v.x(), v.y()))
+            {
+                float elevation;
+                if (tile->_hf.getElevation(0L, v.x(), v.y(), INTERP_BILINEAR, 0L, elevation))
+                {
+                    if (elevation < min) min = elevation;
+                    if (elevation > max) max = elevation;
+                }
+                break;
+            }
+        }
+    }
+
+    return (min <= max);
 }
