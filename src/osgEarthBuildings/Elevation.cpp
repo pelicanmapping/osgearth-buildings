@@ -522,7 +522,7 @@ Elevation::getConfig() const
 
     conf.add("inset", getInset());
     conf.addIfSet("height_percentage", _heightPercentage);
-    conf.add("height", _height);
+    conf.addIfSet("height", _height);
     
     if ( getRoof() )
         conf.add("roof", getRoof()->getConfig());
