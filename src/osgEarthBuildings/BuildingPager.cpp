@@ -309,6 +309,17 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             }
         }
 
+        // This can go here now that we can serialize DIs and TBOs.
+        if (node.valid() && !canceled)
+        {
+            OE_START_TIMER(postProcess);
+
+            output.postProcess(node.get(), progress);
+
+            if (progress && progress->collectStats())
+                progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);
+        }
+
         if (node.valid() && cacheWritesEnabled() && !canceled)
         {
             OE_START_TIMER(writeCache);
@@ -320,6 +331,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         }
     }
     
+#if 0
     if (node.valid() && !canceled)
     {
         OE_START_TIMER(postProcess);
@@ -329,6 +341,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         if (progress && progress->collectStats())
             progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);
     }
+#endif
 
     Registry::instance()->endActivity(activityName);
 
