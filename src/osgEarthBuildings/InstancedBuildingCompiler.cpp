@@ -69,6 +69,9 @@ InstancedBuildingCompiler::compile(const Building*    building,
     float modelHeight = bbox.zMax() - bbox.zMin();
     osg::Vec3f modelCenter = bbox.center();
 
+    float xRatio = spaceWidth / modelWidth;
+    float yRatio = spaceLength / modelLength;
+
     osg::Matrix matrix;
 
     osg::Vec3d spaceCenter = space.center();
@@ -79,11 +82,11 @@ InstancedBuildingCompiler::compile(const Building*    building,
     matrix.preMult( elevation->getRotation() );
 
     // scale the model to match the dimensions of the AABB.
-    matrix.preMultScale( osg::Vec3d(spaceWidth/modelWidth, spaceLength/modelLength, elevation->getHeight()/modelHeight) );
+    matrix.preMultScale( osg::Vec3d(xRatio, yRatio, elevation->getHeight()/modelHeight) );
 
     // translates model so it's centers on 0,0,0.
     matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), -bbox.zMin()) );
-
+    
     output.addInstance( model, matrix * frame );
     
     return true;

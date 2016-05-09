@@ -48,20 +48,6 @@ BuildingCompiler::compile(const BuildingVector& input,
 {
     OE_START_TIMER(total);
 
-    // Use the first building as our global reference frame. In usual practice,
-    // we will probably have a anchor point for a group of buildings (a tile)
-    // that we can pass in here and use.
-#if 0
-    osg::Matrix local2world, world2local;
-    if ( !input.empty() )
-    {
-        local2world = input.front()->getReferenceFrame();
-    }
-    world2local.invert(local2world);
-
-    output.setLocalToWorld( local2world );
-#endif
-
     for(BuildingVector::const_iterator i = input.begin(); i != input.end(); ++i)
     {
         if ( progress && progress->isCanceled() )

@@ -53,15 +53,15 @@ InstancedRoofCompiler::compile(CompilerOutput&       output,
 
         // dimensions of the AABB:       
         float spaceWidth  = space.xMax() - space.xMin();
-        float spaceHeight = space.yMax() - space.yMin();
+        float spaceLength = space.yMax() - space.yMin();
 
         const osg::BoundingBox& bbox = model->getBoundingBox(0L);
         float modelWidth  = bbox.xMax() - bbox.xMin();
-        float modelHeight = bbox.yMax() - bbox.yMin();
+        float modelLength = bbox.yMax() - bbox.yMin();
         osg::Vec3f modelCenter = bbox.center();
 
         float xRatio = spaceWidth/modelWidth;
-        float yRatio = spaceHeight/modelHeight;
+        float yRatio = spaceLength/modelLength;
 
         osg::Matrix matrix;
 

@@ -254,6 +254,12 @@ CompilerOutput::createSceneGraph(Session*                session,
             {
                 modelNode->setName(INSTANCE_MODEL);
 
+                // remove any transforms since these will screw up instancing.
+                osgUtil::Optimizer optimizer;
+                optimizer.optimize(
+                    modelNode.get(),
+                    optimizer.STATIC_OBJECT_DETECTION | optimizer.FLATTEN_STATIC_TRANSFORMS);
+
                 osg::Group* modelGroup = new osg::Group();
                 modelGroup->setName(INSTANCE_MODEL_GROUP);
 
