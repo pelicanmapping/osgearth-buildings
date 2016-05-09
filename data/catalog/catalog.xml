@@ -281,13 +281,12 @@
 
     
     <!-- INSTANCED BUILDING MODELS -->
-
-<!--    
-    <model name="instance.residential.sf.1" tags="building instanced residential singlefamily">
-        <url>models/cube_1m.osgb</url>
-    </model>
--->    
     
+    <model name="roof.instanced.sample-house" tags="building instanced residential singlefamily">
+        <url>models/house.ive</url>
+    </model>
+
+    <!--
     <model name="instance.mak.sf.1" tags="building instanced residential singlefamily">
         <url>H:/data/mak/Houses/GarrisonCollonialClapboardWhite/GarrisonCollonialClapboardWhite.flt.(0,0,90).rot</url>
     </model>
@@ -306,5 +305,6 @@
     <model name="instance.mak.sf.6" tags="building instanced residential singlefamily">
         <url>H:/data/mak/Houses/StickStyleBrickWhite/StickStyleBrickWhite.flt.(0,0,90).rot</url>
     </model>
+    -->
 
 </resources>

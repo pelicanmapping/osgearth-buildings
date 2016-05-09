@@ -2,12 +2,24 @@
 
 <buildings>
 
-    <building name="Single-family home 2-story" 
+    <building name="Single-family home 2-story PARAMETRIC" 
               tags="residential singlefamily"
               max_height="9" 
               max_area="750">              
         <elevations>
             <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
+                <roof type="gable" skin_tags="roof residential"/>
+            </elevation>
+        </elevations>        
+    </building>
+
+    <building name="Single-family home 3-story PARAMETRIC" 
+              tags="residential singlefamily"
+              min_height="9"
+              max_height="16" 
+              max_area="750">              
+        <elevations>
+            <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
                 <roof type="gable" skin_tags="roof residential"/>
             </elevation>
         </elevations>        
@@ -24,14 +36,13 @@
         </elevations>        
     </building>
 
-    <building name="Single-family home 3-story" 
+    <building name="Single-family home INSTANCED MODEL"
               tags="residential singlefamily"
-              min_height="9"
               max_height="16" 
-              max_area="750">              
+              max_area="750"
+              instanced="true">
         <elevations>
-            <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
-                <roof type="gable" skin_tags="roof residential"/>
+            <elevation simplify="true">
             </elevation>
         </elevations>        
     </building>
