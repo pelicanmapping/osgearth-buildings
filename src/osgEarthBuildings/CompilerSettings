@@ -53,12 +53,15 @@ namespace osgEarth { namespace Buildings
         const Bin* getBin(const std::string& tag) const;
         const Bin* getBin(const TagSet& tags) const;
 
+        optional<float>& rangeFactor() { return _rangeFactor; }
+        const optional<float>& rangeFactor() const { return _rangeFactor; }
+
     public:
         CompilerSettings(const Config& conf);
         Config getConfig() const;
 
     protected:
-        optional<float> _mainRangeFactor;
+        optional<float> _rangeFactor;
         Bins _bins;
     };
 

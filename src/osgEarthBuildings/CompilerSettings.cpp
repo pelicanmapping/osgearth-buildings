@@ -21,12 +21,14 @@ using namespace osgEarth;
 using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
-CompilerSettings::CompilerSettings()
+CompilerSettings::CompilerSettings() :
+_rangeFactor( 6.0f )
 {
     //nop
 }
 
 CompilerSettings::CompilerSettings(const CompilerSettings& rhs) :
+_rangeFactor( rhs._rangeFactor ),
 _bins( rhs._bins )
 {
     //nop
@@ -66,7 +68,8 @@ CompilerSettings::getBin(const TagSet& tags) const
 }
 
 
-CompilerSettings::CompilerSettings(const Config& conf)
+CompilerSettings::CompilerSettings(const Config& conf) :
+_rangeFactor( 6.0f )
 {
     const Config* bins = conf.child_ptr("bins");
     if ( bins )
@@ -78,6 +81,7 @@ CompilerSettings::CompilerSettings(const Config& conf)
             bin.lodScale = b->value("lod_scale", 1.0f);
         }
     }
+    conf.getIfSet("range_factor", _rangeFactor);
 }
 
 Config
@@ -100,5 +104,8 @@ CompilerSettings::getConfig() const
             bin.set("lodscale", b->lodScale);
         }
     }
+    
+    conf.addIfSet("range_factor", _rangeFactor);
+
     return conf;
 }

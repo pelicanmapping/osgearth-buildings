@@ -166,6 +166,12 @@ void
 BuildingPager::setCompilerSettings(const CompilerSettings& settings)
 {
     _compilerSettings = settings;
+
+    // Apply the range factor from the settings:
+    if (_compilerSettings.rangeFactor().isSet())
+    {
+        this->setRangeFactor(_compilerSettings.rangeFactor().get());
+    }
 }
 
 void BuildingPager::setIndex(FeatureIndexBuilder* index)
