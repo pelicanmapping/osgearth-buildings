@@ -20,6 +20,7 @@
 #include <osgEarth/Registry>
 #include <osgEarthSymbology/Query>
 #include <osgUtil/Optimizer>
+#include <osgUtil/Statistics>
 #include <osg/Version>
 
 #define LC "[BuildingPager] "
@@ -63,6 +64,11 @@ namespace
         
         osg::ref_ptr<osgDB::ObjectCache> _cache;
     };
+
+    struct ArtCache : public osgDB::ObjectCache
+    {
+        unsigned size() const { return this->_objectCache.size(); }
+    };
 }
 
 
@@ -79,7 +85,10 @@ _index     ( 0L )
     _profile = ::getenv("OSGEARTH_BUILDINGS_PROFILE") != 0L;
 
     // An object cache for shared resources like textures, atlases, and instanced models.
-    _artCache = new osgDB::ObjectCache();
+    _artCache = new ArtCache(); //osgDB::ObjectCache();
+
+    // Texture object cache
+    _texCache = new TextureCache();
 
 #if OSG_VERSION_GREATER_OR_EQUAL(3,5,1)
     // Read this to see why the version check exists:
@@ -185,6 +194,8 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         return 0L;
     }
 
+    //OE_INFO << LC << "Art cache size = " << ((ArtCache*)_artCache.get())->size() << "\n";
+
     if ( progress )
         progress->collectStats() = _profile;
 
@@ -202,7 +213,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // Install an "art cache" in the read options so that images can be 
     // shared throughout the creation process. This is critical for sharing 
     // textures and especially for texture atlas usage.
-    osg::ref_ptr<osgDB::Options> readOptions = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
+    osg::ref_ptr<osgDB::Options> readOptions = new osgDB::Options(); // = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
     readOptions->setObjectCache(_artCache.get());
     readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
 
@@ -221,6 +232,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     output.setName(tileKey.str());
     output.setTileKey(tileKey);
     output.setIndex(_index);
+    output.setTextureCache(_texCache.get());
 
     bool canceled = false;
     bool caching = true;
@@ -347,6 +359,16 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
     double totalTime = OE_GET_TIMER(total);
 
+    // collect statistics about the resulting scene graph:
+    if (node.valid() && progress->collectStats())
+    {
+        osgUtil::StatsVisitor stats;
+        node->accept(stats);
+        progress->stats("# unique stateSets") = stats._statesetSet.size();
+        progress->stats("# stateSet refs") = stats._numInstancedStateSet;
+        progress->stats("# drawables") = stats._drawableSet.size();
+    }
+
     // STATS:
     if ( progress && progress->collectStats() && !progress->stats().empty() && (fromCache ||numFeatures > 0))
     {
@@ -359,12 +381,23 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
         for(ProgressCallback::Stats::const_iterator i = progress->stats().begin(); i != progress->stats().end(); ++i)
         { 
-            buf
-                << "    " 
-                << std::setw(15) << i->first
-                << std::setw(6) << (int)(1000.0*i->second) << " ms"
-                << std::setw(6) << (int)(100.0*i->second/totalTime) << "%"
-                << std::endl;
+            if (i->first.front() == '#')
+            {
+                buf
+                    << "    " 
+                    << std::setw(15) << i->first
+                    << std::setw(10) << i->second
+                    << std::endl;
+            }
+            else
+            {
+                buf
+                    << "    " 
+                    << std::setw(15) << i->first
+                    << std::setw(6) << (int)(1000.0*i->second) << " ms"
+                    << std::setw(6) << (int)(100.0*i->second/totalTime) << "%"
+                    << std::endl;
+            }
         }
 
         OE_INFO << LC << buf.str() << std::endl;

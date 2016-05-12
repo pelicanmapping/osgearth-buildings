@@ -58,7 +58,7 @@ namespace osgEarth { namespace Buildings
         Config getConfig() const;
 
     protected:
-
+        optional<float> _mainRangeFactor;
         Bins _bins;
     };
 

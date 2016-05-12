@@ -147,6 +147,7 @@
         <atlas>false</atlas>
 	</skin>
     
+    
     <skin name="roof.comm.2" tags="roof commercial">
 	    <url>roof/croof2.jpg</url>
 		<tiled>false</tiled>
@@ -242,42 +243,9 @@
     
     <!-- INSTANCED ROOF MODELS -->
 
-    <!--
     <model name="roof.instanced.cube" tags="roof instanced residential">
         <url>models/cube_1m.flt</url>
     </model>  
-    -->
-    
-    <model name="roof.instanced.matt1" tags="roof instanced residential">
-        <url>models/roof/matt/barn.flt</url>
-    </model>  
-    <model name="roof.instanced.matt2" tags="roof instanced residential">
-        <url>models/roof/matt/cross-gable.flt</url>
-    </model>  
-    <model name="roof.instanced.matt3" tags="roof instanced residential">
-        <url>models/roof/matt/dutch-hip.flt</url>
-    </model>  
-    <model name="roof.instanced.matt4" tags="roof instanced residential">
-        <url>models/roof/matt/flat.flt</url>
-    </model>  
-    <model name="roof.instanced.matt5" tags="roof instanced residential">
-        <url>models/roof/matt/gable.flt</url>
-    </model>   
-    <model name="roof.instanced.matt6" tags="roof instanced residential">
-        <url>models/roof/matt/industrial.flt</url>
-    </model>  
-    <model name="roof.instanced.matt7" tags="roof instanced residential">
-        <url>models/roof/matt/jenkins-head.flt</url>
-    </model>   
-    <model name="roof.instanced.matt8" tags="roof instanced residential">
-        <url>models/roof/matt/mansard.flt</url>
-    </model> 
-    <model name="roof.instanced.matt9" tags="roof instanced residential">
-        <url>models/roof/matt/pagoda.flt</url>
-    </model> 
-    <model name="roof.instanced.matt10" tags="roof instanced residential">
-        <url>models/roof/matt/salt-box.flt</url>
-    </model> 
 
     
     <!-- INSTANCED BUILDING MODELS -->
@@ -285,26 +253,5 @@
     <model name="roof.instanced.sample-house" tags="building instanced residential singlefamily">
         <url>models/house.ive</url>
     </model>
-
-    <!--
-    <model name="instance.mak.sf.1" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/GarrisonCollonialClapboardWhite/GarrisonCollonialClapboardWhite.flt.(0,0,90).rot</url>
-    </model>
-    <model name="instance.mak.sf.2" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/GermanColonialStuccoTan/GermanColonialStuccoTan.flt.(0,0,90).rot</url>
-    </model>
-    <model name="instance.mak.sf.3" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/SecondEmpireVictorianClapboardGray/SecondEmpireVictorianClapboardGray.flt.(0,0,90).rot</url>
-    </model>
-    <model name="instance.mak.sf.4" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/SpanishColonialStuccoBeige/SpanishColonialStuccoBeige.flt.(0,0,90).rot</url>
-    </model>
-    <model name="instance.mak.sf.5" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/SpanishSingleStoryStuccoWhite/SpanishSingleStoryStuccoWhite.flt.(0,0,90).rot</url>
-    </model>
-    <model name="instance.mak.sf.6" tags="building instanced residential singlefamily">
-        <url>H:/data/mak/Houses/StickStyleBrickWhite/StickStyleBrickWhite.flt.(0,0,90).rot</url>
-    </model>
-    -->
 
 </resources>

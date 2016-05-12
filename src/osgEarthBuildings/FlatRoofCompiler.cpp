@@ -92,16 +92,14 @@ FlatRoofCompiler::compile(CompilerOutput&       output,
     // prevent any precision loss during the transform.
     osg::Matrix frame = building->getReferenceFrame() * world2local;
 
-    bool genColors = false;   // TODO
+    bool genColors = true; //false;   // TODO
 
     // find a texture:
     SkinResource* skin = roof->getSkinResource();
     osg::ref_ptr<osg::StateSet> stateSet;
     if ( skin )
     {
-        // use the tile's local resource cache for skin statesets to prevent
-        // sharing statesets with live data.
-        output.getLocalResourceCache()->getOrCreateStateSet(skin, stateSet, readOptions);
+        stateSet = output.getSkinStateSet(skin, readOptions);
     }
 
     // Build a flat roof.

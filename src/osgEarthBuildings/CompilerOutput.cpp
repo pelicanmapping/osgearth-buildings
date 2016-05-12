@@ -51,8 +51,6 @@ _currentFeature( 0L )
 
     _debugGroup = new osg::Group();
     _debugGroup->setName(DEBUG_ROOT);
-
-    _resourceCache = new ResourceCache();
 }
 
 void
@@ -222,6 +220,7 @@ CompilerOutput::createSceneGraph(Session*                session,
     
     // install the model instances, creating one instance group for each model.
     OE_START_TIMER(instances);
+    if (!_instances.empty())
     {
         // group to hold all instanced models:
         osg::LOD* instances = new osg::LOD();
@@ -244,6 +243,11 @@ CompilerOutput::createSceneGraph(Session*                session,
                 // loaded only once. Then it's cloned for each tile. That way the shader generator
                 // will never touch live data. (Note that texture images are memory-cached in the
                 // readOptions.)
+                //
+                // TODO: even though the images are shared, the texture object itself is not.
+                // So it would be great to post-process this node and consolidate its texture
+                // references with those in the global texture cache, thereby reducing the GPU
+                // memory footprint.
                 if (!session->getResourceCache()->cloneOrCreateInstanceNode(res, modelNode, readOptions))
                 {
                     OE_WARN << LC << "Failed to materialize resource " << res->uri()->full() << "\n";
@@ -258,6 +262,7 @@ CompilerOutput::createSceneGraph(Session*                session,
                 osgUtil::Optimizer optimizer;
                 optimizer.optimize(
                     modelNode.get(),
+                    //optimizer.INDEX_MESH |
                     optimizer.STATIC_OBJECT_DETECTION | optimizer.FLATTEN_STATIC_TRANSFORMS);
 
                 osg::Group* modelGroup = new osg::Group();

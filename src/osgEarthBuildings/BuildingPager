@@ -85,6 +85,7 @@ namespace osgEarth { namespace Buildings
         bool                              _profile;
         osg::ref_ptr<osgDB::ObjectCache>  _artCache;
         Threading::Mutex                  _globalMutex;
+        osg::ref_ptr<TextureCache>        _texCache;
 
         bool cacheReadsEnabled() const;
         bool cacheWritesEnabled() const;

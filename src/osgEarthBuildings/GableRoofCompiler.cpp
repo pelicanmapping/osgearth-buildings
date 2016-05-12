@@ -97,9 +97,7 @@ GableRoofCompiler::compile(CompilerOutput&       output,
     osg::ref_ptr<osg::StateSet> stateSet;
     if ( skin )
     {
-        // use the tile's local resource cache for skin statesets to prevent
-        // sharing statesets with live data.
-        output.getLocalResourceCache()->getOrCreateStateSet(skin, stateSet, readOptions);
+        stateSet = output.getSkinStateSet(skin, readOptions);
     }
 
     osg::ref_ptr<osg::Geometry> geom = new osg::Geometry();
