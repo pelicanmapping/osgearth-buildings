@@ -153,7 +153,7 @@ BuildingExtension::initializeCaching()
     if ( _dbo.valid() )
     {
         // check for an incoming cache policy:
-        CachePolicy::fromOptions(_dbo.get(), _cachePolicy);
+        _cachePolicy = CachePolicy::get(_dbo.get());
 
         // check for an overriding cache policy in this extension:
         if ( cachePolicy().isSet() )
