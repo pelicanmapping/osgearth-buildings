@@ -243,9 +243,13 @@
     
     <!-- INSTANCED ROOF MODELS -->
 
-    <model name="roof.instanced.cube" tags="roof instanced residential">
-        <url>models/cube_1m.flt</url>
-    </model>  
+    <model name="roof.instanced.roof1" tags="roof instanced residential">
+        <url>models/roof1.osgb</url>
+    </model>
+	
+    <model name="roof.instanced.roof5" tags="roof instanced residential">
+        <url>models/roof5.osgb</url>
+    </model> 	
 
     
     <!-- INSTANCED BUILDING MODELS -->
