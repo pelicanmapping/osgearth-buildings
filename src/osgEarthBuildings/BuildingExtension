@@ -24,6 +24,7 @@
 #include <osgEarth/Extension>
 #include <osgEarth/MapNode>
 #include <osgEarth/CacheBin>
+#include <osgEarthUtil/SimplePager>
 
 namespace osgEarth { namespace Buildings 
 {
@@ -43,8 +44,8 @@ namespace osgEarth { namespace Buildings
         /** destructor */
         virtual ~BuildingExtension();
 
-        /** Accesses the root node of the building scene graph. */
-        osg::Node* getRoot() { return _root.get(); }
+        /** Access to the root pager that loads and displays the buildings */
+        osgEarth::Util::SimplePager* getPager() { return _pager.get(); }
 
     public: // Extension
 
@@ -58,7 +59,8 @@ namespace osgEarth { namespace Buildings
         bool disconnect(MapNode* mapNode);
 
     private:
-        osg::ref_ptr<osg::Group> _root;
+        osg::ref_ptr<osg::Node> _root;
+        osg::ref_ptr<osgEarth::Util::SimplePager> _pager;
         osg::ref_ptr<const osgDB::Options> _dbo;
 
         osg::ref_ptr<CacheBin> _cacheBin;

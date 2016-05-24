@@ -133,9 +133,12 @@ BuildingExtension::connect(MapNode* mapNode)
     else
     {
         // install in the scene graph.
-        mapNode->addChild( pager );    
+        mapNode->addChild( pager ); 
         _root = pager;
     }
+
+    // store the pager pointer for the getter.
+    _pager = pager;
 
     return true;
 }
