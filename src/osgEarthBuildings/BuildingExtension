@@ -43,6 +43,8 @@ namespace osgEarth { namespace Buildings
         /** destructor */
         virtual ~BuildingExtension();
 
+        /** Accesses the root node of the building scene graph. */
+        osg::Node* getRoot() { return _root.get(); }
 
     public: // Extension
 

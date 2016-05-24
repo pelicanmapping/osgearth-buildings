@@ -127,12 +127,14 @@ BuildingExtension::connect(MapNode* mapNode)
         // install in the scene graph.
         inode->addChild( pager );
         mapNode->addChild( inode );
+        _root = inode;
     }
 
     else
     {
         // install in the scene graph.
         mapNode->addChild( pager );    
+        _root = pager;
     }
 
     return true;
