@@ -387,7 +387,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
         for(ProgressCallback::Stats::const_iterator i = progress->stats().begin(); i != progress->stats().end(); ++i)
         { 
-            if (i->first.front() == '#')
+            if (i->first.at(0) == '#')
             {
                 buf
                     << "    " 
