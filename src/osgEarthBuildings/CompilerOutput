@@ -96,7 +96,7 @@ namespace osgEarth { namespace Buildings
         void setCurrentFeature(Feature* f) { _currentFeature = f; }
 
         /** Run on the result of cretaeSceneGraph or readFromCache to install VPs. */
-        void postProcess(osg::Node* node, ProgressCallback* progress) const;
+        void postProcess(osg::Node* node, const CompilerSettings& settings, ProgressCallback* progress) const;
 
     public:
         

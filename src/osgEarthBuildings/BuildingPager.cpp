@@ -332,7 +332,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         {
             OE_START_TIMER(postProcess);
 
-            output.postProcess(node.get(), progress);
+            output.postProcess(node.get(), _compilerSettings, progress);
 
             if (progress && progress->collectStats())
                 progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);

@@ -22,13 +22,15 @@ using namespace osgEarth::Symbology;
 using namespace osgEarth::Buildings;
 
 CompilerSettings::CompilerSettings() :
-_rangeFactor( 6.0f )
+_rangeFactor  ( 6.0f ),
+_useClustering( false )
 {
     //nop
 }
 
 CompilerSettings::CompilerSettings(const CompilerSettings& rhs) :
 _rangeFactor( rhs._rangeFactor ),
+_useClustering( rhs._useClustering ),
 _bins( rhs._bins )
 {
     //nop
@@ -82,6 +84,7 @@ _rangeFactor( 6.0f )
         }
     }
     conf.getIfSet("range_factor", _rangeFactor);
+    conf.getIfSet("clustering", _useClustering);
 }
 
 Config
@@ -106,6 +109,7 @@ CompilerSettings::getConfig() const
     }
     
     conf.addIfSet("range_factor", _rangeFactor);
+    conf.addIfSet("clustering", _useClustering);
 
     return conf;
 }

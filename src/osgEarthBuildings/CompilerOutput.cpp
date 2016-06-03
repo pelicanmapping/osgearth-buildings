@@ -25,6 +25,7 @@
 #include <osgEarth/DrawInstanced>
 #include <osgEarth/Registry>
 #include <osgEarth/ImageUtils>
+#include <osgEarthSymbology/MeshFlattener>
 #include <osgDB/WriteFile>
 #include <set>
 
@@ -227,7 +228,6 @@ CompilerOutput::createSceneGraph(Session*                session,
         instances->setName(INSTANCES_ROOT);
 
         // keeps one copy of each instanced model per resource:
-        //typedef std::map< ModelResource*, osg::ref_ptr<osg::ProxyNode> > ModelNodes;
         typedef std::map< ModelResource*, osg::ref_ptr<osg::Node> > ModelNodes;
         ModelNodes modelNodes;
 
@@ -314,6 +314,9 @@ namespace
     {
         osg::ref_ptr<StateSetCache> _sscache;
         unsigned _models, _instanceGroups, _geodes;
+        bool _useDrawInstanced;
+
+        void setUseDrawInstanced(bool value) { _useDrawInstanced = value; }
 
         PostProcessNodeVisitor() : osg::NodeVisitor()
         {
@@ -325,6 +328,7 @@ namespace
             _models = 0;
             _instanceGroups = 0;
             _geodes = 0;
+            _useDrawInstanced = false;
         }
 
         void apply(osg::Node& node)
@@ -333,38 +337,67 @@ namespace
             {
                 _geodes++;
                 Registry::instance()->shaderGenerator().run(&node, "Building geodes", _sscache.get());
+                // no traverse necessary
             }
-            
-            else if (node.getName() == INSTANCE_MODEL_GROUP)
+
+            else if (node.getName() == INSTANCES_ROOT && !_useDrawInstanced)
+            {
+                // Clustering:
+
+                // First, combine equivalent LOD ranges so that we can cluster multiple
+                // model together if they fall under the same LOD range
+                osgUtil::Optimizer::CombineLODsVisitor combineLODs;
+                node.accept(combineLODs);
+
+                // Flatten each LOD range individually
+                osg::Group* group = node.asGroup();
+                for (unsigned i = 0; i<group->getNumChildren(); ++i)
+                {
+                    osg::Group* instanceGroup = group->getChild(i)->asGroup();
+                    osgEarth::Symbology::MeshFlattener::run(instanceGroup);
+                }
+
+                // Generate shaders on the whole bunch.
+                Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
+
+                // no traverse necessary
+            }
+
+            else if (node.getName() == INSTANCES_ROOT && _useDrawInstanced)
+            {
+                DrawInstanced::install(node.getOrCreateStateSet());
+                traverse(node);
+            }
+
+            else if (node.getName() == INSTANCE_MODEL_GROUP && _useDrawInstanced)
             {
                 _instanceGroups++;
                 DrawInstanced::convertGraphToUseDrawInstanced(node.asGroup());
+                traverse(node);   
             }
-
-            else if (node.getName() == INSTANCES_ROOT)
-            {
-                DrawInstanced::install(node.getOrCreateStateSet());
-            }
-
-            else if (node.getName() == INSTANCE_MODEL)
+            
+            else if (node.getName() == INSTANCE_MODEL && _useDrawInstanced)
             {
                 _models++;
                 Registry::instance()->shaderGenerator().run(&node, "Resource Model", _sscache.get());
+                // no traverse necessary
             }
 
-            traverse(node);
+            else
+            {
+                traverse(node);
+            }
         }
     };
 }
 
 void
-CompilerOutput::postProcess(osg::Node* graph, ProgressCallback* progress) const
+CompilerOutput::postProcess(osg::Node* graph, const CompilerSettings& settings, ProgressCallback* progress) const
 {
     if (!graph) return;
 
-    // We do this in a separate step because we cannot cache the node once 
-    // shader components are added to it.
     PostProcessNodeVisitor ppnv;
+    ppnv.setUseDrawInstanced(!settings.useClustering().get());
     graph->accept(ppnv);
 
     //OE_INFO << "Post Process (" << _name << ") IGs=" << ppnv._instanceGroups << ", MODELS=" << ppnv._models << ", GEODES=" << ppnv._geodes << "\n";

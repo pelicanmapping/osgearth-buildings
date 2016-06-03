@@ -53,8 +53,21 @@ namespace osgEarth { namespace Buildings
         const Bin* getBin(const std::string& tag) const;
         const Bin* getBin(const TagSet& tags) const;
 
+        /**
+         * The LOD distance for a tile will be the tile's radius multiplied
+         * by this number. The default value is 6.
+         */
         optional<float>& rangeFactor() { return _rangeFactor; }
         const optional<float>& rangeFactor() const { return _rangeFactor; }
+        
+        /**
+         * Substituted instance models are drawn using GL DrawInstanced by default.
+         * Set this to true to use clustering instead. Clustering will attempt to
+         * combine all the model instances into a minimal single geometry, which
+         * sometimes results in better draw performance.
+         */
+        optional<bool>& useClustering() { return _useClustering; }
+        const optional<bool>& useClustering() const { return _useClustering; }
 
     public:
         CompilerSettings(const Config& conf);
@@ -62,6 +75,7 @@ namespace osgEarth { namespace Buildings
 
     protected:
         optional<float> _rangeFactor;
+        optional<bool>  _useClustering;
         Bins _bins;
     };
 

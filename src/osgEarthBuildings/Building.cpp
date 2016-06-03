@@ -104,7 +104,7 @@ Building::resolveInstancedModel(BuildContext& bc)
         }
         else
         {
-            OE_WARN << LC << "no matching instanced model\n" << std::flush;
+            //OE_WARN << LC << "no matching instanced model\n" << std::flush;
         }
     }
 }
