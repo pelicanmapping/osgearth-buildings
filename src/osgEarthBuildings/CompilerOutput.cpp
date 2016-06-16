@@ -127,10 +127,10 @@ CompilerOutput::createCacheKey() const
 }
 
 osg::Node*
-CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, const osgDB::Options* readOptions, ProgressCallback* progress) const
+CompilerOutput::readFromCache(CacheSettings* cacheSettings, const osgDB::Options* readOptions, ProgressCallback* progress) const
 {
-    //return 0L;
-    if ( !cacheBin ) return 0L;
+    if ( !cacheSettings || !cacheSettings->getCacheBin() )
+        return 0L;
 
     std::string cacheKey = createCacheKey();
     if (cacheKey.empty())
@@ -139,10 +139,10 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, con
     // read from the cache.
     osg::ref_ptr<osg::Node> node;
 
-    osgEarth::ReadResult result = cacheBin->readObject(cacheKey, readOptions);
+    osgEarth::ReadResult result = cacheSettings->getCacheBin()->readObject(cacheKey, readOptions);
     if (result.succeeded())
     {
-        if (policy.isExpired(result.lastModifiedTime()))
+        if (cacheSettings->cachePolicy()->isExpired(result.lastModifiedTime()))
         {
             OE_DEBUG << LC << "Tile " << _name << " is cached but expired.\n";
             return 0L;
@@ -160,16 +160,16 @@ CompilerOutput::readFromCache(CacheBin* cacheBin, const CachePolicy& policy, con
 
 
 void
-CompilerOutput::writeToCache(osg::Node* node, CacheBin* cacheBin, ProgressCallback* progress) const
+CompilerOutput::writeToCache(osg::Node* node, CacheSettings* cacheSettings, ProgressCallback* progress) const
 {
-    if ( !node || !cacheBin )
+    if ( !node || !cacheSettings || !cacheSettings->getCacheBin() )
         return;
 
     std::string cacheKey = createCacheKey();
     if (cacheKey.empty())
         return;
 
-    cacheBin->writeNode(cacheKey, node, Config(), 0L);
+    cacheSettings->getCacheBin()->writeNode(cacheKey, node, Config(), 0L);
 
     OE_INFO << LC << "Wrote " << _name << " to cache (key = " << cacheKey << ")\n";
 }

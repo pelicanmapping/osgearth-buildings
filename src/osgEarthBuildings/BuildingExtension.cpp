@@ -35,7 +35,7 @@ using namespace osgEarth::Symbology;
 
 BuildingExtension::BuildingExtension()
 {
-    //nop
+    _uid = Registry::instance()->createUID();
 }
 
 BuildingExtension::BuildingExtension(const BuildingOptions& options) :
@@ -52,7 +52,7 @@ BuildingExtension::~BuildingExtension()
 void
 BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
 {
-    _dbo = dbOptions;
+    _readOptions = dbOptions;
 }
 
 bool
@@ -72,10 +72,10 @@ BuildingExtension::connect(MapNode* mapNode)
     }
     
     // fire it up
-    features->initialize(_dbo.get());
+    features->initialize(_readOptions.get());
 
     // Set up a feature session with a cache:
-    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _dbo.get() );
+    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _readOptions.get() );
     
     // Install a resource cache that we will use for instanced models,
     // but not for skins; b/c we want to cache skin statesets per tile. So there is
@@ -84,14 +84,14 @@ BuildingExtension::connect(MapNode* mapNode)
 
     // Load the building catalog:
     osg::ref_ptr<BuildingCatalog> catalog = new BuildingCatalog();
-    if ( !catalog->load(buildingCatalog().get(), _dbo.get(), 0L) )
+    if ( !catalog->load(buildingCatalog().get(), _readOptions.get(), 0L) )
     {
         OE_WARN << LC << "Failed to load the buildings catalog\n";
         catalog = 0L;
     }
 
     // Open a cache bin, if a cache is active.
-    initializeCaching();
+    osg::ref_ptr<CacheSettings> cacheSettings = initializeCaching();
 
     // Try to page against the feature profile, otherwise fallback to the map
     const Profile* featureProfile = features->getFeatureProfile()->getProfile();
@@ -104,7 +104,7 @@ BuildingExtension::connect(MapNode* mapNode)
     pager->setSession         ( session.get() );
     pager->setFeatureSource   ( features.get() );
     pager->setCatalog         ( catalog.get() );
-    pager->setCacheBin        ( _cacheBin.get(), _cachePolicy.get() );
+    pager->setCacheSettings   ( cacheSettings.get() );
     pager->setCompilerSettings( compilerSettings().get() );
     pager->setPriorityOffset  ( priorityOffset().get() );
     pager->setPriorityScale   ( priorityScale().get() );
@@ -152,44 +152,43 @@ BuildingExtension::disconnect(MapNode* mapNode)
     return true;
 }
 
-void
+CacheSettings*
 BuildingExtension::initializeCaching()
 {
-    if ( _dbo.valid() )
+    osg::ref_ptr<CacheSettings> cacheSettings;
+
+    if ( _readOptions.valid() )
     {
-        // check for an incoming cache policy:
-        _cachePolicy = CachePolicy::get(_dbo.get());
-
-        // check for an overriding cache policy in this extension:
-        if ( cachePolicy().isSet() )
+        CacheManager* cm = CacheManager::get(_readOptions.get());
+        if (cm)
         {
-            _cachePolicy->mergeAndOverride( cachePolicy() );
-        }
+            // a new settings object for this extension:
+            cacheSettings = cm->getOrCreateSettings(_uid);
 
-        // finally resolve with global overrides:
-        Registry::instance()->resolveCachePolicy( _cachePolicy );
+            // incorporate this object's cache policy, if it is set:
+            cacheSettings->integrateCachePolicy(cachePolicy());
 
-        if ( _cachePolicy != CachePolicy::NO_CACHE )
-        {
-            Cache* cache = Cache::get(_dbo.get());
-            if ( cache )
+            // finally, if cacheing is a go, make a bin.
+            if (cacheSettings->cachePolicy()->isCacheEnabled())
             {
                 Config conf = getConfig();
-                conf.remove( "cache_policy" );
+                conf.remove("cache_policy");
                 std::string binName;
                 if (cacheId().isSet() && !cacheId()->empty())
                     binName = Stringify() << "buildings." << cacheId().get();
                 else
                     binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
 
-                _cacheBin = cache->addBin( binName );
+                cacheSettings->setCacheBin(cacheSettings->getCache()->addBin(binName));
             }
-        }                
+        }
     }
     else
     {
-        OE_WARN << LC << "DBO not set; no caching\n";
+        OE_WARN << LC << "read options not set; no caching\n";
     }
+
+    return cacheSettings.release();
 }
 
 

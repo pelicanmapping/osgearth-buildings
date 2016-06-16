@@ -23,7 +23,7 @@
 #include "BuildingOptions"
 #include <osgEarth/Extension>
 #include <osgEarth/MapNode>
-#include <osgEarth/CacheBin>
+#include <osgEarth/Cache>
 #include <osgEarthUtil/SimplePager>
 
 namespace osgEarth { namespace Buildings 
@@ -61,11 +61,11 @@ namespace osgEarth { namespace Buildings
     private:
         osg::ref_ptr<osg::Node> _root;
         osg::ref_ptr<osgEarth::Util::SimplePager> _pager;
-        osg::ref_ptr<const osgDB::Options> _dbo;
+        osg::ref_ptr<const osgDB::Options> _readOptions;
 
-        osg::ref_ptr<CacheBin> _cacheBin;
-        optional<CachePolicy>  _cachePolicy;
-        void initializeCaching();
+        CacheSettings* initializeCaching();
+
+        UID _uid;
         
     protected: // Object
         BuildingExtension(const BuildingExtension& rhs, const osg::CopyOp& op) { }

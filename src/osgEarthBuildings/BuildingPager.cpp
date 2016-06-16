@@ -156,10 +156,13 @@ BuildingPager::setCatalog(BuildingCatalog* catalog)
 }
 
 void
-BuildingPager::setCacheBin(CacheBin* cacheBin, const CachePolicy& cp)
+BuildingPager::setCacheSettings(CacheSettings* cacheSettings)
 {
-    _cacheBin = cacheBin;
-    _cachePolicy = cp;
+    _cacheSettings = cacheSettings;
+    if (_cacheSettings.valid())
+    {
+        OE_INFO << LC "Cache policy = " << _cacheSettings->cachePolicy()->usageString() << "\n";
+    }
 }
 
 void
@@ -182,13 +185,19 @@ void BuildingPager::setIndex(FeatureIndexBuilder* index)
 bool
 BuildingPager::cacheReadsEnabled() const
 {
-    return _cacheBin.valid() && _cachePolicy.isCacheReadable();
+    return
+        _cacheSettings.valid() && 
+        _cacheSettings->getCacheBin() &&
+        _cacheSettings->cachePolicy()->isCacheReadable();
 }
 
 bool
 BuildingPager::cacheWritesEnabled() const
 {
-    return _cacheBin.valid() && _cachePolicy.isCacheWriteable();
+    return
+        _cacheSettings.valid() &&
+        _cacheSettings->getCacheBin() &&
+        _cacheSettings->cachePolicy()->isCacheWriteable();
 }
 
 osg::Node*
@@ -226,11 +235,11 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // TESTING:
     //OE_INFO << LC << "Art cache size = " << ((MyObjectCache*)(_artCache.get()))->getSize() << "\n";
     
-    // install the cache bin in the read options, so we can resolve external references
+    // install the cache settings in the read options, so we can resolve external references
     // to images, etc. stored in the same cache bin
-    if (_cacheBin.valid())
+    if (_cacheSettings.valid() )
     {
-        _cacheBin->put(readOptions.get());
+        _cacheSettings->store(readOptions.get());
     }
 
     // Holds all the final output.
@@ -248,7 +257,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     {
         OE_START_TIMER(readCache);
 
-        node = output.readFromCache(_cacheBin.get(), _cachePolicy, readOptions, progress);
+        node = output.readFromCache(_cacheSettings.get(), readOptions.get(), progress);
 
         if (progress && progress->collectStats())
             progress->stats("pager.readCache") = OE_GET_TIMER(readCache);
@@ -342,7 +351,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         {
             OE_START_TIMER(writeCache);
 
-            output.writeToCache(node, _cacheBin.get(), progress);
+            output.writeToCache(node, _cacheSettings.get(), progress);
 
             if (progress && progress->collectStats())
                 progress->stats("pager.writeCache") = OE_GET_TIMER(writeCache);

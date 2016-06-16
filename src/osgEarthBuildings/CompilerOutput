@@ -70,10 +70,10 @@ namespace osgEarth { namespace Buildings
         void setTextureCache(TextureCache* cache) { _texCache = cache; }
 
         /** Read output from a cache bin */
-        osg::Node* readFromCache(CacheBin* cache, const CachePolicy& policy, const osgDB::Options* readOptions, ProgressCallback* progress) const;
+        osg::Node* readFromCache(CacheSettings* settings, const osgDB::Options* readOptions, ProgressCallback* progress) const;
 
         /** Write output to a cache bin */
-        void writeToCache(osg::Node*, CacheBin* cache, ProgressCallback*) const;
+        void writeToCache(osg::Node*, CacheSettings* settings, ProgressCallback*) const;
 
         /** Build and return a scene graph based on the output in this object. */
         osg::Node* createSceneGraph(Session* session, const CompilerSettings& settings, const osgDB::Options* readOptions, ProgressCallback*) const;

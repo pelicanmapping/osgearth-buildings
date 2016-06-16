@@ -54,8 +54,8 @@ namespace osgEarth { namespace Buildings
         /** Build catalog to use for creating building templates */
         void setCatalog(BuildingCatalog* catalog);
 
-        /** Cache bin for storing compiled nodes per tile key */
-        void setCacheBin(CacheBin* cacheBin, const CachePolicy& cp);
+        /** Cache for storing compiled nodes per tile key */
+        void setCacheSettings(CacheSettings* settings);
 
         /** Settings the dictate how the compiler builds the scene graph */
         void setCompilerSettings(const CompilerSettings& settings);
@@ -76,8 +76,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<Session>             _session;
         osg::ref_ptr<FeatureSource>       _features;
         osg::ref_ptr<BuildingCatalog>     _catalog;
-        osg::ref_ptr<CacheBin>            _cacheBin;
-        CachePolicy                       _cachePolicy;
+        osg::ref_ptr<CacheSettings>       _cacheSettings;
         osg::ref_ptr<BuildingCompiler>    _compiler;
         CompilerSettings                  _compilerSettings;
         FeatureIndexBuilder*              _index;
