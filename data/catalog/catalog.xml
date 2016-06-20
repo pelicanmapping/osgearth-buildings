@@ -37,11 +37,27 @@
 		<texture_mode>decal</texture_mode>
 	</skin>
     
+    <skin name="facade.commercial.1.3" tags="facade commercial">
+	    <url>facade/commercial3.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>25</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
     <skin name="facade.commercial.2" tags="facade commercial">
         <url>facade/1stTileCommercial1.jpg</url>
 		<tiled>true</tiled>
 		<image_width>25</image_width>
 		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.2.2" tags="facade commercial">
+        <url>facade/Commercial4.jpg</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>8</image_height>
 		<texture_mode>decal</texture_mode>
     </skin>
     

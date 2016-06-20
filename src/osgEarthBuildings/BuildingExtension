@@ -61,7 +61,7 @@ namespace osgEarth { namespace Buildings
     private:
         osg::ref_ptr<osg::Node> _root;
         osg::ref_ptr<osgEarth::Util::SimplePager> _pager;
-        osg::ref_ptr<const osgDB::Options> _readOptions;
+        osg::ref_ptr<osgDB::Options> _readOptions;
 
         CacheSettings* initializeCaching();
 

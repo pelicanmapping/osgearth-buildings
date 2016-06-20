@@ -52,7 +52,31 @@ BuildingExtension::~BuildingExtension()
 void
 BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
 {
-    _readOptions = dbOptions;
+    _readOptions = Registry::cloneOrCreateOptions(dbOptions);
+
+    CacheSettings* oldSettings = CacheSettings::get(_readOptions.get());
+    CacheSettings* newSettings = oldSettings ? new CacheSettings(*oldSettings) : new CacheSettings();
+
+    // incorporate this object's cache policy, if it is set:
+    newSettings->integrateCachePolicy(cachePolicy());
+
+    // finally, if cacheing is a go, make a bin.
+    if (newSettings->isCacheEnabled())
+    {
+        Config conf = getConfig();
+        conf.remove("cache_policy");
+        std::string binName;
+        if (cacheId().isSet() && !cacheId()->empty())
+            binName = Stringify() << "buildings." << cacheId().get();
+        else
+            binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
+
+        newSettings->setCacheBin(newSettings->getCache()->addBin(binName));
+
+        OE_INFO << LC << "Opened cache bin [" << binName << "]\n";
+    }
+
+    newSettings->store(_readOptions.get());
 }
 
 bool
@@ -91,7 +115,7 @@ BuildingExtension::connect(MapNode* mapNode)
     }
 
     // Open a cache bin, if a cache is active.
-    osg::ref_ptr<CacheSettings> cacheSettings = initializeCaching();
+    //osg::ref_ptr<CacheSettings> cacheSettings = initializeCaching();
 
     // Try to page against the feature profile, otherwise fallback to the map
     const Profile* featureProfile = features->getFeatureProfile()->getProfile();
@@ -100,11 +124,12 @@ BuildingExtension::connect(MapNode* mapNode)
         featureProfile = mapNode->getMap()->getProfile();
     }
 
+    OE_INFO << LC << CacheSettings::get(_readOptions.get())->toString() << "\n";
+
     BuildingPager* pager = new BuildingPager( featureProfile );
     pager->setSession         ( session.get() );
     pager->setFeatureSource   ( features.get() );
     pager->setCatalog         ( catalog.get() );
-    pager->setCacheSettings   ( cacheSettings.get() );
     pager->setCompilerSettings( compilerSettings().get() );
     pager->setPriorityOffset  ( priorityOffset().get() );
     pager->setPriorityScale   ( priorityScale().get() );
@@ -155,40 +180,38 @@ BuildingExtension::disconnect(MapNode* mapNode)
 CacheSettings*
 BuildingExtension::initializeCaching()
 {
-    osg::ref_ptr<CacheSettings> cacheSettings;
+    osg::ref_ptr<CacheSettings> newSettings;
 
     if ( _readOptions.valid() )
     {
-        CacheManager* cm = CacheManager::get(_readOptions.get());
-        if (cm)
+        CacheSettings* oldSettings = CacheSettings::get(_readOptions.get());
+        newSettings = oldSettings ? new CacheSettings(*oldSettings) : new CacheSettings();
+
+        // incorporate this object's cache policy, if it is set:
+        newSettings->integrateCachePolicy(cachePolicy());
+
+        // finally, if cacheing is a go, make a bin.
+        if (newSettings->isCacheEnabled())
         {
-            // a new settings object for this extension:
-            cacheSettings = cm->getOrCreateSettings(_uid);
+            Config conf = getConfig();
+            conf.remove("cache_policy");
+            std::string binName;
+            if (cacheId().isSet() && !cacheId()->empty())
+                binName = Stringify() << "buildings." << cacheId().get();
+            else
+                binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
 
-            // incorporate this object's cache policy, if it is set:
-            cacheSettings->integrateCachePolicy(cachePolicy());
-
-            // finally, if cacheing is a go, make a bin.
-            if (cacheSettings->cachePolicy()->isCacheEnabled())
-            {
-                Config conf = getConfig();
-                conf.remove("cache_policy");
-                std::string binName;
-                if (cacheId().isSet() && !cacheId()->empty())
-                    binName = Stringify() << "buildings." << cacheId().get();
-                else
-                    binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
-
-                cacheSettings->setCacheBin(cacheSettings->getCache()->addBin(binName));
-            }
+            newSettings->setCacheBin(newSettings->getCache()->addBin(binName));
         }
+
+        OE_INFO << LC << newSettings->toString() << "\n";
     }
     else
     {
         OE_WARN << LC << "read options not set; no caching\n";
     }
 
-    return cacheSettings.release();
+    return newSettings.release();
 }
 
 

@@ -155,6 +155,7 @@ BuildingPager::setCatalog(BuildingCatalog* catalog)
     _catalog = catalog;
 }
 
+#if 0
 void
 BuildingPager::setCacheSettings(CacheSettings* cacheSettings)
 {
@@ -164,6 +165,7 @@ BuildingPager::setCacheSettings(CacheSettings* cacheSettings)
         OE_INFO << LC "Cache policy = " << _cacheSettings->cachePolicy()->usageString() << "\n";
     }
 }
+#endif
 
 void
 BuildingPager::setCompilerSettings(const CompilerSettings& settings)
@@ -183,21 +185,23 @@ void BuildingPager::setIndex(FeatureIndexBuilder* index)
 }
 
 bool
-BuildingPager::cacheReadsEnabled() const
+BuildingPager::cacheReadsEnabled(const osgDB::Options* readOptions) const
 {
+    CacheSettings* cacheSettings = CacheSettings::get(readOptions);
     return
-        _cacheSettings.valid() && 
-        _cacheSettings->getCacheBin() &&
-        _cacheSettings->cachePolicy()->isCacheReadable();
+        cacheSettings && 
+        cacheSettings->getCacheBin() &&
+        cacheSettings->cachePolicy()->isCacheReadable();
 }
 
 bool
-BuildingPager::cacheWritesEnabled() const
+BuildingPager::cacheWritesEnabled(const osgDB::Options* writeOptions) const
 {
+    CacheSettings* cacheSettings = CacheSettings::get(writeOptions);
     return
-        _cacheSettings.valid() &&
-        _cacheSettings->getCacheBin() &&
-        _cacheSettings->cachePolicy()->isCacheWriteable();
+        cacheSettings &&
+        cacheSettings->getCacheBin() &&
+        cacheSettings->cachePolicy()->isCacheWriteable();
 }
 
 osg::Node*
@@ -228,19 +232,12 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // Install an "art cache" in the read options so that images can be 
     // shared throughout the creation process. This is critical for sharing 
     // textures and especially for texture atlas usage.
-    osg::ref_ptr<osgDB::Options> readOptions = new osgDB::Options(); // = osgEarth::Registry::instance()->cloneOrCreateOptions(_session->getDBOptions());
+    osg::ref_ptr<osgDB::Options> readOptions = Registry::cloneOrCreateOptions(_session->getDBOptions());
     readOptions->setObjectCache(_artCache.get());
     readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
 
     // TESTING:
     //OE_INFO << LC << "Art cache size = " << ((MyObjectCache*)(_artCache.get()))->getSize() << "\n";
-    
-    // install the cache settings in the read options, so we can resolve external references
-    // to images, etc. stored in the same cache bin
-    if (_cacheSettings.valid() )
-    {
-        _cacheSettings->store(readOptions.get());
-    }
 
     // Holds all the final output.
     CompilerOutput output;
@@ -253,11 +250,11 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     bool caching = true;
 
     // Try to load from the cache.
-    if (cacheReadsEnabled() && !canceled)
+    if (cacheReadsEnabled(readOptions.get()) && !canceled)
     {
         OE_START_TIMER(readCache);
 
-        node = output.readFromCache(_cacheSettings.get(), readOptions.get(), progress);
+        node = output.readFromCache(readOptions.get(), progress);
 
         if (progress && progress->collectStats())
             progress->stats("pager.readCache") = OE_GET_TIMER(readCache);
@@ -347,11 +344,11 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);
         }
 
-        if (node.valid() && cacheWritesEnabled() && !canceled)
+        if (node.valid() && cacheWritesEnabled(readOptions.get()) && !canceled)
         {
             OE_START_TIMER(writeCache);
 
-            output.writeToCache(node, _cacheSettings.get(), progress);
+            output.writeToCache(node, readOptions, progress);
 
             if (progress && progress->collectStats())
                 progress->stats("pager.writeCache") = OE_GET_TIMER(writeCache);

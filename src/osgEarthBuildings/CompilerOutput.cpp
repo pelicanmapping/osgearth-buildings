@@ -97,25 +97,10 @@ CompilerOutput::addInstance(ModelResource* model, const osg::Matrix& matrix)
 std::string
 CompilerOutput::createCacheKey() const
 {
-#if 1
     if (_key.valid())
     {
         return Stringify() << _key.getLOD() << "_" << _key.getTileX() << "_" << _key.getTileY();
     }
-#else
-    if (_key.valid())
-    {
-        unsigned x, y;
-        _key.getProfile()->getNumTiles(_key.getLOD(), x, y);
-        unsigned xbins = std::min(x, 32u);
-        unsigned ybins = std::min(y, 32u);
-        unsigned xbin = _key.getTileX() / xbins;
-        unsigned ybin = _key.getTileY() / ybins;
-        std::string key2 = _key.str();
-        osgEarth::replaceIn(key2, "/", "_");
-        return Stringify() << _key.getLOD() << "_" << xbin << "_" << ybin << "/" << key2;
-    }
-#endif
     else if (!_name.empty())
     {
         return _name;
@@ -127,8 +112,10 @@ CompilerOutput::createCacheKey() const
 }
 
 osg::Node*
-CompilerOutput::readFromCache(CacheSettings* cacheSettings, const osgDB::Options* readOptions, ProgressCallback* progress) const
+CompilerOutput::readFromCache(const osgDB::Options* readOptions, ProgressCallback* progress) const
 {
+    CacheSettings* cacheSettings = CacheSettings::get(readOptions);
+
     if ( !cacheSettings || !cacheSettings->getCacheBin() )
         return 0L;
 
@@ -160,8 +147,10 @@ CompilerOutput::readFromCache(CacheSettings* cacheSettings, const osgDB::Options
 
 
 void
-CompilerOutput::writeToCache(osg::Node* node, CacheSettings* cacheSettings, ProgressCallback* progress) const
+CompilerOutput::writeToCache(osg::Node* node, const osgDB::Options* writeOptions, ProgressCallback* progress) const
 {
+    CacheSettings* cacheSettings = CacheSettings::get(writeOptions);
+
     if ( !node || !cacheSettings || !cacheSettings->getCacheBin() )
         return;
 
@@ -169,7 +158,7 @@ CompilerOutput::writeToCache(osg::Node* node, CacheSettings* cacheSettings, Prog
     if (cacheKey.empty())
         return;
 
-    cacheSettings->getCacheBin()->writeNode(cacheKey, node, Config(), 0L);
+    cacheSettings->getCacheBin()->writeNode(cacheKey, node, Config(), writeOptions);
 
     OE_INFO << LC << "Wrote " << _name << " to cache (key = " << cacheKey << ")\n";
 }
@@ -315,6 +304,7 @@ namespace
         osg::ref_ptr<StateSetCache> _sscache;
         unsigned _models, _instanceGroups, _geodes;
         bool _useDrawInstanced;
+        ProgressCallback* _progress;
 
         void setUseDrawInstanced(bool value) { _useDrawInstanced = value; }
 
@@ -342,6 +332,7 @@ namespace
 
             else if (node.getName() == INSTANCES_ROOT && !_useDrawInstanced)
             {
+                OE_START_TIMER(clustering);
                 // Clustering:
 
                 // First, combine equivalent LOD ranges so that we can cluster multiple
@@ -356,6 +347,9 @@ namespace
                     osg::Group* instanceGroup = group->getChild(i)->asGroup();
                     osgEarth::Symbology::MeshFlattener::run(instanceGroup);
                 }
+
+                if (_progress)
+                    _progress->stats("clustering") += OE_GET_TIMER(clustering);
 
                 // Generate shaders on the whole bunch.
                 Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
@@ -398,6 +392,7 @@ CompilerOutput::postProcess(osg::Node* graph, const CompilerSettings& settings, 
 
     PostProcessNodeVisitor ppnv;
     ppnv.setUseDrawInstanced(!settings.useClustering().get());
+    ppnv._progress = progress;
     graph->accept(ppnv);
 
     //OE_INFO << "Post Process (" << _name << ") IGs=" << ppnv._instanceGroups << ", MODELS=" << ppnv._models << ", GEODES=" << ppnv._geodes << "\n";
