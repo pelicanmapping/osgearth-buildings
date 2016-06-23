@@ -159,7 +159,8 @@ Roof::resolveInstancedModel(const Polygon* footprint, BuildContext& bc)
 {
     if ( getModelSymbol() && bc.getResourceLibrary() )
     {
-        getModelSymbol()->addTags("instanced roof");
+        //getModelSymbol()->addTags("instanced roof");
+        getModelSymbol()->addTags("instanced");
         
         // resolve the resource.
         ModelResourceVector candidates;

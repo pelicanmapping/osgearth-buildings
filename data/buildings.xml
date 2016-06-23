@@ -3,7 +3,7 @@
 <buildings>
 
     <building name="Single-family home 2-story PARAMETRIC" 
-              tags="residential singlefamily"
+              tags="building residential singlefamily"
               max_height="9" 
               max_area="750">              
         <elevations>
@@ -14,7 +14,7 @@
     </building>
 
     <building name="Single-family home 3-story PARAMETRIC" 
-              tags="residential singlefamily"
+              tags="building residential singlefamily"
               min_height="9"
               max_height="16" 
               max_area="750">              
@@ -26,18 +26,18 @@
     </building>
 
     <building name="Single-family home with an INSTANCED roof"
-              tags="residential singlefamily"
+              tags="building residential singlefamily"
               max_height="9" 
               max_area="750">              
         <elevations>
             <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
-                <roof type="instanced" model_tags="roof residential" skin_tags="roof residential"/>
+                <roof type="instanced" model_tags="roof residential"/>
             </elevation>
         </elevations>        
     </building>
 
     <building name="Single-family home INSTANCED MODEL"
-              tags="residential singlefamily"
+              tags="building residential singlefamily"
               max_height="16" 
               max_area="750"
               instanced="true">
@@ -48,7 +48,7 @@
     </building>
 
     <building name="Single-family house with fence 3-story" 
-              tags="residential singlefamily"
+              tags="building residential singlefamily"
               min_height="9"
               max_height="16" 
               max_area="750">              
@@ -62,7 +62,7 @@
     </building>
     
     <building name="Commercial low" 
-              tags="commercial" 
+              tags="building commercial" 
               min_height="0" 
               max_height="15" 
               min_area="750">              
@@ -79,7 +79,7 @@
     
 
     <building name="Commercial medium simple" 
-              tags="commercial" 
+              tags="building commercial" 
               min_height="15" 
               max_height="30">              
         <elevations>
@@ -98,7 +98,7 @@
     </building>
 
     <building name="Commercial with roof"
-              tags="commercial"
+              tags="building commercial"
               min_height="20"
               max_height="60">
         <elevations>
@@ -117,7 +117,7 @@
     </building>
    
    <building name="Commercial 2-tier building"
-             tags="commercial" 
+             tags="building commercial" 
              min_height="50">
         <elevations>
             <elevation height="5" skin_tags="facade retail">
@@ -141,7 +141,7 @@
    </building>
    
    <building name="Commercial 3-tier building offset"
-             tags="commercial"
+             tags="building commercial"
              min_height="80">
         <elevations>
             <elevation height_percentage="15" skin_tags="facade commercial">
@@ -163,5 +163,12 @@
             </elevation>
         </elevations>
    </building>
+
+    <building name="Cow" tags="cow" instanced="true">
+        <elevations>
+            <elevation simplify="true">
+            </elevation>
+        </elevations>
+    </building>
 
 </buildings>

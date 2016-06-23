@@ -221,7 +221,8 @@ BuildingCatalog::parseBuildings(const Config& conf, ProgressCallback* progress)
         if ( b->value("instanced", false) == true )
         {
             ModelSymbol* ms = new ModelSymbol();
-            ms->addTags( "building instanced" );
+            ms->addTags( "instanced" );
+//            ms->addTags( "building instanced" );
             if ( b->hasValue("tags") )
                 ms->addTags( b->value("tags") );
             building->setInstancedModelSymbol( ms );
