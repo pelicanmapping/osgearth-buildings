@@ -158,6 +158,12 @@ BuildingFactory::create(Feature*               feature,
                     if ( !tagString.empty() )
                         StringTokenizer(tagString, tags, " ", "\"", false);
                 }
+
+                else
+                {
+                    // If there's no tag expression, the default is "building".
+                    tags.push_back("building");
+                }
             }
         }
 

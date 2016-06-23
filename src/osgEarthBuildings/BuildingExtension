@@ -63,8 +63,6 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<osgEarth::Util::SimplePager> _pager;
         osg::ref_ptr<osgDB::Options> _readOptions;
 
-        CacheSettings* initializeCaching();
-
         UID _uid;
         
     protected: // Object

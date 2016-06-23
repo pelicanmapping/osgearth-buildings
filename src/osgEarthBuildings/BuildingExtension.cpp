@@ -67,9 +67,9 @@ BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
         conf.remove("cache_policy");
         std::string binName;
         if (cacheId().isSet() && !cacheId()->empty())
-            binName = Stringify() << "buildings." << cacheId().get();
+            binName = cacheId().get();
         else
-            binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
+            binName = hashToString(conf.toJSON(false));
 
         newSettings->setCacheBin(newSettings->getCache()->addBin(binName));
 
@@ -113,9 +113,6 @@ BuildingExtension::connect(MapNode* mapNode)
         OE_WARN << LC << "Failed to load the buildings catalog\n";
         catalog = 0L;
     }
-
-    // Open a cache bin, if a cache is active.
-    //osg::ref_ptr<CacheSettings> cacheSettings = initializeCaching();
 
     // Try to page against the feature profile, otherwise fallback to the map
     const Profile* featureProfile = features->getFeatureProfile()->getProfile();
@@ -176,44 +173,6 @@ BuildingExtension::disconnect(MapNode* mapNode)
         mapNode->removeChild( _root.get() );
     return true;
 }
-
-CacheSettings*
-BuildingExtension::initializeCaching()
-{
-    osg::ref_ptr<CacheSettings> newSettings;
-
-    if ( _readOptions.valid() )
-    {
-        CacheSettings* oldSettings = CacheSettings::get(_readOptions.get());
-        newSettings = oldSettings ? new CacheSettings(*oldSettings) : new CacheSettings();
-
-        // incorporate this object's cache policy, if it is set:
-        newSettings->integrateCachePolicy(cachePolicy());
-
-        // finally, if cacheing is a go, make a bin.
-        if (newSettings->isCacheEnabled())
-        {
-            Config conf = getConfig();
-            conf.remove("cache_policy");
-            std::string binName;
-            if (cacheId().isSet() && !cacheId()->empty())
-                binName = Stringify() << "buildings." << cacheId().get();
-            else
-                binName = Stringify() << "buildings." << hashString(conf.toJSON(false));
-
-            newSettings->setCacheBin(newSettings->getCache()->addBin(binName));
-        }
-
-        OE_INFO << LC << newSettings->toString() << "\n";
-    }
-    else
-    {
-        OE_WARN << LC << "read options not set; no caching\n";
-    }
-
-    return newSettings.release();
-}
-
 
 //.........................................................
 
