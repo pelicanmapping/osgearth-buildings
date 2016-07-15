@@ -57,8 +57,17 @@ BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
     CacheSettings* oldSettings = CacheSettings::get(_readOptions.get());
     CacheSettings* newSettings = oldSettings ? new CacheSettings(*oldSettings) : new CacheSettings();
 
-    // incorporate this object's cache policy, if it is set:
-    newSettings->integrateCachePolicy(cachePolicy());
+    // incorporate this object's cache policy, if it is set. By default, the buildings extension's 
+    // caching is OFF and you must expressly turn it on.
+    if (cachePolicy().isSet())
+    {
+        newSettings->integrateCachePolicy(cachePolicy());
+    }
+    else
+    {
+        OE_INFO << LC << "Cache policy not set; defaulting to NO CACHE.\n";
+        newSettings->cachePolicy() = CachePolicy::NO_CACHE;
+    }
 
     // finally, if cacheing is a go, make a bin.
     if (newSettings->isCacheEnabled())
