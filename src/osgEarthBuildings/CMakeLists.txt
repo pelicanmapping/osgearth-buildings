@@ -10,6 +10,7 @@ set(LIB_NAME osgEarthBuildings)
 set(HEADER_PATH ${OSGEARTH_SOURCE_DIR}/include/${LIB_NAME})
 
 set(LIB_PUBLIC_HEADERS
+    Analyzer
     BuildContext
     Building
     BuildingCatalog
@@ -38,6 +39,7 @@ set(LIB_PUBLIC_HEADERS
 )
 
 set(LIB_COMMON_FILES
+    Analyzer.cpp
     Building.cpp
     BuildingCatalog.cpp
     BuildingCompiler.cpp

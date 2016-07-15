@@ -69,6 +69,17 @@ namespace osgEarth { namespace Buildings
         optional<bool>& useClustering() { return _useClustering; }
         const optional<bool>& useClustering() const { return _useClustering; }
 
+        /**
+         * When clustering is enabled, this is the target number of vertices
+         * to gather in each cluster. Too low and you won't get the benefits of 
+         * clustering (too many drawables). Too high and you will overload the GPU
+         * with VBOs that are too large and hurt performance.
+         *
+         * This value is paseed to the osgUtil::Optimizer::MergeGeometryFilter.
+         */
+        optional<unsigned>& maxVertsPerCluster() { return _maxVertsPerCluster; }
+        const optional<unsigned>& maxVertsPerCluster() const { return _maxVertsPerCluster; }
+
     public:
         CompilerSettings(const Config& conf);
         Config getConfig() const;
@@ -76,6 +87,7 @@ namespace osgEarth { namespace Buildings
     protected:
         optional<float> _rangeFactor;
         optional<bool>  _useClustering;
+        optional<unsigned> _maxVertsPerCluster;
         Bins _bins;
     };
 

@@ -116,17 +116,7 @@ namespace osgEarth { namespace Buildings
         osg::Group* getDebugGroup() const { return _debugGroup; }
         
         /** Returns the StateSet unique to this skin resource (may be empty) - used for caching. */
-        osg::StateSet* getSkinStateSet(SkinResource* skin, const osgDB::Options* readOptions) {
-            osg::ref_ptr<osg::StateSet>& ss = _skinStateSetCache[skin->imageURI()->full()];
-            if (!ss.valid()) {
-                ss = new osg::StateSet();
-                osg::Texture* tex = _texCache->get(skin, readOptions);
-                if (tex) {
-                    ss->setTextureAttributeAndModes(0, tex, osg::StateAttribute::ON);
-                }
-            }
-            return ss;
-        }
+        osg::StateSet* getSkinStateSet(SkinResource* skin, const osgDB::Options* readOptions);
 
         osg::Texture* getTexture(SkinResource* skin, const osgDB::Options* readOptions) {
             return _texCache->get(skin, readOptions);

@@ -85,6 +85,7 @@ _rangeFactor( 6.0f )
     }
     conf.getIfSet("range_factor", _rangeFactor);
     conf.getIfSet("clustering", _useClustering);
+    conf.getIfSet("max_verts_per_cluster", _maxVertsPerCluster);
 }
 
 Config
@@ -110,6 +111,7 @@ CompilerSettings::getConfig() const
     
     conf.addIfSet("range_factor", _rangeFactor);
     conf.addIfSet("clustering", _useClustering);
+    conf.addIfSet("max_verts_per_cluster", _maxVertsPerCluster);
 
     return conf;
 }

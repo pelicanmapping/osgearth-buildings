@@ -41,6 +41,7 @@ using namespace osgEarth::Buildings;
 #define INSTANCE_MODEL        "_oeb_inm"
 #define DEBUG_ROOT            "_oeb_deb"
 
+#define USE_LODS 1
 
 CompilerOutput::CompilerOutput() :
 _range( FLT_MAX ),
@@ -145,6 +146,20 @@ CompilerOutput::readFromCache(const osgDB::Options* readOptions, ProgressCallbac
     }
 }
 
+osg::StateSet*
+CompilerOutput::getSkinStateSet(SkinResource* skin, const osgDB::Options* readOptions)
+{
+    osg::ref_ptr<osg::StateSet>& ss = _skinStateSetCache[skin->imageURI()->full()];
+    if (!ss.valid()) {
+        ss = new osg::StateSet();
+        osg::Texture* tex = _texCache->get(skin, readOptions);
+        if (tex) {
+            ss->setTextureAttributeAndModes(0, tex, osg::StateAttribute::ON);
+        }
+        //OE_INFO << LC << "Cached stateset for texture " << skin->getName() << "\n";
+    }
+    return ss;
+}
 
 void
 CompilerOutput::writeToCache(osg::Node* node, const osgDB::Options* writeOptions, ProgressCallback* progress) const
@@ -212,8 +227,12 @@ CompilerOutput::createSceneGraph(Session*                session,
     OE_START_TIMER(instances);
     if (!_instances.empty())
     {
+#ifdef USE_LODS
         // group to hold all instanced models:
         osg::LOD* instances = new osg::LOD();
+#else
+        osg::Group* instances = new osg::Group();
+#endif
         instances->setName(INSTANCES_ROOT);
 
         // keeps one copy of each instanced model per resource:
@@ -267,12 +286,16 @@ CompilerOutput::createSceneGraph(Session*                session,
                     modelGroup->addChild( modelxform );
                 }
 
+#ifdef USE_LODS
                 // check for a display bin for this model resource:
                 const CompilerSettings::Bin* bin = settings.getBin( res->tags() );
                 float lodScale = bin ? bin->lodScale : 1.0f;
 
                 float maxRange = std::max( _range*lodScale, modelGroup->getBound().radius() ); 
                 instances->addChild( modelGroup, 0.0, maxRange );
+#else
+                instances->addChild( modelGroup );
+#endif
             }
         }
               
@@ -305,8 +328,7 @@ namespace
         unsigned _models, _instanceGroups, _geodes;
         bool _useDrawInstanced;
         ProgressCallback* _progress;
-
-        void setUseDrawInstanced(bool value) { _useDrawInstanced = value; }
+        const CompilerSettings* _settings;
 
         PostProcessNodeVisitor() : osg::NodeVisitor()
         {
@@ -330,33 +352,6 @@ namespace
                 // no traverse necessary
             }
 
-            else if (node.getName() == INSTANCES_ROOT && !_useDrawInstanced)
-            {
-                OE_START_TIMER(clustering);
-                // Clustering:
-
-                // First, combine equivalent LOD ranges so that we can cluster multiple
-                // model together if they fall under the same LOD range
-                osgUtil::Optimizer::CombineLODsVisitor combineLODs;
-                node.accept(combineLODs);
-
-                // Flatten each LOD range individually
-                osg::Group* group = node.asGroup();
-                for (unsigned i = 0; i<group->getNumChildren(); ++i)
-                {
-                    osg::Group* instanceGroup = group->getChild(i)->asGroup();
-                    osgEarth::Symbology::MeshFlattener::run(instanceGroup);
-                }
-
-                if (_progress)
-                    _progress->stats("clustering") += OE_GET_TIMER(clustering);
-
-                // Generate shaders on the whole bunch.
-                Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
-
-                // no traverse necessary
-            }
-
             else if (node.getName() == INSTANCES_ROOT && _useDrawInstanced)
             {
                 DrawInstanced::install(node.getOrCreateStateSet());
@@ -377,6 +372,41 @@ namespace
                 // no traverse necessary
             }
 
+            else if (node.getName() == INSTANCES_ROOT && !_useDrawInstanced)
+            {
+                OE_START_TIMER(clustering);
+                // Clustering:
+
+                // Generate shaders first.
+                Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
+
+                // First, combine equivalent LOD ranges so that we can cluster multiple
+                // model together if they fall under the same LOD range
+                osgUtil::Optimizer::CombineLODsVisitor combineLODs;
+                node.accept(combineLODs);
+                
+                osg::Group* group = node.asGroup();
+#ifdef USE_LODS
+                // Flatten each LOD range individually
+                for (unsigned i = 0; i<group->getNumChildren(); ++i)
+                {
+                    osg::Group* instanceGroup = group->getChild(i)->asGroup();
+                    
+                    if (_settings->maxVertsPerCluster().isSet())
+                        osgEarth::Symbology::MeshFlattener::run(instanceGroup, _settings->maxVertsPerCluster().get());
+                    else
+                        osgEarth::Symbology::MeshFlattener::run(instanceGroup);                        
+                }
+#else
+                osgEarth::Symbology::MeshFlattener::run(group);
+#endif
+
+                if (_progress)
+                    _progress->stats("clustering") += OE_GET_TIMER(clustering);
+
+                // no traverse necessary
+            }
+
             else
             {
                 traverse(node);
@@ -391,9 +421,11 @@ CompilerOutput::postProcess(osg::Node* graph, const CompilerSettings& settings, 
     if (!graph) return;
 
     PostProcessNodeVisitor ppnv;
-    ppnv.setUseDrawInstanced(!settings.useClustering().get());
+    ppnv._useDrawInstanced = !settings.useClustering().get();
     ppnv._progress = progress;
+    ppnv._settings = &settings;
     graph->accept(ppnv);
 
+    osgDB::writeNodeFile(*graph, "out.osgb");
     //OE_INFO << "Post Process (" << _name << ") IGs=" << ppnv._instanceGroups << ", MODELS=" << ppnv._models << ", GEODES=" << ppnv._geodes << "\n";
 }

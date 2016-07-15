@@ -17,11 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "BuildingPager"
+#include "Analyzer"
 #include <osgEarth/Registry>
 #include <osgEarthSymbology/Query>
 #include <osgUtil/Optimizer>
 #include <osgUtil/Statistics>
 #include <osg/Version>
+#include <osg/CullFace>
+#include <osg/Geometry>
 
 #define LC "[BuildingPager] "
 
@@ -30,7 +33,6 @@ using namespace osgEarth::Features;
 using namespace osgEarth::Symbology;
 
 #define OE_TEST OE_DEBUG
-
 
 namespace
 {
@@ -97,6 +99,9 @@ _index     ( 0L )
     // This callack expires unused items from the art cache periodically
     this->addCullCallback(new TendArtCacheCallback(_artCache.get()));
 #endif
+
+    this->getOrCreateStateSet()->setAttributeAndModes(
+        new osg::CullFace(), osg::StateAttribute::OFF | osg::StateAttribute::PROTECTED);
 }
 
 void
@@ -212,6 +217,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         OE_WARN << LC << "Misconfiguration error; make sure Session and FeatureSource are set\n";
         return 0L;
     }
+
+    // For debugging. This tile is in Seattle.
+    //if (tileKey.str() != "14/2625/5725")
+    //    return 0L;
 
     //OE_INFO << LC << "Art cache size = " << ((ArtCache*)_artCache.get())->size() << "\n";
 
@@ -354,68 +363,17 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 progress->stats("pager.writeCache") = OE_GET_TIMER(writeCache);
         }
     }
-    
-#if 0
-    if (node.valid() && !canceled)
-    {
-        OE_START_TIMER(postProcess);
-
-        output.postProcess(node.get(), progress);
-
-        if (progress && progress->collectStats())
-            progress->stats("pager.postProcess") = OE_GET_TIMER(postProcess);
-    }
-#endif
 
     Registry::instance()->endActivity(activityName);
 
     double totalTime = OE_GET_TIMER(total);
 
-    // collect statistics about the resulting scene graph:
-    if (node.valid() && progress->collectStats())
-    {
-        osgUtil::StatsVisitor stats;
-        node->accept(stats);
-        progress->stats("# unique stateSets") = stats._statesetSet.size();
-        progress->stats("# stateSet refs") = stats._numInstancedStateSet;
-        progress->stats("# drawables") = stats._drawableSet.size();
-    }
-
     // STATS:
-    if ( progress && progress->collectStats() && !progress->stats().empty() && (fromCache ||numFeatures > 0))
+    if ( progress && progress->collectStats() && !progress->stats().empty() && (fromCache || numFeatures > 0))
     {
-        std::stringstream buf;
-        buf << "Key = " << tileKey.str() 
-            << " : Features = " << numFeatures 
-            << ", Time = " << (int)(1000.0*totalTime) 
-            << " ms, Avg = " << std::setprecision(3) << (1000.0*(totalTime/(double)numFeatures)) << " ms"
-            << std::endl;
+        Analyzer analyzer;
+        analyzer.analyze(node.get(), progress, numFeatures, totalTime, tileKey);
 
-        for(ProgressCallback::Stats::const_iterator i = progress->stats().begin(); i != progress->stats().end(); ++i)
-        { 
-            if (i->first.at(0) == '#')
-            {
-                buf
-                    << "    " 
-                    << std::setw(15) << i->first
-                    << std::setw(10) << i->second
-                    << std::endl;
-            }
-            else
-            {
-                buf
-                    << "    " 
-                    << std::setw(15) << i->first
-                    << std::setw(6) << (int)(1000.0*i->second) << " ms"
-                    << std::setw(6) << (int)(100.0*i->second/totalTime) << "%"
-                    << std::endl;
-            }
-        }
-
-        OE_INFO << LC << buf.str() << std::endl;
-
-        // clear them when we are done.
-        progress->stats().clear();
     }
 
     if (canceled)
