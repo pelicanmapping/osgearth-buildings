@@ -201,7 +201,7 @@ CompilerOutput::createSceneGraph(Session*                session,
         {
             const std::string& tag = g->first;
             const CompilerSettings::Bin* bin = settings.getBin(tag);
-            float maxRange = bin? _range*bin->lodScale : FLT_MAX;
+            float maxRange = bin? g->second->getBound().radius() + _range*bin->lodScale : FLT_MAX;
             geodeLOD->addChild( g->second.get(), 0.0f, maxRange );
         }
     }
@@ -291,7 +291,8 @@ CompilerOutput::createSceneGraph(Session*                session,
                 const CompilerSettings::Bin* bin = settings.getBin( res->tags() );
                 float lodScale = bin ? bin->lodScale : 1.0f;
 
-                float maxRange = std::max( _range*lodScale, modelGroup->getBound().radius() ); 
+                //float maxRange = std::max( _range*lodScale, 2.0f*modelGroup->getBound().radius() ); 
+                float maxRange = modelGroup->getBound().radius() + _range*lodScale;
                 instances->addChild( modelGroup, 0.0, maxRange );
 #else
                 instances->addChild( modelGroup );
@@ -426,6 +427,6 @@ CompilerOutput::postProcess(osg::Node* graph, const CompilerSettings& settings, 
     ppnv._settings = &settings;
     graph->accept(ppnv);
 
-    osgDB::writeNodeFile(*graph, "out.osgb");
+    //osgDB::writeNodeFile(*graph, "out.osgb");
     //OE_INFO << "Post Process (" << _name << ") IGs=" << ppnv._instanceGroups << ", MODELS=" << ppnv._models << ", GEODES=" << ppnv._geodes << "\n";
 }
