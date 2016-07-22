@@ -272,10 +272,7 @@
     
     <model name="roof.instanced.sample-house" tags="building instanced residential singlefamily">
         <url>models/house.ive</url>
-    </model>
-    
-    <model name="cow-instance" tags="cow building instanced">
-        <url>H:/devel/osg/OpenSceneGraph-Data/cow.osg</url>
+        <can_scale_to_fit_z>false</can_scale_to_fit_z>
     </model>
 
 </resources>

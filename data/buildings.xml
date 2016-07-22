@@ -129,7 +129,7 @@
                                 <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
                                 <elevations>
                                     <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.poured">
-                                        <roof type="flat"/>
+                                        <roof type="flat" skin_name="parapet.concrete" />
                                     </elevation>
                                 </elevations>
                             </elevation>
@@ -154,6 +154,7 @@
                                 <roof type="flat" skin_tags="roof commercial" model_tags="roof clutter"/>
                                 <elevations>                
                                     <elevation type="parapet" inset="0.15" height="1.0" width="0.0" skin_name="parapet.poured">
+                                        <roof type="flat" skin_name="parapet.concrete" />
                                     </elevation>
                                 </elevations>
                             </elevation>

@@ -291,9 +291,25 @@ CompilerOutput::createSceneGraph(Session*                session,
                 const CompilerSettings::Bin* bin = settings.getBin( res->tags() );
                 float lodScale = bin ? bin->lodScale : 1.0f;
 
-                //float maxRange = std::max( _range*lodScale, 2.0f*modelGroup->getBound().radius() ); 
-                float maxRange = modelGroup->getBound().radius() + _range*lodScale;
-                instances->addChild( modelGroup, 0.0, maxRange );
+                float maxRange = _range*lodScale;
+
+                // find the LOD range to add it to, or create a new one if neccesary:
+                bool added = false;
+                for(unsigned i=0; i<instances->getNumChildren() && !added; ++i)
+                {
+                    if (instances->getMaxRange(i) == maxRange)
+                    {
+                        instances->getChild(i)->asGroup()->addChild(modelGroup);
+                        added = true;
+                    }
+                }
+
+                if (!added)
+                {
+                    osg::Group* parent = new osg::Group();
+                    instances->addChild(parent, 0.0, maxRange);
+                    parent->addChild( modelGroup );
+                }
 #else
                 instances->addChild( modelGroup );
 #endif
@@ -376,19 +392,12 @@ namespace
             else if (node.getName() == INSTANCES_ROOT && !_useDrawInstanced)
             {
                 OE_START_TIMER(clustering);
+
                 // Clustering:
-
-                // Generate shaders first.
-                Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
-
-                // First, combine equivalent LOD ranges so that we can cluster multiple
-                // model together if they fall under the same LOD range
-                osgUtil::Optimizer::CombineLODsVisitor combineLODs;
-                node.accept(combineLODs);
-                
                 osg::Group* group = node.asGroup();
+
 #ifdef USE_LODS
-                // Flatten each LOD range individually
+                // Flatten each LOD range individually.
                 for (unsigned i = 0; i<group->getNumChildren(); ++i)
                 {
                     osg::Group* instanceGroup = group->getChild(i)->asGroup();
@@ -401,6 +410,9 @@ namespace
 #else
                 osgEarth::Symbology::MeshFlattener::run(group);
 #endif
+
+                // Generate shaders afterwards.
+                Registry::instance()->shaderGenerator().run(&node, "Instances Root", _sscache.get());
 
                 if (_progress)
                     _progress->stats("clustering") += OE_GET_TIMER(clustering);
@@ -426,7 +438,4 @@ CompilerOutput::postProcess(osg::Node* graph, const CompilerSettings& settings, 
     ppnv._progress = progress;
     ppnv._settings = &settings;
     graph->accept(ppnv);
-
-    //osgDB::writeNodeFile(*graph, "out.osgb");
-    //OE_INFO << "Post Process (" << _name << ") IGs=" << ppnv._instanceGroups << ", MODELS=" << ppnv._models << ", GEODES=" << ppnv._geodes << "\n";
 }

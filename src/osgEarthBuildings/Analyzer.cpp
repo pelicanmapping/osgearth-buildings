@@ -23,8 +23,11 @@
 #include <osgEarth/ImageUtils>
 #include <osg/BlendFunc>
 #include <osg/BlendColor>
+#include <osgDB/Registry>
+#include <osgDB/WriteFile>
 #include <osgUtil/Statistics>
 #include <iostream>
+#include <set>
 
 #define LC "[Analyzer] "
 
@@ -47,6 +50,50 @@ namespace
             out << "Textures (" << _textures.size() << ") : \n";
             for (std::set<osg::Texture*>::const_iterator i = _textures.begin(); i != _textures.end(); ++i) {
                 out << "    " << std::hex << (uintptr_t)(*i) << " : " << std::dec << (*i)->getImage(0)->getFileName() << "\n";
+            }
+        }
+    };
+
+    struct CompareStateSets {
+        bool operator()(const osg::StateSet* lhs, const osg::StateSet* rhs) const {
+            return lhs->compare(*rhs, true) < 0;
+        }
+    };
+    typedef std::set< osg::ref_ptr<osg::StateSet>, CompareStateSets> StateSetSet;
+
+    struct FindStateSets : public osg::NodeVisitor
+    {
+        FindStateSets() {
+            setTraversalMode(TRAVERSE_ALL_CHILDREN);
+            setNodeMaskOverride(~0);
+        }
+        void apply(osg::Node& node) {
+            apply(node.getStateSet());
+            traverse(node);
+        }
+        void apply(osg::Geode& geode) {
+            apply(geode.getStateSet());
+            for (unsigned i = 0; i < geode.getNumDrawables(); ++i) {
+                apply(geode.getDrawable(i)->getStateSet());
+            }
+        }
+        void apply(osg::StateSet* ss) {
+            if (ss) {
+                _statesets.insert(ss);
+            }
+        }
+        //std::set<osg::StateSet*> _statesets;
+        //typedef std::set<osg::StateSet*> StateSets;
+        StateSetSet _statesets;
+
+        void print(std::ostream& out) {
+            out << "Statesets: (" << _statesets.size() << ")\n";
+            osgDB::ReaderWriter* rw = osgDB::Registry::instance()->getReaderWriterForExtension("osgt");
+            for (StateSetSet::iterator i = _statesets.begin(); i != _statesets.end(); ++i) {
+                osg::StateSet* ss = *i;
+                out << std::hex << (uintptr_t)ss << std::dec << std::endl;
+                //rw->writeObject(*ss, out);
+                //out << std::endl;
             }
         }
     };
@@ -141,6 +188,13 @@ Analyzer::analyze(osg::Node* node, ProgressCallback* progress, unsigned numFeatu
         FindTextures ft;
         node->accept(ft);
         ft.print(std::cout);
+
+        FindStateSets fss;
+        node->accept(fss);
+        fss.print(std::cout);
+
+        // Uncomment to dump out a file per tile.
+        //osgDB::writeNodeFile(*node, "out.osgt");
     }
 
     std::stringstream buf;

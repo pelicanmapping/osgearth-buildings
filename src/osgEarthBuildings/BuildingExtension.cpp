@@ -82,7 +82,7 @@ BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
 
         newSettings->setCacheBin(newSettings->getCache()->addBin(binName));
 
-        OE_INFO << LC << "Opened cache bin [" << binName << "]\n";
+        OE_INFO << LC << "Cache bin is [" << binName << "]\n";
     }
 
     newSettings->store(_readOptions.get());
@@ -104,8 +104,17 @@ BuildingExtension::connect(MapNode* mapNode)
         return false;
     }
     
-    // fire it up
+    // Open the building feature source:
+#if 1
     features->initialize(_readOptions.get());
+#else
+    const Status& status = features->open(_readOptions.get());
+    if (status.isError())
+    {
+        OE_WARN << LC << "Failed to open feature data: " << status.message() << std::endl;
+        return false;
+    }
+#endif
 
     // Set up a feature session with a cache:
     osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _readOptions.get() );
