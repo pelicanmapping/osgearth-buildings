@@ -97,57 +97,6 @@ namespace
             }
         }
     };
-
-    struct ColorVisitor : public osg::NodeVisitor
-    {
-        std::set<osg::Drawable*> _visitedDrawables;
-
-        int r;
-        int g;
-        int b;
-        int brightness;
-
-        ColorVisitor() : osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN)
-        {
-            r = g = b = brightness = 128;
-        }
-
-        virtual void apply(osg::Geode& geode)
-        {
-            for (unsigned int i = 0; i < geode.getNumDrawables(); i++)
-            {
-                if (_visitedDrawables.find(geode.getDrawable(i)) != _visitedDrawables.end())
-                {
-                    continue;
-                }
-
-                _visitedDrawables.insert(geode.getDrawable(i));
-                applyColor(geode.getDrawable(i));
-            }
-
-            osg::NodeVisitor::apply(geode);
-        }
-
-        void applyColor(osg::Drawable* drawable)
-        {
-            r = (r + 3) % 255;
-            g = (g + 13) % 255;
-            b = (b + 25) % 255;
-            brightness = (brightness + 1) % 3;
-
-            // set blending function to use blend color
-            osg::ref_ptr<osg::BlendFunc> blendFunc = new osg::BlendFunc(GL_CONSTANT_COLOR, GL_ZERO);
-            osg::ref_ptr<osg::BlendColor> bc = new osg::BlendColor(osg::Vec4(r / 255.0 + (brightness - 1) * 0.25, g / 255.0 + (brightness - 1) * 0.25, b / 255.0 + (brightness - 1) * 0.25, 1.0));
-
-            int attributes = osg::StateAttribute::ON | osg::StateAttribute::PROTECTED;
-            osg::StateSet* originalState = drawable->getOrCreateStateSet();
-            osg::StateSet* state = static_cast<osg::StateSet*>(originalState->clone(osg::CopyOp::SHALLOW_COPY));
-
-            drawable->setStateSet(state);
-            state->setAttributeAndModes(blendFunc.get(), attributes);
-            state->setAttributeAndModes(bc.get(), attributes);
-        }
-    };
 }
 
 void
@@ -225,8 +174,5 @@ Analyzer::analyze(osg::Node* node, ProgressCallback* progress, unsigned numFeatu
 
     // clear them when we are done.
     progress->stats().clear();
-
-    /*ColorVisitor cv;
-    node->accept(cv);*/
 
 }
