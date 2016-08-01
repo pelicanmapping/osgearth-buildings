@@ -61,6 +61,25 @@ namespace
     };
     typedef std::set< osg::ref_ptr<osg::StateSet>, CompareStateSets> StateSetSet;
 
+    void printStateSet(osg::StateSet* ss, std::ostream& os)
+    {
+        os << "  # attrs = " << ss->getAttributeList().size() << "\n";
+
+        const osg::StateSet::AttributeList& alist = ss->getAttributeList();
+        for (osg::StateSet::AttributeList::const_iterator i = alist.begin(); i != alist.end(); ++i) {
+            os << "     " << std::hex << (uintptr_t)i->second.first.get() << std::dec << " : " << i->second.first.get()->className() << "\n";
+        }
+
+        os << "  # texattrs = \n";
+
+        const osg::StateSet::TextureAttributeList& talist = ss->getTextureAttributeList();
+        for (osg::StateSet::TextureAttributeList::const_iterator i = talist.begin(); i != talist.end(); ++i) {
+            for (osg::StateSet::AttributeList::const_iterator j = i->begin(); j != i->end(); ++j) {
+                os << "     " << std::hex << (uintptr_t)j->second.first.get() << std::dec << " : " << j->second.first.get()->className() << "\n";
+            }
+        }
+    }
+
     struct FindStateSets : public osg::NodeVisitor
     {
         FindStateSets() {
@@ -82,8 +101,7 @@ namespace
                 _statesets.insert(ss);
             }
         }
-        //std::set<osg::StateSet*> _statesets;
-        //typedef std::set<osg::StateSet*> StateSets;
+
         StateSetSet _statesets;
 
         void print(std::ostream& out) {
@@ -92,8 +110,7 @@ namespace
             for (StateSetSet::iterator i = _statesets.begin(); i != _statesets.end(); ++i) {
                 osg::StateSet* ss = *i;
                 out << std::hex << (uintptr_t)ss << std::dec << std::endl;
-                //rw->writeObject(*ss, out);
-                //out << std::endl;
+                printStateSet(ss, out);
             }
         }
     };

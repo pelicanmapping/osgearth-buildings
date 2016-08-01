@@ -81,16 +81,12 @@ namespace osgEarth { namespace Buildings
                 return ReadResult::FILE_NOT_FOUND;
             }
 
-#if 1
-            fs->initialize(options);
-#else
             const Status& status = fs->open(options);
             if (status.isError())
             {
                 OE_WARN << LC << "No feature data: " << status.message() << std::endl;
                 return ReadResult::FILE_NOT_FOUND;
             }
-#endif
 
             // Create a cursor to iterator over the feature data:
             osg::ref_ptr<FeatureCursor> cursor = fs->createFeatureCursor();

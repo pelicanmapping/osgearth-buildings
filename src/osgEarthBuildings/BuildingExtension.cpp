@@ -105,16 +105,12 @@ BuildingExtension::connect(MapNode* mapNode)
     }
     
     // Open the building feature source:
-#if 1
-    features->initialize(_readOptions.get());
-#else
     const Status& status = features->open(_readOptions.get());
     if (status.isError())
     {
         OE_WARN << LC << "Failed to open feature data: " << status.message() << std::endl;
         return false;
     }
-#endif
 
     // Set up a feature session with a cache:
     osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _readOptions.get() );
