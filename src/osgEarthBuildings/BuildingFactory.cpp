@@ -90,12 +90,21 @@ BuildingFactory::create(Feature*               feature,
         _session->styles() ? _session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
         0L;
         
+    
+
+  
     // Pull a resource library if one is defined.
     ResourceLibrary* reslib = 0L;
     if (buildingSymbol && buildingSymbol->library().isSet())
-        reslib = _session->styles()->getResourceLibrary(buildingSymbol->library().get());
+    {
+        optional<StringExpression>  librayExpr = buildingSymbol->library();
+        std::string library = feature->eval(librayExpr.mutable_value(), _session.get());
+        reslib = _session->styles()->getResourceLibrary(library);
+    }
     if ( !reslib )
+    {
         reslib = _session->styles()->getDefaultResourceLibrary();
+    }
 
     // Construct a context to use during the build process.
     BuildContext context;

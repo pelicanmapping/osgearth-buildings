@@ -36,7 +36,8 @@ Symbol       ( rhs, copyop ),
 _floorHeight ( rhs._floorHeight ),
 _heightExpr  ( rhs._heightExpr ),
 _modelURIExpr( rhs._modelURIExpr ),
-_tagsExpr    ( rhs._tagsExpr )
+_tagsExpr    ( rhs._tagsExpr ),
+_libraryName ( rhs._libraryName )
 {
     //nop
 }
@@ -50,7 +51,7 @@ BuildingSymbol::getConfig() const
     conf.addObjIfSet( "height",       _heightExpr );
     conf.addObjIfSet( "tags",         _tagsExpr );
     conf.addObjIfSet( "model",        _modelURIExpr );
-    conf.addIfSet   ( "library_name", _libraryName );
+    conf.addObjIfSet( "library_name", _libraryName );
     return conf;
 }
 
@@ -61,7 +62,7 @@ BuildingSymbol::mergeConfig( const Config& conf )
     conf.getObjIfSet( "height",       _heightExpr );
     conf.getObjIfSet( "tags",         _tagsExpr );
     conf.getObjIfSet( "model",        _modelURIExpr );
-    conf.getIfSet   ( "library_name", _libraryName );
+    conf.getObjIfSet( "library_name", _libraryName );
 }
 
 void
@@ -82,6 +83,6 @@ BuildingSymbol::parseSLD(const Config& c, Style& style)
         style.getOrCreate<BuildingSymbol>()->modelURI() = !c.value().empty() ? StringExpression(c.value()) : *defaults.tags();
     }
     else if ( match(c.key(), "building-library") ) {
-        style.getOrCreate<BuildingSymbol>()->library() = c.value();
+        style.getOrCreate<BuildingSymbol>()->library() = !c.value().empty() ? StringExpression(c.value()) : *defaults.library();
     }
 }

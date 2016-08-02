@@ -57,8 +57,8 @@ namespace osgEarth { namespace Buildings
         const optional<StringExpression>& modelURI() const { return _modelURIExpr; }
 
         /** Resource library name */
-        optional<std::string>& library() { return _libraryName; }
-        const optional<std::string>& library() const { return _libraryName; }
+        optional<StringExpression>& library() { return _libraryName; }
+        const optional<StringExpression>& library() const { return _libraryName; }
 
     public: // serialization support
         virtual Config getConfig() const;
@@ -70,7 +70,7 @@ namespace osgEarth { namespace Buildings
         optional<NumericExpression> _heightExpr;
         optional<StringExpression>  _tagsExpr;
         optional<StringExpression>  _modelURIExpr;
-        optional<std::string>       _libraryName;
+        optional<StringExpression>  _libraryName;
     };
 } }
 
