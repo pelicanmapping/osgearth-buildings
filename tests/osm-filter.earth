@@ -1,0 +1,213 @@
+<map>
+
+    <options>
+        <terrain driver="rex" merges_per_frame="4"/>
+        <cache driver="filesystem" path="cache"/>
+    </options>
+    
+    <image name="readymap imagery" driver="tms">
+        <url>http://readymap.org/readymap/tiles/1.0.0/22/</url>
+    </image>
+    
+    <!--
+    <image name="mapquest_open_aerial" driver="xyz">
+        <url>http://oatile[1234].mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg</url>
+        <profile>spherical-mercator</profile>
+        <nodata_image>http://oatile3.mqcdn.com/tiles/1.0.0/sat/13/636/6210.jpg</nodata_image>
+    </image>
+    -->
+    
+    <elevation driver="tms"
+           url="http://readymap.org/readymap/tiles/1.0.0/116/">
+    </elevation>
+    
+    <!--
+    <model name="cities" driver="feature_geom" max_range="1e7" min_range="100000">
+        <features name="cities" driver="ogr">
+            <url>H:/devel/osgearth/repo/data/ne_cities.shp</url>
+            <profile>spherical-mercator</profile>
+        </features>
+
+        <styles>
+            <selector class="cities">
+                <query><expr><![CDATA[rank_max > 9]]></expr></query>
+            </selector>
+            <style type="text/css">              
+                cities {
+                    text-content:   [name];
+                    text-priority:  [rank_max];
+                    text-halo:      #3f3f3f;
+                    text-size:      16+1.25*([rank_max]-9);
+                    text-declutter: true;
+                }     
+            </style>
+        </styles>        
+    </model>
+  -->
+    
+    <extensions>
+    
+        <buildings additive_lods="true" cacheid="osm">
+
+        
+            <features name="buildings" driver="tfs">
+                <url>http://s3.amazonaws.com/pelican-downloads/osm_buildings/</url>        
+                <invert_y>true</invert_y>
+                <min_level>14</min_level>
+                <max_level>14</max_level>
+                <profile>spherical-mercator</profile>
+                <format>pbf</format>            
+                <filters>
+                  <join>
+                      <features name="world" driver="ogr">
+                          <url>d:/dev/osgearth/data/world.shp</url>
+                      </features>
+                  </join>
+              </filters>
+
+            </features>
+            
+            <!-- <cache_policy usage="read_only"/> -->
+            
+            <building_catalog>../data/buildings.xml</building_catalog>
+            
+            <settings>
+                <bins>
+                    <bin tag="clutter"      lod_scale="0.25"/>
+                    <bin tag="singlefamily" lod_scale="0.5"/>
+                    <bin tag="parapet"      lod_scale="0.25"/>
+                </bins>
+            </settings>
+                        
+            <styles>
+                <library name="buildings">
+                    <url>../data/catalog/catalog.xml</url>
+                </library>
+
+                <library name="buildings_fr">
+                    <url>../data/catalog/catalog_fr.xml</url>
+                </library>
+
+                <library name="buildings_jp">
+                    <url>../data/catalog/catalog_jp.xml</url>
+                </library>
+
+                
+                <style type="text/css">
+                    14 {
+                        building-height:   getHeight();
+                        building-library:  getLibrary();
+                        altitude-clamping: terrain;  
+
+                    }
+                </style>
+                
+                <script language="javascript" minimal="true">
+                  <![CDATA[
+                  
+                    function getHeight() {                      
+                        var height = 7.0;
+                        if ("height" in feature.properties) {
+                            height = Math.max(feature.properties.height, 4.0);
+                        }
+                        return height;
+                    }
+
+                    function getLibrary() {
+                        var code = feature.properties["code"];
+                        if (code == "FR") return "buildings_fr";
+                        if (code == "JP") return "buildings_jp";
+                        return "buildings";
+                    }
+
+                    function getTags() {
+                        return feature.properties["code"];
+                    }
+                                        
+                  ]]>
+                </script>
+            </styles>
+            
+        </buildings>
+        
+        <decluttering>
+            <sort_by_priority>true</sort_by_priority>
+        </decluttering>
+        
+        <viewpoints>
+            <viewpoint name="Paris">
+                <heading>-31.4538</heading>
+                <pitch>-4.28229</pitch>
+                <range>1827.32m</range>
+                <long>2.28496995276303</long>
+                <lat>48.86352703509513</lat>
+                <height>72.02410362847149</height>
+            </viewpoint>
+            <viewpoint name="Seattle">
+              <heading>163.366</heading>
+              <pitch>-4.87876</pitch>
+              <range>3124.53m</range>
+              <long>-122.3371213015735</long>
+              <lat>47.6106601306717</lat>
+              <height>54.08651210740209</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="New York">
+              <heading>-18.0478</heading>
+              <pitch>-15.8031</pitch>
+              <range>4465.71m</range>
+              <long>-73.97828175687108</long>
+              <lat>40.68666567694596</lat>
+              <height>17.28424610942602</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="San Francisco">
+              <heading>-32.4442</heading>
+              <pitch>-9.77047</pitch>
+              <range>3349.87m</range>
+              <long>-122.4022968684475</long>
+              <lat>37.77955999006335</lat>
+              <height>4.108565904200077</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="Mumbai">
+              <heading>51.3514</heading>
+              <pitch>-12.1379</pitch>
+              <range>1547.47m</range>
+              <long>72.8215130257299</long>
+              <lat>19.00404772134459</lat>
+              <height>5.364573975093663</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="London">
+              <heading>57.1563</heading>
+              <pitch>-16.9776</pitch>
+              <range>3360.06m</range>
+              <long>-0.1137174062164174</long>
+              <lat>51.49671036318259</lat>
+              <height>6.710510544478893</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="Toronto">
+              <heading>-80.6332</heading>
+              <pitch>-13.1004</pitch>
+              <range>3460.53m</range>
+              <long>-79.36803491300944</long>
+              <lat>43.65157708314885</lat>
+              <height>82.76821340993047</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+            <viewpoint name="Vancouver">
+              <heading>-0.572968</heading>
+              <pitch>-10.777</pitch>
+              <range>2725.77m</range>
+              <long>-123.1203381795948</long>
+              <lat>49.25776033212635</lat>
+              <height>54.16124152671546</height>
+              <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+            </viewpoint>
+        </viewpoints>
+        
+       
+    </extensions>
+</map>

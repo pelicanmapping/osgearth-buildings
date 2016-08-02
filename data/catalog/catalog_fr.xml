@@ -1,0 +1,278 @@
+<?xml version="1.0" ?>
+<resources name="osgearth-buildings">
+
+    <!-- Facades: residential -->
+    
+    <skin name="facade.residential.sf.1" tags="facade residential singlefamily 2story">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>8</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="facade.residential.sf.2" tags="facade residential singlefamily 2story">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>12</image_width>
+		<image_height>8</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="facade.residential.sf.3" tags="facade residential singlefamily 3story">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>12</image_width>
+		<image_height>12</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <!-- Facades: commercial -->
+    
+    <skin name="facade.commercial.1" tags="facade commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>25</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="facade.commercial.1.3" tags="facade commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>25</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="facade.commercial.2" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.2.2" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>8</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.3" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>14</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.4" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>25</image_width>
+		<image_height>8</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.5" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>30</image_width>
+		<image_height>12</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.commercial.6" tags="facade commercial">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>30</image_width>
+		<image_height>12</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.retail.0" tags="facade retail">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="facade.retail.2" tags="facade retail">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>5</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="brick">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <skin name="brickfade">
+        <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+    </skin>
+    
+    <!-- Roofs -->
+    
+    <skin name="roof.commercial.1" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>10</image_width>
+		<image_height>10</image_height>
+		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
+	</skin>
+    
+    <skin name="roof.commercial.2" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>10</image_width>
+		<image_height>10</image_height>
+		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
+	</skin>
+    
+    <skin name="roof.commercial.gravel" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>20</image_width>
+		<image_height>20</image_height>
+		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
+	</skin>
+    
+    <skin name="roof.residential.brown" tags="roof residential">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>3</image_width>
+		<image_height>3</image_height>
+		<texture_mode>decal</texture_mode>
+        <atlas>false</atlas>
+	</skin>
+    
+    
+    <skin name="roof.comm.2" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.56" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.94" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="roof.comm.95" tags="roof commercial">
+	    <url>fr.png</url>
+		<tiled>false</tiled>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    
+    <!-- Parapets -->
+    
+    <skin name="parapet.concrete" tags="parapet commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>2</image_width>
+		<image_height>2</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    <skin name="parapet.poured" tags="parapet commercial">
+	    <url>fr.png</url>
+		<tiled>true</tiled>
+		<image_width>8</image_width>
+		<image_height>2</image_height>
+		<texture_mode>decal</texture_mode>
+	</skin>
+    
+    
+    <!-- BARRIERS AND FENCES -->
+    
+    <skin name="fence.picket" tags="fence picket residential">
+        <url>fr.png</url>
+		<image_width>5</image_width>
+		<image_height>1.5</image_height>
+        <texture_mode>modulate</texture_mode>
+    </skin>
+    
+    
+    <!-- ROOF CLUTER MODELS -->
+    
+    <model name="roof.cow" tags="roof">
+        <url>models/cow.osg</url>
+    </model>
+    
+    <model name="roof.flag" tags="roof">
+        <url>models/red_flag.osg.10.scale</url>
+    </model>
+        
+    <model name="roof.ac" tags="roof clutter">
+        <url>models/ac.osgb</url>
+    </model>
+        
+    <model name="roof.ac.small" tags="roof clutter">
+        <url>models/ac.osgb.(0.3,1,1).scale</url>
+    </model>
+        
+    <model name="roof.clutter.1" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_1.flt</url>
+    </model>
+        
+    <model name="roof.clutter.2" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_2.flt</url>
+    </model>
+        
+    <model name="roof.clutter.3" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_3.flt</url>
+    </model>
+        
+    <model name="roof.clutter.4" tags="roof clutter">
+        <url>models/rc/rooftop_clutter_4.flt</url>
+    </model>
+        
+    <model name="roof.clutter.5" tags="roof clutter">
+        <url>models/rc/rc5.osgb</url>
+    </model>    
+    
+    
+    <!-- INSTANCED ROOF MODELS -->
+
+    <model name="roof.instanced.roof1" tags="roof instanced residential">
+        <url>models/roof1.osgb</url>
+    </model>
+	
+    <model name="roof.instanced.roof5" tags="roof instanced residential">
+        <url>models/roof5.osgb</url>
+    </model> 	
+
+    
+    <!-- INSTANCED BUILDING MODELS -->
+    
+    <model name="roof.instanced.sample-house" tags="building instanced residential singlefamily">
+        <url>models/house.ive</url>
+        <can_scale_to_fit_z>false</can_scale_to_fit_z>
+    </model>
+
+</resources>
