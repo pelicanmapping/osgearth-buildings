@@ -284,9 +284,15 @@ BuildingCatalog::parseElevations(const Config&     conf,
             // use this parent as new parent for sub-elevations
             skinSymbol = parentSkinSymbol;
             if ( parent == 0L )
-            //if ( parentSkinSymbol != 0L )
                 elevation->setSkinSymbol( parentSkinSymbol );
         }
+
+        if (e->hasValue("tag"))
+            elevation->setTag(e->value("tag"));
+        else if (e->hasValue("tags"))
+            elevation->setTag(e->value("tags"));
+        else if (parent)
+            elevation->setTag(parent->getTag());            
 
         // resolve the height properties:
         optional<float> hp;
@@ -314,7 +320,13 @@ BuildingCatalog::parseElevations(const Config&     conf,
         {
             Roof* roof = parseRoof( e->child_ptr("roof"), progress );
             if ( roof )
+            {
                 elevation->setRoof( roof );
+                if (roof->getTag().empty())
+                {
+                    roof->setTag(elevation->getTag());
+                }
+            }
         }
 
         output.push_back( elevation );
@@ -355,6 +367,11 @@ BuildingCatalog::parseRoof(const Config* r, ProgressCallback* progress) const
     {
         roof->setModelSymbol( modelSymbol );
     }
+
+    if (r->hasValue("tag"))
+        roof->setTag(r->value("tag"));
+    else if (r->hasValue("tags"))
+        roof->setTag(r->value("tags"));
 
     return roof;
 }

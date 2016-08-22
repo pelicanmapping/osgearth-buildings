@@ -197,12 +197,17 @@ CompilerOutput::createSceneGraph(Session*                session,
         geodeLOD->setName(GEODES_ROOT);
         root->addChild( geodeLOD );
 
+        const GeoCircle& bc = _key.getExtent().getBoundingGeoCircle();
+
         for(TaggedGeodes::const_iterator g = _geodes.begin(); g != _geodes.end(); ++g)
         {
             const std::string& tag = g->first;
             const CompilerSettings::Bin* bin = settings.getBin(tag);
-            float maxRange = bin? g->second->getBound().radius() + _range*bin->lodScale : FLT_MAX;
-            geodeLOD->addChild( g->second.get(), 0.0f, maxRange );
+            //float minRange = bin && bin->minLodScale > 0.0f? g->second->getBound().radius() + _range*bin->minLodScale : 0.0f;
+            //float maxRange = bin ? g->second->getBound().radius() + _range*bin->lodScale : FLT_MAX;
+            float minRange = bin && bin->minLodScale > 0.0f? bc.getRadius() + _range*bin->minLodScale : 0.0f;
+            float maxRange = bin ? bc.getRadius() + _range*bin->lodScale : FLT_MAX;
+            geodeLOD->addChild( g->second.get(), minRange, maxRange );
         }
     }
 

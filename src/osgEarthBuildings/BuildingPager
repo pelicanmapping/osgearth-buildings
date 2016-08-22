@@ -87,6 +87,8 @@ namespace osgEarth { namespace Buildings
 
         bool cacheReadsEnabled(const osgDB::Options*) const;
         bool cacheWritesEnabled(const osgDB::Options*) const;
+
+        void applyRenderSymbology(osg::Node*, const Style& style) const;
     };
 
 } } // namespace

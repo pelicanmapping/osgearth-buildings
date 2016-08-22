@@ -25,6 +25,7 @@
 #include <osg/Version>
 #include <osg/CullFace>
 #include <osg/Geometry>
+#include <osgDB/WriteFile>
 
 #define LC "[BuildingPager] "
 
@@ -160,18 +161,6 @@ BuildingPager::setCatalog(BuildingCatalog* catalog)
     _catalog = catalog;
 }
 
-#if 0
-void
-BuildingPager::setCacheSettings(CacheSettings* cacheSettings)
-{
-    _cacheSettings = cacheSettings;
-    if (_cacheSettings.valid())
-    {
-        OE_INFO << LC "Cache policy = " << _cacheSettings->cachePolicy()->usageString() << "\n";
-    }
-}
-#endif
-
 void
 BuildingPager::setCompilerSettings(const CompilerSettings& settings)
 {
@@ -221,16 +210,14 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     // For debugging. This tile is in Seattle.
     //if (tileKey.str() != "14/2625/5725")
     //    return 0L;
-
-    //OE_INFO << LC << "Art cache size = " << ((ArtCache*)_artCache.get())->size() << "\n";
-
+    
     if ( progress )
         progress->collectStats() = _profile;
 
     OE_START_TIMER(total);
     unsigned numFeatures = 0;
     
-    std::string activityName("Buildings " + tileKey.str());
+    std::string activityName("Load building tile " + tileKey.str());
     Registry::instance()->startActivity(activityName);
 
     // result:
@@ -246,7 +233,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     readOptions->setObjectCacheHint(osgDB::Options::CACHE_IMAGES);
 
     // TESTING:
-    //OE_INFO << LC << "Art cache size = " << ((MyObjectCache*)(_artCache.get()))->getSize() << "\n";
+    Registry::instance()->startActivity("Bld art cache", Stringify()<<((ArtCache*)(_artCache.get()))->size());
+    Registry::instance()->startActivity("Bld tex cache", Stringify() << _texCache->_cache.size());
+    Registry::instance()->startActivity("RCache skins", Stringify() << _session->getResourceCache()->getSkinStats()._entries);
+    Registry::instance()->startActivity("RCache insts", Stringify() << _session->getResourceCache()->getInstanceStats()._entries);
 
     // Holds all the final output.
     CompilerOutput output;
@@ -275,9 +265,14 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
     if (!node.valid() && !canceled)
     {
+        // fetch the style for this LOD:
+        std::string styleName = Stringify() << tileKey.getLOD();
+        const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
+
         // Create a cursor to iterator over the feature data:
         Query query;
         query.tileKey() = tileKey;
+        
         osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor(query);
         if (cursor.valid() && cursor->hasMore() && !canceled)
         {
@@ -287,9 +282,6 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             factory->setCatalog(_catalog.get());
             factory->setClamper(_clamper.get());
             factory->setOutputSRS(_session->getMapSRS());
-
-            std::string styleName = Stringify() << tileKey.getLOD();
-            const Style* style = _session->styles() ? _session->styles()->getStyle(styleName) : 0L;
 
             // Prepare the terrain envelope, for clamping.
             // TODO: review the LOD selection..
@@ -347,6 +339,10 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         {
             OE_START_TIMER(postProcess);
 
+            // apply render symbology, if it exists.
+            if (style)
+                applyRenderSymbology(node.get(), *style);
+
             output.postProcess(node.get(), _compilerSettings, progress);
 
             if (progress && progress->collectStats())
@@ -373,7 +369,6 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     {
         Analyzer analyzer;
         analyzer.analyze(node.get(), progress, numFeatures, totalTime, tileKey);
-
     }
 
     if (canceled)
@@ -384,5 +379,57 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     else
     {
         return node.release();
+    }
+}
+
+void
+BuildingPager::applyRenderSymbology(osg::Node* node, const Style& style) const
+{
+    const RenderSymbol* render = style.get<RenderSymbol>();
+    if ( render )
+    {
+        if ( render->depthTest().isSet() )
+        {
+            node->getOrCreateStateSet()->setMode(
+                GL_DEPTH_TEST,
+                (render->depthTest() == true? osg::StateAttribute::ON : osg::StateAttribute::OFF) | osg::StateAttribute::OVERRIDE );
+        }
+
+        if ( render->backfaceCulling().isSet() )
+        {
+            node->getOrCreateStateSet()->setMode(
+                GL_CULL_FACE,
+                (render->backfaceCulling() == true? osg::StateAttribute::ON : osg::StateAttribute::OFF) | osg::StateAttribute::OVERRIDE );
+        }
+
+#ifndef OSG_GLES2_AVAILABLE
+        if ( render->clipPlane().isSet() )
+        {
+            GLenum mode = GL_CLIP_PLANE0 + render->clipPlane().value();
+            node->getOrCreateStateSet()->setMode(mode, 1);
+        }
+#endif
+
+        if ( render->order().isSet() || render->renderBin().isSet() )
+        {
+            osg::StateSet* ss = node->getOrCreateStateSet();
+            int binNumber = render->order().isSet() ? (int)render->order()->eval() : ss->getBinNumber();
+            std::string binName =
+                render->renderBin().isSet() ? render->renderBin().get() :
+                ss->useRenderBinDetails() ? ss->getBinName() : "DepthSortedBin";
+            ss->setRenderBinDetails(binNumber, binName);
+        }
+
+        if ( render->minAlpha().isSet() )
+        {
+            DiscardAlphaFragments().install( node->getOrCreateStateSet(), render->minAlpha().value() );
+        }
+        
+
+        if ( render->transparent() == true )
+        {
+            osg::StateSet* ss = node->getOrCreateStateSet();
+            ss->setRenderingHint( ss->TRANSPARENT_BIN );
+        }
     }
 }

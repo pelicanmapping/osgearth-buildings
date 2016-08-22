@@ -81,6 +81,7 @@ _rangeFactor( 6.0f )
             Bin& bin = addBin();
             bin.tag = b->value("tag");
             bin.lodScale = b->value("lod_scale", 1.0f);
+            bin.minLodScale = b->value("min_lod_scale", 0.0f);
         }
     }
     conf.getIfSet("range_factor", _rangeFactor);

@@ -114,6 +114,23 @@ namespace
             }
         }
     };
+
+    struct ExStatsVisitor : public osgUtil::StatsVisitor
+    {
+        ExStatsVisitor() : osgUtil::StatsVisitor() {
+            setTraversalMode(TRAVERSE_ALL_CHILDREN);
+            setNodeMaskOverride(~0);
+        }
+        void apply(osg::Drawable& d) {
+            osgUtil::StatsVisitor::apply(d);
+            osg::Geometry* g = d.asGeometry();
+            if (g) {
+                osg::Object* vbo = g->getVertexArray()->getVertexBufferObject();
+                _vbos.insert(vbo);                
+            }
+        }
+        std::set<osg::Object*> _vbos;
+    };
 }
 
 void
@@ -136,7 +153,7 @@ Analyzer::analyze(osg::Node* node, ProgressCallback* progress, unsigned numFeatu
     // collect statistics about the resulting scene graph:
     if (progress->collectStats())
     {
-        osgUtil::StatsVisitor stats;
+        ExStatsVisitor stats;
         node->accept(stats);
         progress->stats("# unique stateSets") = stats._statesetSet.size();
         progress->stats("# stateSet refs") = stats._numInstancedStateSet;
@@ -146,10 +163,12 @@ Analyzer::analyze(osg::Node* node, ProgressCallback* progress, unsigned numFeatu
         stats.print(std::cout);
 
         // Uncomment to see the number of primitivesets (i.e. number of calls to DrawElements) in each drawable
-        //unsigned dc=0;
-        //for (osgUtil::StatsVisitor::DrawableSet::const_iterator i = stats._drawableSet.begin(); i != stats._drawableSet.end(); ++i) {
-        //    progress->stats(Stringify()<<"# primsets in drawable " << (dc++)) = (*i)->asGeometry()->getNumPrimitiveSets();
-        //}
+        unsigned primsets = 0;
+        for (osgUtil::StatsVisitor::DrawableSet::const_iterator i = stats._drawableSet.begin(); i != stats._drawableSet.end(); ++i) {
+            primsets += (*i)->asGeometry()->getNumPrimitiveSets();
+        }
+        progress->stats("# primsets") = primsets;
+        progress->stats("# vbos") = stats._vbos.size();
 
         FindTextures ft;
         node->accept(ft);

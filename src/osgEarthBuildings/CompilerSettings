@@ -35,7 +35,8 @@ namespace osgEarth { namespace Buildings
         struct Bin
         {
             std::string tag;
-            float       lodScale;
+            float lodScale;
+            float minLodScale;
         };
         typedef std::vector<Bin> Bins;
 
