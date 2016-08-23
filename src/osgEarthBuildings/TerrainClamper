@@ -71,6 +71,7 @@ namespace osgEarth { namespace Buildings
             STATUS_FAIL = 3u
         };
 
+        // a single elevation tile
         struct Tile : public osg::Referenced
         {
             Tile() : _status(STATUS_EMPTY) { }
@@ -80,8 +81,20 @@ namespace osgEarth { namespace Buildings
             osg::Timer_t        _loadTime;
         };
 
+        // custom comparator for Tile that sorts Tiles in a set from
+        // highest resolution to lowest resolution
+        struct TileSortHiResToLoRes
+        {
+            bool operator()(
+                const osg::ref_ptr<Tile>& lhs,
+                const osg::ref_ptr<Tile>& rhs) const
+            {
+                return lhs->_hf.getExtent().width() < rhs->_hf.getExtent().width();
+            }
+        };
+
         typedef std::map<TileKey, osg::ref_ptr<Tile> > Tiles;
-        typedef std::vector<osg::ref_ptr<Tile> > QuerySet;
+        typedef std::set<osg::ref_ptr<Tile>, TileSortHiResToLoRes> QuerySet;
         typedef std::list<TileKey> KeyLRU;
 
         Tiles             _tiles;

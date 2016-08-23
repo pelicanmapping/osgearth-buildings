@@ -179,7 +179,7 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& o
             if ( tile->_hf.valid() )
             {
                 // got a valid tile, so push it to the query set.
-                output.push_back( tile.get() );
+                output.insert( tile.get() );
             }
             else
             {
@@ -219,6 +219,7 @@ TerrainEnvelope::getElevationExtrema(const Feature* feature, float& min, float& 
         for(Geometry::const_iterator v = part->begin(); v != part->end(); ++v)
         {
             // TODO: consider speed of this vs. Profile::createTileKey + std::map lookup
+            // NB, tiles are pre-sorted from high to low resolution.
             for(TerrainClamper::QuerySet::const_iterator q = _tiles.begin(); q != _tiles.end(); ++q)
             {
                 TerrainClamper::Tile* tile = q->get();
