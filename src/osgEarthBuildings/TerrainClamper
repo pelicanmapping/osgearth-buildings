@@ -79,6 +79,7 @@ namespace osgEarth { namespace Buildings
             GeoHeightField      _hf;
             OpenThreads::Atomic _status;
             osg::Timer_t        _loadTime;
+            TileKey             _key;
         };
 
         // custom comparator for Tile that sorts Tiles in a set from
@@ -89,7 +90,9 @@ namespace osgEarth { namespace Buildings
                 const osg::ref_ptr<Tile>& lhs,
                 const osg::ref_ptr<Tile>& rhs) const
             {
-                return lhs->_hf.getExtent().width() < rhs->_hf.getExtent().width();
+                // Bug : fix this to be rhs->_key < lhs->_key
+                //return lhs->_hf.getExtent().width() < rhs->_hf.getExtent().width();
+                return rhs->_key < lhs->_key;
             }
         };
 

@@ -76,6 +76,7 @@ TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
     {
         // a new tile; status -> EMPTY
         tile = new Tile();
+        tile->_key = key;
 
         // update the LRU:
         _lru.push_front( key );
