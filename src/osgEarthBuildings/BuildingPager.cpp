@@ -132,7 +132,7 @@ BuildingPager::setSession(Session* session)
                     {
                         minLOD = i;
                     }
-                    else if ( !maxLOD.isSet() )
+                    else if ( !maxLOD.isSet() || maxLOD.get() < i)
                     {
                         maxLOD = i;
                     }
