@@ -25,18 +25,18 @@ using namespace osgEarth::Buildings;
 #define LC "[TerrainClamper] "
 
 TerrainClamper::TerrainClamper() :
-_maxEntries( 200000u ) //200u )
+_maxEntries( 200000u )
 {
     //nop
 }
 
 void TerrainClamper::setSession(Session* session)
 {
-    _frame = session->createMapFrame();
+    _session = session;
 }
 
 bool
-TerrainClamper::fetchTileFromMap(const TileKey& key, Tile* tile)
+TerrainClamper::fetchTileFromMap(const TileKey& key, MapFrame& frame, Tile* tile)
 {
     const int tileSize = 33;
 
@@ -51,7 +51,7 @@ TerrainClamper::fetchTileFromMap(const TileKey& key, Tile* tile)
     TileKey keyToUse = key;
     while( !tile->_hf.valid() && keyToUse.valid() )
     {
-        if (_frame.populateHeightField(hf, keyToUse, false /*heightsAsHAE*/, 0L))
+        if (frame.populateHeightField(hf, keyToUse, false /*heightsAsHAE*/, 0L))
         {
             tile->_hf = GeoHeightField( hf.get(), keyToUse.getExtent() );
             tile->_bounds = keyToUse.getExtent().bounds();
@@ -66,7 +66,7 @@ TerrainClamper::fetchTileFromMap(const TileKey& key, Tile* tile)
 }
 
 bool
-TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
+TerrainClamper::getTile(const TileKey& key, MapFrame& frame, osg::ref_ptr<Tile>& out)
 {
     // first see whether the tile is available
     _tilesMutex.lock();
@@ -94,7 +94,7 @@ TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
         tile->_status.exchange(STATUS_IN_PROGRESS);
         _tilesMutex.unlock();
 
-        bool ok = fetchTileFromMap(key, tile);
+        bool ok = fetchTileFromMap(key, frame, tile);
         tile->_status.exchange( ok ? STATUS_AVAILABLE : STATUS_FAIL );
         
         out = ok ? tile.get() : 0L;
@@ -135,24 +135,25 @@ TerrainClamper::getTile(const TileKey& key, osg::ref_ptr<Tile>& out)
 }
 
 bool
-TerrainClamper::buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& output)
+TerrainClamper::buildQuerySet(const GeoExtent& extent, MapFrame& frame, unsigned lod, QuerySet& output)
 {
     output.clear();
 
-    if ( _frame.needsSync() )
-    {
-        if (_frame.sync())
-        {
-            _tilesMutex.lock();
-            _tiles.clear();
-            _tilesMutex.unlock();
-        }
-    }
+    //Dont' need this since the Frame is used once per enveloper -gw
+    //if ( frame.needsSync() )
+    //{
+    //    if (frame.sync())
+    //    {
+    //        _tilesMutex.lock();
+    //        _tiles.clear();
+    //        _tilesMutex.unlock();
+    //    }
+    //}
 
     // find the minimal collection of tiles (in the map frame's profile) that cover
     // the requested extent (which might be in a different profile).
     std::vector<TileKey> keys;
-    _frame.getProfile()->getIntersectingTiles(extent, lod, keys);
+    frame.getProfile()->getIntersectingTiles(extent, lod, keys);
     
     // for each coverage key, fetch the corresponding elevation tile and add it to
     // the output list.
@@ -162,7 +163,7 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& o
 
         const double timeout = 30.0;
         osg::ref_ptr<Tile> tile;
-        while( getTile(keys[i], tile) && !tile.valid() && OE_GET_TIMER(get) < timeout)
+        while( getTile(keys[i], frame, tile) && !tile.valid() && OE_GET_TIMER(get) < timeout)
         {
             // condition: another thread is working on fetching the tile from the map,
             // so wait and try again later. Do this until we succeed or time out.
@@ -196,7 +197,8 @@ TerrainEnvelope*
 TerrainClamper::createEnvelope(const GeoExtent& extent, unsigned lod)
 {
     TerrainEnvelope* e = new TerrainEnvelope();
-    buildQuerySet( extent, lod, e->_tiles );
+    e->_frame.setMap(_session->getMap());
+    buildQuerySet( extent, e->_frame, lod, e->_tiles );
     return e;
 }
 

@@ -61,7 +61,8 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~TerrainClamper() { }
 
-        MapFrame _frame;
+        //MapFrame _frame;
+        osg::ref_ptr<Session> _session;
 
         enum Status
         {
@@ -107,13 +108,13 @@ namespace osgEarth { namespace Buildings
         unsigned          _maxEntries;
 
         // safely fetch a tile from the central repo, loading from map if necessary
-        bool getTile(const TileKey& key, osg::ref_ptr<Tile>& output);
+        bool getTile(const TileKey& key, MapFrame& frame, osg::ref_ptr<Tile>& output);
 
         // safely popluate the tile; called when Tile._status = IN_PROGRESS
-        bool fetchTileFromMap(const TileKey& key, Tile* tile);
+        bool fetchTileFromMap(const TileKey& key, MapFrame& frame, Tile* tile);
         
         // given a geospatial extent, build or update a query set that covers it
-        bool buildQuerySet(const GeoExtent& extent, unsigned lod, QuerySet& querySet);
+        bool buildQuerySet(const GeoExtent& extent, MapFrame& frame, unsigned lod, QuerySet& querySet);
 
         friend class TerrainEnvelope;
     };
@@ -132,6 +133,7 @@ namespace osgEarth { namespace Buildings
     protected:
         virtual ~TerrainEnvelope() { }
 
+        MapFrame _frame;
         TerrainClamper::QuerySet _tiles;
         friend class TerrainClamper;
     };
