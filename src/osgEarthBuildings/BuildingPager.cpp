@@ -208,9 +208,9 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
     }
 
     // For debugging. This tile is in Seattle.
-    //if (tileKey.str() != "14/2625/5725")
+    //if (tileKey.str() != "14/2625/5725" && tileKey.str() != "13/1312/2862")
     //    return 0L;
-    
+
     if ( progress )
         progress->collectStats() = _profile;
 
@@ -294,7 +294,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             {
                 Feature* feature = cursor->nextFeature();
                 numFeatures++;
-
+                
                 BuildingVector buildings;
                 if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, readOptions, progress))
                 {
