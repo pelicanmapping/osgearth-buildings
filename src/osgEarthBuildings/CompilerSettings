@@ -32,13 +32,14 @@ namespace osgEarth { namespace Buildings
     class OSGEARTHBUILDINGS_EXPORT CompilerSettings
     {
     public:
-        struct Bin
+        /** LODBin groups objects together for LOD purposes. */
+        struct LODBin
         {
             std::string tag;
             float lodScale;
             float minLodScale;
         };
-        typedef std::vector<Bin> Bins;
+        typedef std::vector<LODBin> LODBins;
 
     public:
         /** Constructor */
@@ -46,13 +47,13 @@ namespace osgEarth { namespace Buildings
         CompilerSettings(const CompilerSettings& rhs);
 
         /** Display bins for customizing display by tag */
-        Bins& getBins()             { return _bins; }
-        const Bins& getBins() const { return _bins; }
-        Bin& addBin();
+        LODBins& getLODBins()             { return _lodBins; }
+        const LODBins& getLODBins() const { return _lodBins; }
+        LODBin& addLODBin();
 
         /** Given a tag or tag set, return the display bin. */
-        const Bin* getBin(const std::string& tag) const;
-        const Bin* getBin(const TagSet& tags) const;
+        const LODBin* getLODBin(const std::string& tag) const;
+        const LODBin* getLODBin(const TagSet& tags) const;
 
         /**
          * The LOD distance for a tile will be the tile's radius multiplied
@@ -89,7 +90,7 @@ namespace osgEarth { namespace Buildings
         optional<float> _rangeFactor;
         optional<bool>  _useClustering;
         optional<unsigned> _maxVertsPerCluster;
-        Bins _bins;
+        LODBins _lodBins;
     };
 
 } } // namespace

@@ -290,6 +290,11 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             if (progress && progress->collectStats())
                 progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
 
+            if (!envelope.valid())
+            {
+                OE_WARN << LC << "Failed to create clamping envelope for " << tileKey.str() << "\n";
+            }
+
             while (cursor->hasMore() && !canceled)
             {
                 Feature* feature = cursor->nextFeature();

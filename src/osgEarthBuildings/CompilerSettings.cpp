@@ -31,22 +31,22 @@ _useClustering( false )
 CompilerSettings::CompilerSettings(const CompilerSettings& rhs) :
 _rangeFactor( rhs._rangeFactor ),
 _useClustering( rhs._useClustering ),
-_bins( rhs._bins )
+_lodBins( rhs._lodBins )
 {
     //nop
 }
 
-CompilerSettings::Bin&
-CompilerSettings::addBin()
+CompilerSettings::LODBin&
+CompilerSettings::addLODBin()
 {
-    _bins.push_back(Bin());
-    return _bins.back();
+    _lodBins.push_back(LODBin());
+    return _lodBins.back();
 }
 
-const CompilerSettings::Bin*
-CompilerSettings::getBin(const std::string& tag) const
+const CompilerSettings::LODBin*
+CompilerSettings::getLODBin(const std::string& tag) const
 {
-    for(Bins::const_iterator bin = _bins.begin(); bin != _bins.end(); ++bin)
+    for(LODBins::const_iterator bin = _lodBins.begin(); bin != _lodBins.end(); ++bin)
     {
         if ( tag == bin->tag )
         {
@@ -56,10 +56,10 @@ CompilerSettings::getBin(const std::string& tag) const
     return 0L;
 }
 
-const CompilerSettings::Bin*
-CompilerSettings::getBin(const TagSet& tags) const
+const CompilerSettings::LODBin*
+CompilerSettings::getLODBin(const TagSet& tags) const
 {
-    for(Bins::const_iterator bin = _bins.begin(); bin != _bins.end(); ++bin)
+    for(LODBins::const_iterator bin = _lodBins.begin(); bin != _lodBins.end(); ++bin)
     {
         if ( tags.find(bin->tag) != tags.end() )
         {
@@ -78,7 +78,7 @@ _rangeFactor( 6.0f )
     {
         for(ConfigSet::const_iterator b = bins->children().begin(); b != bins->children().end(); ++b )
         {
-            Bin& bin = addBin();
+            LODBin& bin = addLODBin();
             bin.tag = b->value("tag");
             bin.lodScale = b->value("lod_scale", 1.0f);
             bin.minLodScale = b->value("min_lod_scale", 0.0f);
@@ -93,12 +93,12 @@ Config
 CompilerSettings::getConfig() const
 {
     Config conf("settings");
-    if (!_bins.empty())
+    if (!_lodBins.empty())
     {
         Config bins("bins");
         conf.add(bins);
 
-        for(Bins::const_iterator b = _bins.begin(); b != _bins.end(); ++b)
+        for(LODBins::const_iterator b = _lodBins.begin(); b != _lodBins.end(); ++b)
         {
             Config bin("bin");
             bins.add(bin);

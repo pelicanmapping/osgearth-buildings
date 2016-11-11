@@ -150,6 +150,12 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, MapFrame& frame, unsigned
     //    }
     //}
 
+    if (frame.getProfile() == 0L || !frame.getProfile()->isOK())
+    {
+        OE_WARN << LC << "Frame profile is not available; buildQuerySet failed.\n";
+        return false;
+    }
+
     // find the minimal collection of tiles (in the map frame's profile) that cover
     // the requested extent (which might be in a different profile).
     std::vector<TileKey> keys;
@@ -196,10 +202,12 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, MapFrame& frame, unsigned
 TerrainEnvelope*
 TerrainClamper::createEnvelope(const GeoExtent& extent, unsigned lod)
 {
-    TerrainEnvelope* e = new TerrainEnvelope();
+    osg::ref_ptr<TerrainEnvelope> e = new TerrainEnvelope();
     e->_frame.setMap(_session->getMap());
-    buildQuerySet( extent, e->_frame, lod, e->_tiles );
-    return e;
+    if (buildQuerySet( extent, e->_frame, lod, e->_tiles ))
+        return e.release();
+    else
+        return 0L;
 }
 
 //...................................

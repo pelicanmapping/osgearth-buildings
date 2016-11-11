@@ -90,8 +90,6 @@ BuildingFactory::create(Feature*               feature,
         _session->styles() ? _session->styles()->getDefaultStyle()->get<BuildingSymbol>() :
         0L;
         
-    
-
   
     // Pull a resource library if one is defined.
     ResourceLibrary* reslib = 0L;
@@ -210,12 +208,8 @@ BuildingFactory::create(Feature*               feature,
         float min = FLT_MAX, max = -FLT_MAX;
         bool terrainMinMaxValid =
             needToClamp &&
+            terrain &&
             terrain->getElevationExtrema(feature, min, max);
-
-        //if (!terrainMinMaxValid)
-        //{
-        //    OE_WARN << LC << "A feature failed to clamp.\n";
-        //}
                 
         context.setTerrainMinMax(
             terrainMinMaxValid ? min : 0.0f,

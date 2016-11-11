@@ -202,7 +202,7 @@ CompilerOutput::createSceneGraph(Session*                session,
         for(TaggedGeodes::const_iterator g = _geodes.begin(); g != _geodes.end(); ++g)
         {
             const std::string& tag = g->first;
-            const CompilerSettings::Bin* bin = settings.getBin(tag);
+            const CompilerSettings::LODBin* bin = settings.getLODBin(tag);
             //float minRange = bin && bin->minLodScale > 0.0f? g->second->getBound().radius() + _range*bin->minLodScale : 0.0f;
             //float maxRange = bin ? g->second->getBound().radius() + _range*bin->lodScale : FLT_MAX;
             float minRange = bin && bin->minLodScale > 0.0f? bc.getRadius() + _range*bin->minLodScale : 0.0f;
@@ -293,7 +293,7 @@ CompilerOutput::createSceneGraph(Session*                session,
 
 #ifdef USE_LODS
                 // check for a display bin for this model resource:
-                const CompilerSettings::Bin* bin = settings.getBin( res->tags() );
+                const CompilerSettings::LODBin* bin = settings.getLODBin( res->tags() );
                 float lodScale = bin ? bin->lodScale : 1.0f;
 
                 float maxRange = _range*lodScale;
