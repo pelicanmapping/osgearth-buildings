@@ -152,7 +152,7 @@ TerrainClamper::buildQuerySet(const GeoExtent& extent, MapFrame& frame, unsigned
 
     if (frame.getProfile() == 0L || !frame.getProfile()->isOK())
     {
-        OE_WARN << LC << "Frame profile is not available; buildQuerySet failed.\n";
+        OE_INFO << LC << "Frame profile is not available; buildQuerySet failed.\n";
         return false;
     }
 
@@ -204,6 +204,13 @@ TerrainClamper::createEnvelope(const GeoExtent& extent, unsigned lod)
 {
     osg::ref_ptr<TerrainEnvelope> e = new TerrainEnvelope();
     e->_frame.setMap(_session->getMap());
+
+    if (!e->_frame.isValid())
+    {
+        // frame synchronization failed, which means the Map went away.
+        return 0L;
+    }
+
     if (buildQuerySet( extent, e->_frame, lod, e->_tiles ))
         return e.release();
     else
