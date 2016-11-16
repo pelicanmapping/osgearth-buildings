@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 #include "TerrainClamper"
+#include <osgEarth/Version>
 
 using namespace osgEarth;
 using namespace osgEarth::Features;
@@ -203,7 +204,12 @@ TerrainEnvelope*
 TerrainClamper::createEnvelope(const GeoExtent& extent, unsigned lod)
 {
     osg::ref_ptr<TerrainEnvelope> e = new TerrainEnvelope();
+
+#if OSGEARTH_VERSION_GREATER_OR_EQUAL(2,9,0)
+    e->_frame = _session->createMapFrame();
+#else
     e->_frame.setMap(_session->getMap());
+#endif
 
     if (!e->_frame.isValid())
     {

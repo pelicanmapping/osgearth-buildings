@@ -340,9 +340,7 @@ namespace
 {
     /**
      * Performs all the shader component installation on the scene graph. 
-     * Once this is done the model is ready to render. This happens as an
-     * isolated operation because we cannot write a graph with shader 
-     * components to the cache.
+     * Once this is done the model is ready to render.
      */
     struct PostProcessNodeVisitor : public osg::NodeVisitor
     {
