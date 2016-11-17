@@ -73,6 +73,10 @@ namespace osgEarth { namespace Buildings
         optional<std::string>& cacheId() { return _cacheId; }
         const optional<std::string>& cacheId() const { return _cacheId;  }
 
+        /** Whether cancelation of tiles is enabled (default = true) */
+        optional<bool>& enableCancelation() { return _enableCancelation; }
+        const optional<bool>& enableCancelation() const { return _enableCancelation; }
+
     public:
         BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
             _lod.init( 14u );
@@ -80,6 +84,7 @@ namespace osgEarth { namespace Buildings
             _createIndex.init(false);
             _priorityOffset.init(0.0f);
             _priorityScale.init(1.0f);
+            _enableCancelation.init(true);
             fromConfig( _conf );
         }
 
@@ -96,6 +101,7 @@ namespace osgEarth { namespace Buildings
             conf.updateIfSet   ("priority_offset",  _priorityOffset);
             conf.updateIfSet   ("priority_scale",   _priorityScale);
             conf.updateIfSet   ("cacheid",          _cacheId);
+            conf.updateIfSet   ("enable_cancelation", _enableCancelation);
             return conf;
         }
 
@@ -117,6 +123,7 @@ namespace osgEarth { namespace Buildings
             conf.getIfSet   ("priority_offset",  _priorityOffset);
             conf.getIfSet   ("priority_scale",   _priorityScale);
             conf.getIfSet   ("cacheid",          _cacheId);
+            conf.getIfSet   ("enable_cancelation", _enableCancelation);
         }
 
         optional<FeatureSourceOptions> _featureSourceOptions;
@@ -130,6 +137,7 @@ namespace osgEarth { namespace Buildings
         optional<float> _priorityOffset;
         optional<float> _priorityScale;
         optional<std::string> _cacheId;
+        optional<bool> _enableCancelation;
     };
 } }
 

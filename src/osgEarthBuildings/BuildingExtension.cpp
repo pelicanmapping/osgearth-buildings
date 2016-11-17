@@ -144,6 +144,10 @@ BuildingExtension::connect(MapNode* mapNode)
     pager->setCompilerSettings( compilerSettings().get() );
     pager->setPriorityOffset  ( priorityOffset().get() );
     pager->setPriorityScale   ( priorityScale().get() );
+
+    if (enableCancelation().isSet())
+        pager->setEnableCancelation(enableCancelation().get());
+
     pager->build();
 
     if ( createIndex() == true )
