@@ -292,7 +292,11 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
             if (!envelope.valid())
             {
-                OE_WARN << LC << "Failed to create clamping envelope for " << tileKey.str() << "\n";
+                // if this happens, it means that the clamper most likely lost its connection
+                // to the underlying map for some reason (Map closed, e.g.). In this case we
+                // should just cancel the tile operation.
+                OE_INFO << LC << "Failed to create clamping envelope for " << tileKey.str() << "\n";
+                canceled = true;
             }
 
             while (cursor->hasMore() && !canceled)
