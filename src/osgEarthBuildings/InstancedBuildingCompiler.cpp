@@ -87,8 +87,8 @@ InstancedBuildingCompiler::compile(const Building*    building,
     // scale the model to match the dimensions of the AABB.    
     matrix.preMultScale( scale );
 
-    // translates model so it's centers on 0,0,0.
-    matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), -bbox.zMin()) );
+    // translates model so it centers/clamps to (0,0,0).
+    matrix.preMultTranslate( osg::Vec3d(-modelCenter.x(), -modelCenter.y(), 0.0) );
     
     output.addInstance( model, matrix * frame );
     
