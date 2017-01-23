@@ -112,6 +112,37 @@ CompilerOutput::createCacheKey() const
     }
 }
 
+namespace
+{
+    struct ConsolidateTextures : public TextureAndImageVisitor
+    {
+        TextureCache* _cache;
+        ConsolidateTextures(TextureCache* cache) : _cache(cache) { }
+        void apply(osg::StateSet& stateSet)
+        {
+            osg::StateSet::TextureAttributeList& a = stateSet.getTextureAttributeList();
+            for (osg::StateSet::TextureAttributeList::iterator i = a.begin(); i != a.end(); ++i)
+            {
+                osg::StateSet::AttributeList& b = *i;
+                for (osg::StateSet::AttributeList::iterator j = b.begin(); j != b.end(); ++j)
+                {
+                    osg::StateAttribute* sa = j->second.first.get();
+                    if (sa)
+                    {
+                        osg::Texture* tex = dynamic_cast<osg::Texture*>(sa);
+                        if (tex)
+                        {
+                            osg::Texture* sharedTex = _cache->getOrInsert(tex);
+                            if (sharedTex != tex)
+                                j->second.first = sharedTex;
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
 osg::Node*
 CompilerOutput::readFromCache(const osgDB::Options* readOptions, ProgressCallback* progress) const
 {
@@ -135,6 +166,9 @@ CompilerOutput::readFromCache(const osgDB::Options* readOptions, ProgressCallbac
             OE_DEBUG << LC << "Tile " << _name << " is cached but expired.\n";
             return 0L;
         }
+
+        ConsolidateTextures consolidate(_texCache.get());
+        result.getNode()->accept(consolidate);
 
         OE_INFO << LC << "Loaded " << _name << " from the cache (key = " << cacheKey << ")\n";
         return result.releaseNode();

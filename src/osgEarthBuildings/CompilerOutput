@@ -49,7 +49,17 @@ namespace osgEarth { namespace Buildings
             return t.get();
         }
 
+        osg::Texture* getOrInsert(osg::Texture* tex) {
+            _mutex.lock();
+            osg::ref_ptr<osg::Texture>& t = _cache[tex->getImage(0)->getFileName()];
+            if (!t.valid())
+                t = tex;
+            _mutex.unlock();
+            return t.get();
+        }
+
         std::map<std::string, osg::ref_ptr<osg::Texture> > _cache;
+        //std::map<std::string, osg::observer_ptr<osg::Texture> > _cache;
     };
 
     /**

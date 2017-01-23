@@ -124,7 +124,7 @@ namespace
         void apply(osg::Drawable& d) {
             osgUtil::StatsVisitor::apply(d);
             osg::Geometry* g = d.asGeometry();
-            if (g) {
+            if (g && g->getVertexArray()) {
                 osg::Object* vbo = g->getVertexArray()->getVertexBufferObject();
                 _vbos.insert(vbo);                
             }
