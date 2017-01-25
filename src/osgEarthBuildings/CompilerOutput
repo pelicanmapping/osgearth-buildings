@@ -51,7 +51,7 @@ namespace osgEarth { namespace Buildings
 
         osg::Texture* getOrInsert(osg::Texture* tex)
         {
-            osg::Texture* result = 0L;
+            osg::Texture* result = tex;
 
             if (tex && tex->getNumImages() > 0 && tex->getImage(0))
             {

@@ -133,8 +133,10 @@ namespace
                         if (tex)
                         {
                             osg::Texture* sharedTex = _cache->getOrInsert(tex);
-                            if (sharedTex != tex)
+                            if (sharedTex != 0L && sharedTex != tex)
+                            {
                                 j->second.first = sharedTex;
+                            }
                         }
                     }
                 }
