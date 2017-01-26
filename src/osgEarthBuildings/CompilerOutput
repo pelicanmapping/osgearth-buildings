@@ -24,6 +24,7 @@
 
 #include <osg/Geode>
 #include <osg/Matrix>
+#include <osg/TextureBuffer>
 #include <osgEarth/Containers>
 #include <osgEarth/Progress>
 #include <osgEarthFeatures/Session>
@@ -53,7 +54,11 @@ namespace osgEarth { namespace Buildings
         {
             osg::Texture* result = tex;
 
-            if (tex && tex->getNumImages() > 0 && tex->getImage(0))
+            if (tex && 
+                tex->getNumImages() > 0 &&                      
+                tex->getImage(0) &&
+                !tex->getImage(0)->getFileName().empty() &&     // has a valid filename
+                dynamic_cast<osg::TextureBuffer*>(tex) == 0L)   // isn't an instance data texture
             {
                 _mutex.lock();
                 osg::ref_ptr<osg::Texture>& t = _cache[tex->getImage(0)->getFileName()];
