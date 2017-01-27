@@ -65,8 +65,9 @@ BuildingExtension::setDBOptions(const osgDB::Options* dbOptions)
     }
     else
     {
-        OE_INFO << LC << "Cache policy not set; defaulting to NO CACHE.\n";
-        newSettings->cachePolicy() = CachePolicy::NO_CACHE;
+        OE_INFO << LC << "Cache policy not set; defaulting to READ ONLY.\n";
+        //newSettings->cachePolicy() = CachePolicy::NO_CACHE;
+        newSettings->cachePolicy() = CachePolicy::USAGE_READ_ONLY;
     }
 
     // finally, if cacheing is a go, make a bin.
