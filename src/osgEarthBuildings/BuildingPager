@@ -23,7 +23,6 @@
 #include "BuildingFactory"
 #include "BuildingCompiler"
 #include "CompilerSettings"
-#include "TerrainClamper"
 
 #include <osgEarth/CacheBin>
 #include <osgEarth/StateSetCache>
@@ -54,14 +53,14 @@ namespace osgEarth { namespace Buildings
         /** Build catalog to use for creating building templates */
         void setCatalog(BuildingCatalog* catalog);
 
-        /** Cache for storing compiled nodes per tile key */
-        //void setCacheSettings(CacheSettings* settings);
-
         /** Settings the dictate how the compiler builds the scene graph */
         void setCompilerSettings(const CompilerSettings& settings);
 
         /** Feature index to populate */
         void setIndex(FeatureIndexBuilder* index);
+
+        /** Elevation pool to use for clamping */
+        void setElevationPool(ElevationPool* pool);
 
     public: // SimplePager
 
@@ -79,7 +78,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<BuildingCompiler>    _compiler;
         CompilerSettings                  _compilerSettings;
         FeatureIndexBuilder*              _index;
-        osg::ref_ptr<TerrainClamper>      _clamper;
+        osg::ref_ptr<ElevationPool>       _elevationPool;
         bool                              _profile;
         osg::ref_ptr<osgDB::ObjectCache>  _artCache;
         Threading::Mutex                  _globalMutex;

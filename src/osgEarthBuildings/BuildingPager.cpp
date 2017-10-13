@@ -35,6 +35,8 @@ using namespace osgEarth::Symbology;
 
 #define OE_TEST OE_DEBUG
 
+#define USE_OSGEARTH_ELEVATION_POOL
+
 namespace
 {
     // Callback to force building threads onto the high-latency pager queue.
@@ -114,9 +116,6 @@ BuildingPager::setSession(Session* session)
     {
         _compiler = new BuildingCompiler(session);
 
-        _clamper = new TerrainClamper();
-        _clamper->setSession( session );
-
         // Analyze the styles to determine the min and max LODs.
         // Styles are named by LOD.
         if ( _session->styles() )
@@ -176,6 +175,12 @@ BuildingPager::setCompilerSettings(const CompilerSettings& settings)
 void BuildingPager::setIndex(FeatureIndexBuilder* index)
 {
     _index = index;
+}
+
+void
+BuildingPager::setElevationPool(ElevationPool* pool)
+{
+    _elevationPool = pool;
 }
 
 bool
@@ -280,13 +285,16 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
             factory->setSession(_session.get());
             factory->setCatalog(_catalog.get());
-            factory->setClamper(_clamper.get());
             factory->setOutputSRS(_session->getMapSRS());
 
             // Prepare the terrain envelope, for clamping.
             // TODO: review the LOD selection..
             OE_START_TIMER(envelope);
-            osg::ref_ptr<TerrainEnvelope> envelope = factory->getClamper()->createEnvelope(tileKey.getExtent(), tileKey.getLOD());
+
+            osg::ref_ptr<ElevationEnvelope> envelope = _elevationPool->createEnvelope(
+                _session->getMapSRS(),      // SRS of input features
+                tileKey.getLOD());          // LOD at which to clamp
+
             if (progress && progress->collectStats())
                 progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
 

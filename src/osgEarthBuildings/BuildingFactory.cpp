@@ -33,7 +33,6 @@ using namespace osgEarth::Symbology;
 
 BuildingFactory::BuildingFactory()
 {
-    _clamper = new TerrainClamper();
     setSession( new Session(0L) );
 }
 
@@ -41,10 +40,6 @@ void
 BuildingFactory::setSession(Session* session)
 {
     _session = session;
-    if ( session )
-    {
-        _clamper->setSession( session );
-    }
 }
 
 bool
@@ -61,7 +56,7 @@ BuildingFactory::cropToCentroid(const Feature* feature, const GeoExtent& extent)
 bool
 BuildingFactory::create(Feature*               feature,
                         const GeoExtent&       cropTo,
-                        const TerrainEnvelope* terrain,
+                        ElevationEnvelope*     terrain,
                         const Style*           style,
                         BuildingVector&        output,
                         const osgDB::Options*  readOptions,
@@ -209,7 +204,8 @@ BuildingFactory::create(Feature*               feature,
         bool terrainMinMaxValid =
             needToClamp &&
             terrain &&
-            terrain->getElevationExtrema(feature, min, max);
+            feature->getGeometry() != 0L &&
+            terrain->getElevationExtrema(feature->getGeometry()->asVector(), min, max);
                 
         context.setTerrainMinMax(
             terrainMinMaxValid ? min : 0.0f,

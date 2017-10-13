@@ -40,6 +40,11 @@ namespace osgEarth { namespace Buildings
 
     /**
      * Shared terrain clamping service.
+     *
+     * @DEPRECATED
+     *
+     * This class is no longer in use. It is superceded by the osgEarth
+     * Map's ElevationPool.
      */
     class OSGEARTHBUILDINGS_EXPORT TerrainClamper : public osg::Referenced
     {

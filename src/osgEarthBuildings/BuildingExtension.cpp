@@ -139,6 +139,7 @@ BuildingExtension::connect(MapNode* mapNode)
     OE_INFO << LC << CacheSettings::get(_readOptions.get())->toString() << "\n";
 
     BuildingPager* pager = new BuildingPager( featureProfile );
+    pager->setElevationPool   ( mapNode->getMap()->getElevationPool() );
     pager->setSession         ( session.get() );
     pager->setFeatureSource   ( features.get() );
     pager->setCatalog         ( catalog.get() );
