@@ -233,7 +233,7 @@ CompilerOutput::createSceneGraph(Session*                session,
         geodeLOD->setName(GEODES_ROOT);
         root->addChild( geodeLOD );
 
-        const GeoCircle& bc = _key.getExtent().getBoundingGeoCircle();
+        const GeoCircle bc = _key.getExtent().computeBoundingGeoCircle();
 
         for(TaggedGeodes::const_iterator g = _geodes.begin(); g != _geodes.end(); ++g)
         {
