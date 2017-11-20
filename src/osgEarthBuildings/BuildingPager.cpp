@@ -20,6 +20,7 @@
 #include "Analyzer"
 #include <osgEarth/Registry>
 #include <osgEarthSymbology/Query>
+#include <osgEarthSymbology/StyleSheet>
 #include <osgUtil/Optimizer>
 #include <osgUtil/Statistics>
 #include <osg/Version>

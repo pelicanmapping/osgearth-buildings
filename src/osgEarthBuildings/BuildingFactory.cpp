@@ -21,8 +21,12 @@
 #include "BuildingVisitor"
 #include "BuildContext"
 #include "Parapet"
+
+#include <osgEarthFeatures/Session>
 #include <osgEarthFeatures/AltitudeFilter>
 #include <osgEarthSymbology/Geometry>
+#include <osgEarthSymbology/ResourceLibrary>
+#include <osgEarthSymbology/StyleSheet>
 
 using namespace osgEarth;
 using namespace osgEarth::Buildings;

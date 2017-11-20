@@ -30,6 +30,7 @@
 #include <osgEarthFeatures/Session>
 #include <osgEarthFeatures/FeatureIndex>
 #include <osgEarthSymbology/ModelResource>
+#include <osgEarthSymbology/ResourceCache>
 
 namespace osgEarth { namespace Buildings 
 {

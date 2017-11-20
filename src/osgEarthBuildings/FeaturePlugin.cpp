@@ -28,6 +28,7 @@
 #include <osgEarth/Registry>
 #include <osgEarth/Utils>
 #include <osgEarthFeatures/FeatureSource>
+#include <osgEarthSymbology/StyleSheet>
 #include <osgEarthDrivers/feature_ogr/OGRFeatureOptions>
 
 #define LC "[Building Plugin] "

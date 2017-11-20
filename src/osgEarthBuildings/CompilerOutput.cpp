@@ -25,6 +25,8 @@
 #include <osgEarth/DrawInstanced>
 #include <osgEarth/Registry>
 #include <osgEarth/ImageUtils>
+#include <osgEarthFeatures/Session>
+#include <osgEarthSymbology/ResourceCache>
 #include <osgEarthSymbology/MeshFlattener>
 #include <osgDB/WriteFile>
 #include <set>
