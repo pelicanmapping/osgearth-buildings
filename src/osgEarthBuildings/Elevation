@@ -138,7 +138,7 @@ namespace osgEarth { namespace Buildings
          * The skin (texture and properties) for the elevation walls.
          */
         void setSkinResource(SkinResource* res) { _skinResource = res; }
-        SkinResource* getSkinResource() const   { return _skinResource; }
+        SkinResource* getSkinResource() const   { return _skinResource.get(); }
 
         /**
          * Skin to use to texture this elevation. (optional)

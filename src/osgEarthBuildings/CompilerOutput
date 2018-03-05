@@ -134,10 +134,10 @@ namespace osgEarth { namespace Buildings
         void addInstance(ModelResource* model, const osg::Matrix& matrix);
 
         /** The group containing externally referenced models */
-        osg::Group* getExternalModelsGroup() const { return _externalModelsGroup; }
+        osg::Group* getExternalModelsGroup() const { return _externalModelsGroup.get(); }
 
         /** Group holding debugging geometry */
-        osg::Group* getDebugGroup() const { return _debugGroup; }
+        osg::Group* getDebugGroup() const { return _debugGroup.get(); }
         
         /** Returns the StateSet unique to this skin resource (may be empty) - used for caching. */
         osg::StateSet* getSkinStateSet(SkinResource* skin, const osgDB::Options* readOptions);

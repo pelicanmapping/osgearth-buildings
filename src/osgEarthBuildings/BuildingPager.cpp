@@ -314,7 +314,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 numFeatures++;
                 
                 BuildingVector buildings;
-                if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, readOptions, progress))
+                if (!factory->create(feature, tileKey.getExtent(), envelope.get(), style, buildings, readOptions.get(), progress))
                 {
                     canceled = true;
                 }
@@ -331,7 +331,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
                     for (BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
                     {
-                        if (!_compiler->compile(buildings, output, readOptions, progress))
+                        if (!_compiler->compile(buildings, output, readOptions.get(), progress))
                         {
                             canceled = true;
                         }
@@ -344,7 +344,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                 // set the distance at which details become visible.
                 osg::BoundingSphere tileBound = getBounds(tileKey);
                 output.setRange(tileBound.radius() * getRangeFactor());
-                node = output.createSceneGraph(_session.get(), _compilerSettings, readOptions, progress);
+                node = output.createSceneGraph(_session.get(), _compilerSettings, readOptions.get(), progress);
             }
             else
             {
@@ -371,7 +371,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         {
             OE_START_TIMER(writeCache);
 
-            output.writeToCache(node, readOptions, progress);
+            output.writeToCache(node.get(), readOptions.get(), progress);
 
             if (progress && progress->collectStats())
                 progress->stats("pager.writeCache") = OE_GET_TIMER(writeCache);

@@ -55,8 +55,8 @@ namespace
     };
 
     struct CompareStateSets {
-        bool operator()(const osg::StateSet* lhs, const osg::StateSet* rhs) const {
-            return lhs->compare(*rhs, true) < 0;
+        bool operator()(const osg::ref_ptr<osg::StateSet>& lhs, const osg::ref_ptr<osg::StateSet>& rhs) const {
+            return lhs->compare(*rhs.get(), true) < 0;
         }
     };
     typedef std::set< osg::ref_ptr<osg::StateSet>, CompareStateSets> StateSetSet;
@@ -108,7 +108,7 @@ namespace
             out << "Statesets: (" << _statesets.size() << ")\n";
             osgDB::ReaderWriter* rw = osgDB::Registry::instance()->getReaderWriterForExtension("osgt");
             for (StateSetSet::iterator i = _statesets.begin(); i != _statesets.end(); ++i) {
-                osg::StateSet* ss = *i;
+                osg::StateSet* ss = i->get();
                 out << std::hex << (uintptr_t)ss << std::dec << std::endl;
                 printStateSet(ss, out);
             }

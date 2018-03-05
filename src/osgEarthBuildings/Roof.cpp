@@ -125,7 +125,7 @@ Roof::resolveSkin(const Polygon* footprint, BuildContext& bc)
         if ( !candidates.empty() )
         {
             unsigned index = Random(bc.getSeed()).next( candidates.size() );
-            setSkinResource( candidates.at(index) );
+            setSkinResource( candidates.at(index).get() );
         }
     }
 }
@@ -149,7 +149,7 @@ Roof::resolveClutterModel(const Polygon* footprint, BuildContext& bc)
         if ( !candidates.empty() )
         {
             unsigned index = Random(bc.getSeed()).next( candidates.size() );
-            setModelResource( candidates.at(index) );
+            setModelResource( candidates.at(index).get() );
         }
     }
 }
@@ -168,7 +168,7 @@ Roof::resolveInstancedModel(const Polygon* footprint, BuildContext& bc)
         if ( !candidates.empty() )
         {
             unsigned index = Random(bc.getSeed()).next( candidates.size() );
-            setModelResource( candidates.at(index) );
+            setModelResource( candidates.at(index).get() );
         }
         else
         {

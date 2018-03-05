@@ -34,7 +34,7 @@ namespace osgEarth { namespace Buildings
         BuildContext() : _seed(0), _terrainMin(0.0f), _terrainMax(0.0f) { }
 
         void setDBOptions(const osgDB::Options* dbo) { _dbo = dbo; }
-        const osgDB::Options* getDBOptions() const   { return _dbo; }
+        const osgDB::Options* getDBOptions() const   { return _dbo.get(); }
 
         /** Seeding value for pseudo-random number generation */
         void setSeed(unsigned seed) { _seed = seed; }
@@ -46,7 +46,7 @@ namespace osgEarth { namespace Buildings
 
         /** Resource library for shared textures and models */
         void setResourceLibrary(ResourceLibrary* reslib) { _reslib = reslib; }
-        ResourceLibrary* getResourceLibrary() const      { return _reslib; }
+        ResourceLibrary* getResourceLibrary() const      { return _reslib.get(); }
 
     private:
         unsigned                           _seed;

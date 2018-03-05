@@ -106,7 +106,7 @@ namespace osgEarth { namespace Buildings
             }
 
             StyleSheet* sheet = new StyleSheet();
-            sheet->addResourceLibrary( reslib );
+            sheet->addResourceLibrary( reslib.get() );
 
             BuildingSymbol* sym = sheet->getDefaultStyle()->getOrCreate<BuildingSymbol>();
             sym->height() = NumericExpression("max(5.0, [HEIGHT])");
@@ -138,10 +138,10 @@ namespace osgEarth { namespace Buildings
             // Create OSG model from buildings.
             OE_START_TIMER(compile);
             CompilerOutput output;
-            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session );
+            osg::ref_ptr<BuildingCompiler> compiler = new BuildingCompiler( session.get() );
             compiler->compile(buildings, output, 0L);
 
-            osg::Node* node = output.createSceneGraph( session, CompilerSettings(), 0L, 0L );
+            osg::Node* node = output.createSceneGraph( session.get(), CompilerSettings(), 0L, 0L );
 
             OE_INFO << LC << "Compiled " << buildings.size() << " buildings in " << std::setprecision(3) << OE_GET_TIMER(compile) << "s" << std::endl;
 

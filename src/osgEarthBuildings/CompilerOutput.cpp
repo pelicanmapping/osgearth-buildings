@@ -196,7 +196,7 @@ CompilerOutput::getSkinStateSet(SkinResource* skin, const osgDB::Options* readOp
         }
         //OE_INFO << LC << "Cached stateset for texture " << skin->getName() << "\n";
     }
-    return ss;
+    return ss.get();
 }
 
 void

@@ -114,7 +114,7 @@ BuildingExtension::connect(MapNode* mapNode)
     }
 
     // Set up a feature session with a cache:
-    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features, _readOptions.get() );
+    osg::ref_ptr<Session> session = new Session( mapNode->getMap(), styles().get(), features.get(), _readOptions.get() );
     
     // Install a resource cache that we will use for instanced models,
     // but not for skins; b/c we want to cache skin statesets per tile. So there is
@@ -156,7 +156,7 @@ BuildingExtension::connect(MapNode* mapNode)
     {
         // create a feature index.
         FeatureSourceIndex* index = new FeatureSourceIndex(
-            features,
+            features.get(),
             Registry::objectIndex(),
             FeatureSourceIndexOptions() );
 

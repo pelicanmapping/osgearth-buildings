@@ -100,7 +100,7 @@ Building::resolveInstancedModel(BuildContext& bc)
         if ( !candidates.empty() )
         {
             unsigned index = Random(bc.getSeed()).next( candidates.size() );
-            setInstancedModelResource( candidates.at(index) );
+            setInstancedModelResource( candidates.at(index).get() );
         }
         else
         {

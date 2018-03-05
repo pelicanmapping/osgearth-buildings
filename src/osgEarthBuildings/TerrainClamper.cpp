@@ -95,7 +95,7 @@ TerrainClamper::getTile(const TileKey& key, MapFrame& frame, osg::ref_ptr<Tile>&
         tile->_status.exchange(STATUS_IN_PROGRESS);
         _tilesMutex.unlock();
 
-        bool ok = fetchTileFromMap(key, frame, tile);
+        bool ok = fetchTileFromMap(key, frame, tile.get());
         tile->_status.exchange( ok ? STATUS_AVAILABLE : STATUS_FAIL );
         
         out = ok ? tile.get() : 0L;

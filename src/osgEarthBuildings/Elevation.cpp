@@ -437,7 +437,7 @@ Elevation::resolveSkin(BuildContext& bc)
         if ( !candidates.empty() )
         {
             unsigned index = Random(bc.getSeed()).next( candidates.size() );
-            SkinResource* skin = candidates.at(index);
+            SkinResource* skin = candidates.at(index).get();
             setSkinResource( skin );
                     
             unsigned numFloors = (unsigned)std::max(1.0f, osg::round(getHeight() / skin->imageHeight().get()));
