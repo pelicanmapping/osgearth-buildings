@@ -329,12 +329,9 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
                     // for indexing, if enabled:
                     output.setCurrentFeature(feature);
 
-                    for (BuildingVector::iterator b = buildings.begin(); b != buildings.end() && !canceled; ++b)
+                    if (!_compiler->compile(buildings, output, readOptions.get(), progress))
                     {
-                        if (!_compiler->compile(buildings, output, readOptions.get(), progress))
-                        {
-                            canceled = true;
-                        }
+                        canceled = true;
                     }
                 }
             }
