@@ -1,0 +1,121 @@
+<map>
+
+    <options>
+        <terrain driver="rex" merges_per_frame="8"/>
+    </options>
+    
+    <image name="ArcGIS World Imagery" driver="arcgis">
+        <url>http://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/</url>
+		<nodata_image>http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/100/0/0.jpeg</nodata_image>
+		<cache_policy usage="no_cache"/>
+    </image>
+    
+    <elevation name="readymap elevation" driver="tms" cacheid="readymap_elevation">
+        <url>http://readymap.org/readymap/tiles/1.0.0/116/</url>
+    </elevation>
+    
+    <model name="cities" driver="feature_geom" max_range="1e7" min_range="100000" enabled="false">
+        <features name="cities" driver="ogr">
+            <url>H:/devel/osgearth/repo/data/ne_cities.shp</url>
+            <profile>spherical-mercator</profile>
+        </features>
+
+        <styles>
+            <selector class="cities">
+                <query><expr><![CDATA[rank_max > 9]]></expr></query>
+            </selector>
+            <style type="text/css">              
+                cities {
+                    text-content:   [name];
+                    text-priority:  [rank_max];
+                    text-halo:      #3f3f3f;
+                    text-size:      16+1.25*([rank_max]-9);
+                    text-declutter: true;
+                }     
+            </style>
+        </styles>        
+    </model>
+    
+    <buildings additive_lods="true" cacheid="osm">
+    
+        <cache_policy usage="read_write"/>
+    
+        <features name="buildings" driver="tfs">
+            <profile>spherical-mercator</profile>
+            <url>http://readymap.org/osm/</url>
+            <min_level>14</min_level>
+            <max_level>14</max_level>
+            <format>pbf</format>   
+            <filters>
+                <script>
+                   <![CDATA[ ("building" in feature.properties); ]]>
+                </script>
+            </filters>  
+        </features>
+        
+        <building_catalog>../data/buildings-procedural-only.xml</building_catalog>
+        
+        <settings>
+            <range_factor>3</range_factor>
+            <bins>
+                <bin tag="clutter"      lod_scale="0.25"/>
+                <bin tag="singlefamily" lod_scale="0.5"/>
+                <bin tag="parapet"      lod_scale="0.25"/>
+            </bins>
+        </settings>
+                    
+        <styles>
+            <library name="buildings">
+                <url>../data/catalog/catalog.xml</url>
+            </library>
+            
+            <style type="text/css">
+                14 {
+                    building-height:   getHeight();
+                    building-model:    getModel();
+                    building-library:  "buildings";
+                    altitude-clamping: terrain;
+                }
+            </style>
+            
+            <script language="javascript">
+              <![CDATA[
+              
+				function getHeight() {                      
+					if ("height" in feature.properties) {
+						var h = feature.properties["height"].replace('m','');
+						return Math.max(h, 20.0);
+					} else if ("building:height" in feature.properties) {
+						var h = feature.properties["building:height"].replace('m','');
+						return Math.max(h, 20.0);
+					} else if ("building:levels" in feature.properties){
+						var l = feature.properties["building:levels"];
+						return Math.max(l * 4, 20.0);
+					}
+					return Math.floor((Math.random() * 10.0) + 7.0);
+				}  
+                
+                var modelRoot = "H:/data/osm/models/";
+                
+                var modelMap = {
+                    5013364: "Paris/eiffel.osg"
+                };
+                
+                function getModel() {
+                    var id = parseInt( feature.properties["@id"] );
+                    var file = modelMap[id];
+                    return file ? modelRoot+file : "";
+                }
+              ]]>
+            </script>
+        </styles>
+        
+    </buildings>
+    
+    <screen_space_layout>
+        <sort_by_priority>true</sort_by_priority>
+    </screen_space_layout>
+    
+    <xi:include href="viewpoints.xml"/>
+    
+</map>

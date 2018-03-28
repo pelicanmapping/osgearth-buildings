@@ -1,0 +1,83 @@
+<viewpoints>
+    <viewpoint name="Test TILE">
+        <heading>162.578</heading>
+        <pitch>-14.8057</pitch>
+        <range>2218.57m</range>
+        <long>-122.3106794505007</long>
+        <lat>47.5566425317735</lat>
+        <height>65.74807498883456</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="Boston, MA" heading="24.261" height="0" lat="42.34425" long="-71.076262" pitch="-21.6" range="3450"/>
+    <viewpoint name="Paris">
+        <heading>-31.4538</heading>
+        <pitch>-4.28229</pitch>
+        <range>1827.32m</range>
+        <long>2.28496995276303</long>
+        <lat>48.86352703509513</lat>
+        <height>72.02410362847149</height>
+    </viewpoint>
+    <viewpoint name="Seattle">
+        <heading>163.366</heading>
+        <pitch>-4.87876</pitch>
+        <range>3124.53m</range>
+        <long>-122.3371213015735</long>
+        <lat>47.6106601306717</lat>
+        <height>54.08651210740209</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="New York">
+        <heading>-18.0478</heading>
+        <pitch>-15.8031</pitch>
+        <range>4465.71m</range>
+        <long>-73.97828175687108</long>
+        <lat>40.68666567694596</lat>
+        <height>17.28424610942602</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="San Francisco">
+        <heading>-32.4442</heading>
+        <pitch>-9.77047</pitch>
+        <range>3349.87m</range>
+        <long>-122.4022968684475</long>
+        <lat>37.77955999006335</lat>
+        <height>4.108565904200077</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="Mumbai">
+        <heading>51.3514</heading>
+        <pitch>-12.1379</pitch>
+        <range>1547.47m</range>
+        <long>72.8215130257299</long>
+        <lat>19.00404772134459</lat>
+        <height>5.364573975093663</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="London">
+        <heading>57.1563</heading>
+        <pitch>-16.9776</pitch>
+        <range>3360.06m</range>
+        <long>-0.1137174062164174</long>
+        <lat>51.49671036318259</lat>
+        <height>6.710510544478893</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="Toronto">
+        <heading>-80.6332</heading>
+        <pitch>-13.1004</pitch>
+        <range>3460.53m</range>
+        <long>-79.36803491300944</long>
+        <lat>43.65157708314885</lat>
+        <height>82.76821340993047</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+    <viewpoint name="Vancouver">
+        <heading>-0.572968</heading>
+        <pitch>-10.777</pitch>
+        <range>2725.77m</range>
+        <long>-123.1203381795948</long>
+        <lat>49.25776033212635</lat>
+        <height>54.16124152671546</height>
+        <srs>+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs </srs>
+    </viewpoint>
+</viewpoints>

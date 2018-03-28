@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+
+<buildings>
+
+    <building name="Single-family home 2-story PARAMETRIC" 
+              tags="building residential singlefamily"
+              max_height="9" 
+              max_area="750">              
+        <elevations>
+            <elevation simplify="true" skin_tags="facade residential singlefamily 2story">
+                <roof type="flat" skin_tags="roof residential"/>
+            </elevation>
+        </elevations>        
+    </building>
+
+    <building name="Single-family home 3-story PARAMETRIC" 
+              tags="building residential singlefamily"
+              min_height="9"
+              max_height="16" 
+              max_area="750">              
+        <elevations>
+            <elevation simplify="true" height_percentage="100" skin_tags="facade residential singlefamily 3story">
+                <roof type="flat" skin_tags="roof residential"/>
+            </elevation>
+        </elevations>        
+    </building>
+    
+    <building name="Commercial low" 
+              tags="building commercial" 
+              min_height="0" 
+              max_height="15" 
+              min_area="750">              
+        <elevations>
+            <elevation height_percentage="100" skin_tags="facade commercial">
+                <roof type="flat" skin_tags="roof commercial"/>
+                <elevations>                
+                    <elevation type="parapet" inset="0.15" height="0.75" width="0.0" skin_name="parapet.poured">
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>        
+    </building>
+    
+
+    <building name="Commercial medium simple" 
+              tags="building commercial" 
+              min_height="15" 
+              max_height="30">              
+        <elevations>
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-5" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial"/>
+                        <elevations>                
+                            <elevation type="parapet" inset="0.15" height="0.75" width="0.0" skin_name="parapet.poured">
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>
+    </building>
+
+    <building name="Commercial with roof"
+              tags="building commercial"
+              min_height="20"
+              max_height="60">
+        <elevations>
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-6.2" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial"/>
+                        <elevations>                
+                            <elevation type="parapet" inset="0.25" height="1.2" width="0.0" skin_name="parapet.poured">
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>
+    </building>
+   
+   <building name="Commercial 2-tier building"
+             tags="building commercial" 
+             min_height="50">
+        <elevations>
+            <elevation height="5" skin_tags="facade retail">
+                <elevations>
+                    <elevation height="-11.2" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial"/>
+                        <elevations>                
+                            <elevation height="5" inset="3" skin_tags="facade commercial">
+                                <roof type="flat" skin_tags="roof commercial"/>
+                                <elevations>
+                                    <elevation type="parapet" height="1.2" width="0.5" inset="1" skin_name="parapet.poured">
+                                        <roof type="flat" skin_name="parapet.concrete" />
+                                    </elevation>
+                                </elevations>
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>
+   </building>
+   
+   <building name="Commercial 3-tier building offset"
+             tags="building commercial"
+             min_height="80">
+        <elevations>
+            <elevation height_percentage="15" skin_tags="facade commercial">
+                <roof type="flat" skin_tags="roof commercial"/>
+                <elevations>                
+                    <elevation height_percentage="40" inset="5" skin_tags="facade commercial">
+                        <roof type="flat" skin_tags="roof commercial"/>
+                        <elevations>
+                            <elevation height_percentage="35" inset="4" skin_tags="facade commercial">
+                                <roof type="flat" skin_tags="roof commercial"/>
+                                <elevations>                
+                                    <elevation type="parapet" inset="0.15" height="1.0" width="0.0" skin_name="parapet.poured">
+                                        <roof type="flat" skin_name="parapet.concrete" />
+                                    </elevation>
+                                </elevations>
+                            </elevation>
+                        </elevations>
+                    </elevation>
+                </elevations>
+            </elevation>
+        </elevations>
+   </building>
+
+</buildings>
