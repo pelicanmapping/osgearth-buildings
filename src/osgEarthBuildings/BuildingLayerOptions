@@ -21,7 +21,9 @@
 
 #include "Common"
 #include "CompilerSettings"
+#include <osgEarth/Layer>
 #include <osgEarthFeatures/FeatureSource>
+#include <osgEarthFeatures/FeatureModelSource>
 #include <osgEarthSymbology/StyleSheet>
 
 namespace osgEarth { namespace Buildings 
@@ -29,12 +31,12 @@ namespace osgEarth { namespace Buildings
     using namespace osgEarth::Features;
     using namespace osgEarth::Symbology;
 
-    class BuildingOptions : public ConfigOptions
+    class BuildingLayerOptions : public VisibleLayerOptions
     {
     public:
-        /** Feature source for building data */
-        optional<FeatureSourceOptions>& featureOptions() { return _featureSourceOptions; }
-        const optional<FeatureSourceOptions>& featureOptions() const { return _featureSourceOptions; }
+        /** Embedded feature source configuration. */
+        optional<FeatureSourceOptions>& featureSource() { return _featureSource; }
+        const optional<FeatureSourceOptions>& featureSource() const { return _featureSource; }
 
         /** Location of the building template catalog */
         optional<URI>& buildingCatalog() { return _buildingCatalogURI; }
@@ -78,7 +80,8 @@ namespace osgEarth { namespace Buildings
         const optional<bool>& enableCancelation() const { return _enableCancelation; }
 
     public:
-        BuildingOptions( const ConfigOptions& opt =ConfigOptions() ) : ConfigOptions( opt ) {
+        BuildingLayerOptions( const ConfigOptions& opt =ConfigOptions() ) : VisibleLayerOptions( opt )
+        {
             _lod.init( 14u );
             _additiveLODs.init(false);
             _createIndex.init(false);
@@ -89,54 +92,51 @@ namespace osgEarth { namespace Buildings
         }
 
     public:
-        Config getConfig() const {
-            Config conf = ConfigOptions::getConfig();
-            conf.updateObjIfSet("features",         _featureSourceOptions);
+        Config getConfig() const
+        {
+            Config conf = VisibleLayerOptions::getConfig();
+            conf.updateObjIfSet("features",         _featureSource);
             conf.updateIfSet   ("building_catalog", _buildingCatalogURI);
             conf.updateObjIfSet("styles",           _styles);
-            conf.updateObjIfSet("cache_policy",     _cachePolicy);
             conf.updateIfSet   ("additive_lods",    _additiveLODs);
             conf.updateObjIfSet("settings",         _settings);
             conf.updateIfSet   ("create_index",     _createIndex);
             conf.updateIfSet   ("priority_offset",  _priorityOffset);
             conf.updateIfSet   ("priority_scale",   _priorityScale);
-            conf.updateIfSet   ("cacheid",          _cacheId);
             conf.updateIfSet   ("enable_cancelation", _enableCancelation);
             return conf;
         }
 
     protected:
-        void mergeConfig(const Config& conf) {
-            ConfigOptions::mergeConfig( conf );
+        void mergeConfig(const Config& conf)
+        {
+            VisibleLayerOptions::mergeConfig( conf );
             fromConfig( conf );
         }
 
     private:
-        void fromConfig(const Config& conf) {
-            conf.getObjIfSet("features",         _featureSourceOptions);
+        void fromConfig(const Config& conf)
+        {
+            conf.getObjIfSet("features",         _featureSource);
             conf.getIfSet   ("building_catalog", _buildingCatalogURI);
             conf.getObjIfSet("styles",           _styles);
-            conf.getObjIfSet("cache_policy",     _cachePolicy);
             conf.getIfSet   ("additive_lods",    _additiveLODs);
             conf.getObjIfSet("settings",         _settings);
             conf.getIfSet   ("create_index",     _createIndex);
             conf.getIfSet   ("priority_offset",  _priorityOffset);
             conf.getIfSet   ("priority_scale",   _priorityScale);
-            conf.getIfSet   ("cacheid",          _cacheId);
             conf.getIfSet   ("enable_cancelation", _enableCancelation);
         }
 
-        optional<FeatureSourceOptions> _featureSourceOptions;
+        optional<FeatureSourceOptions> _featureSource;
         optional<URI> _buildingCatalogURI;
         osg::ref_ptr<StyleSheet> _styles;
         optional<unsigned> _lod;
-        optional<CachePolicy> _cachePolicy;
         optional<bool> _additiveLODs;
         optional<CompilerSettings> _settings;
         optional<bool> _createIndex;
         optional<float> _priorityOffset;
         optional<float> _priorityScale;
-        optional<std::string> _cacheId;
         optional<bool> _enableCancelation;
     };
 } }

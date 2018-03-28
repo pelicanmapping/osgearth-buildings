@@ -15,9 +15,9 @@ set(LIB_PUBLIC_HEADERS
     Building
     BuildingCatalog
     BuildingCompiler
-    BuildingExtension
     BuildingFactory
-    BuildingOptions
+    BuildingLayer
+    BuildingLayerOptions
     BuildingPager
     BuildingSymbol
     BuildingVisitor
@@ -43,8 +43,8 @@ set(LIB_COMMON_FILES
     Building.cpp
     BuildingCatalog.cpp
     BuildingCompiler.cpp
-    BuildingExtension.cpp
     BuildingFactory.cpp
+    BuildingLayer.cpp
     BuildingPager.cpp
     BuildingSymbol.cpp
     BuildingVisitor.cpp
