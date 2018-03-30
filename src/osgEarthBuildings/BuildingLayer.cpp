@@ -61,9 +61,6 @@ BuildingLayer::init()
 {
     VisibleLayer::init();
 
-    // Callbacks for paged data
-    _sgCallbacks = new SceneGraphCallbacks();
-
     // Create the root group
     _root = new osg::Group();
     _root->setName(getName());
@@ -196,6 +193,7 @@ BuildingLayer::createSceneGraph()
     pager->setCompilerSettings( options().compilerSettings().get() );
     pager->setPriorityOffset  ( options().priorityOffset().get() );
     pager->setPriorityScale   ( options().priorityScale().get() );
+    pager->setSceneGraphCallbacks(getSceneGraphCallbacks());
 
     if (options().enableCancelation().isSet())
     {

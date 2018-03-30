@@ -22,7 +22,6 @@
 #include "Common"
 #include "BuildingLayerOptions"
 #include <osgEarth/VisibleLayer>
-#include <osgEarth/SceneGraphCallback>
 #include <osgEarthUtil/SimplePager>
 #include <osgEarthFeatures/FeatureSource>
 #include <osgEarthFeatures/Session>
@@ -47,12 +46,6 @@ namespace osgEarth { namespace Buildings
         //! Sets the source of buildings data - call before opening layer
         void setFeatureSource(FeatureSource*);
         FeatureSource* getFeatureSource() const { return _featureSource.get(); }
-
-        //! Access to the root pager that loads and displays the buildings
-        //osgEarth::Util::SimplePager* getPager() { return _pager.get(); }
-
-        //! Access to scene graph callbacks
-        SceneGraphCallbacks* getSceneGraphCallbacks() { return _sgCallbacks.get(); }
 
 
     public: // Layer
@@ -80,8 +73,6 @@ namespace osgEarth { namespace Buildings
     private:
 
         osg::ref_ptr<osg::Group> _root;
-        //osg::ref_ptr<osgEarth::Util::SimplePager> _pager;
-        osg::ref_ptr<SceneGraphCallbacks> _sgCallbacks;
         osg::ref_ptr<BuildingCatalog> _catalog;
         osg::ref_ptr<FeatureSource> _featureSource;
         osg::ref_ptr<Session> _session;
