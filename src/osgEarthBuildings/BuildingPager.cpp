@@ -292,21 +292,27 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
             // TODO: review the LOD selection..
             OE_START_TIMER(envelope);
 
-            osg::ref_ptr<ElevationEnvelope> envelope = _elevationPool->createEnvelope(
-                _session->getMapSRS(),      // SRS of input features
-                tileKey.getLOD());          // LOD at which to clamp
+            osg::ref_ptr<ElevationEnvelope> envelope;
 
-            if (progress && progress->collectStats())
-                progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
-
-            if (!envelope.valid())
+            osg::ref_ptr<ElevationPool> pool;
+            if (_elevationPool.lock(pool))
             {
-                // if this happens, it means that the clamper most likely lost its connection
-                // to the underlying map for some reason (Map closed, e.g.). In this case we
-                // should just cancel the tile operation.
-                OE_INFO << LC << "Failed to create clamping envelope for " << tileKey.str() << "\n";
-                canceled = true;
+                envelope = pool->createEnvelope(
+                    _session->getMapSRS(),      // SRS of input features
+                    tileKey.getLOD());          // LOD at which to clamp
+
+                if (progress && progress->collectStats())
+                    progress->stats("pager.envelope") = OE_GET_TIMER(envelope);
+
+                if (!envelope.valid())
+                {
+                    // if this happens, it means that the clamper most likely lost its connection
+                    // to the underlying map for some reason (Map closed, e.g.). In this case we
+                    // should just cancel the tile operation.
+                    OE_INFO << LC << "Failed to create clamping envelope for " << tileKey.str() << "\n";
+                }
             }
+            canceled = canceled || !envelope.valid();
 
             while (cursor->hasMore() && !canceled)
             {
@@ -388,7 +394,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
 
     if (canceled)
     {
-        OE_INFO << LC << "Building tile " << tileKey.str() << " - canceled\n";
+        OE_INFO << LC << "Building tile " << tileKey.str() << " - canceled" << std::endl;
         return 0L;
     }
     else

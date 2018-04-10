@@ -78,7 +78,7 @@ namespace osgEarth { namespace Buildings
         osg::ref_ptr<BuildingCompiler>    _compiler;
         CompilerSettings                  _compilerSettings;
         FeatureIndexBuilder*              _index;
-        osg::ref_ptr<ElevationPool>       _elevationPool;
+        osg::observer_ptr<ElevationPool>  _elevationPool;
         bool                              _profile;
         osg::ref_ptr<osgDB::ObjectCache>  _artCache;
         Threading::Mutex                  _globalMutex;
