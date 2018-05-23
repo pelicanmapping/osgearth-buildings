@@ -38,6 +38,10 @@ using namespace osgEarth::Symbology;
 
 #define USE_OSGEARTH_ELEVATION_POOL
 
+#ifndef GL_CLIP_DISTANCE0
+#define GL_CLIP_DISTANCE0 0x3000
+#endif
+
 namespace
 {
     // Callback to force building threads onto the high-latency pager queue.
@@ -426,7 +430,7 @@ BuildingPager::applyRenderSymbology(osg::Node* node, const Style& style) const
 #ifndef OSG_GLES2_AVAILABLE
         if ( render->clipPlane().isSet() )
         {
-            GLenum mode = GL_CLIP_PLANE0 + render->clipPlane().value();
+            GLenum mode = GL_CLIP_DISTANCE0 + render->clipPlane().value();
             node->getOrCreateStateSet()->setMode(mode, 1);
         }
 #endif

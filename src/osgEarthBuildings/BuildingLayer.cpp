@@ -88,7 +88,7 @@ BuildingLayer::setFeatureSource(FeatureSource* source)
 }
 
 osg::Node*
-BuildingLayer::getOrCreateNode()
+BuildingLayer::getNode() const
 {
     return _root.get();
 }

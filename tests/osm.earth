@@ -16,7 +16,7 @@
     
     <model name="cities" driver="feature_geom" max_range="1e7" min_range="100000" enabled="false">
         <features name="cities" driver="ogr">
-            <url>H:/devel/osgearth/repo/data/ne_cities.shp</url>
+            <url>H:/devel/osgearth/repo/data/cities.shp</url>
             <profile>spherical-mercator</profile>
         </features>
 
