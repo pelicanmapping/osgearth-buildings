@@ -35,7 +35,7 @@ namespace osgEarth { namespace Buildings
     class OSGEARTHBUILDINGS_EXPORT BuildingLayer : public VisibleLayer
     {
     public:
-        META_Layer(osgEarthBuildings, BuildingLayer, BuildingLayerOptions);
+        META_Layer(osgEarthBuildings, BuildingLayer, BuildingLayerOptions, buildings);
 
         //! Default constructor
         BuildingLayer();

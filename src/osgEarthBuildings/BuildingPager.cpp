@@ -283,7 +283,7 @@ BuildingPager::createNode(const TileKey& tileKey, ProgressCallback* progress)
         Query query;
         query.tileKey() = tileKey;
         
-        osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor(query);
+        osg::ref_ptr<FeatureCursor> cursor = _features->createFeatureCursor(query, progress);
         if (cursor.valid() && cursor->hasMore() && !canceled)
         {
             osg::ref_ptr<BuildingFactory> factory = new BuildingFactory();

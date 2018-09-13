@@ -95,15 +95,15 @@ namespace osgEarth { namespace Buildings
         Config getConfig() const
         {
             Config conf = VisibleLayerOptions::getConfig();
-            conf.updateObjIfSet("features",         _featureSource);
-            conf.updateIfSet   ("building_catalog", _buildingCatalogURI);
-            conf.updateObjIfSet("styles",           _styles);
-            conf.updateIfSet   ("additive_lods",    _additiveLODs);
-            conf.updateObjIfSet("settings",         _settings);
-            conf.updateIfSet   ("create_index",     _createIndex);
-            conf.updateIfSet   ("priority_offset",  _priorityOffset);
-            conf.updateIfSet   ("priority_scale",   _priorityScale);
-            conf.updateIfSet   ("enable_cancelation", _enableCancelation);
+            conf.setObj("features",         _featureSource);
+            conf.set   ("building_catalog", _buildingCatalogURI);
+            conf.setObj("styles",           _styles);
+            conf.set   ("additive_lods",    _additiveLODs);
+            conf.setObj("settings",         _settings);
+            conf.set   ("create_index",     _createIndex);
+            conf.set   ("priority_offset",  _priorityOffset);
+            conf.set   ("priority_scale",   _priorityScale);
+            conf.set   ("enable_cancelation", _enableCancelation);
             return conf;
         }
 
