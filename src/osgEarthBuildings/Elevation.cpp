@@ -520,19 +520,19 @@ Elevation::getConfig() const
 {
     Config conf;
 
-    conf.add("inset", getInset());
-    conf.addIfSet("height_percentage", _heightPercentage);
-    conf.addIfSet("height", _height);
+    conf.set("inset", getInset());
+    conf.set("height_percentage", _heightPercentage);
+    conf.set("height", _height);
     
     if ( getRoof() )
-        conf.add("roof", getRoof()->getConfig());
+        conf.set("roof", getRoof()->getConfig());
 
     if ( !getElevations().empty() )
     {
         Config evec("elevations");
         for(ElevationVector::const_iterator sub = getElevations().begin(); sub != getElevations().end(); ++sub)
             evec.add("elevation", sub->get()->getConfig());
-        conf.add(evec);
+        conf.set(evec);
     }
     return conf;
 }

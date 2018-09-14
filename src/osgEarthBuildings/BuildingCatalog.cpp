@@ -296,7 +296,7 @@ BuildingCatalog::parseElevations(const Config&     conf,
 
         // resolve the height properties:
         optional<float> hp;
-        if ( e->getIfSet( "height_percentage", hp) )
+        if ( e->get( "height_percentage", hp) )
             elevation->setHeightPercentage( hp.get()*0.01f );
 
         if ( e->hasValue( "height" ) )

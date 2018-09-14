@@ -95,15 +95,15 @@ namespace osgEarth { namespace Buildings
         Config getConfig() const
         {
             Config conf = VisibleLayerOptions::getConfig();
-            conf.setObj("features",         _featureSource);
-            conf.set   ("building_catalog", _buildingCatalogURI);
-            conf.setObj("styles",           _styles);
-            conf.set   ("additive_lods",    _additiveLODs);
-            conf.setObj("settings",         _settings);
-            conf.set   ("create_index",     _createIndex);
-            conf.set   ("priority_offset",  _priorityOffset);
-            conf.set   ("priority_scale",   _priorityScale);
-            conf.set   ("enable_cancelation", _enableCancelation);
+            conf.set("features",         _featureSource);
+            conf.set("building_catalog", _buildingCatalogURI);
+            conf.set("styles",           _styles);
+            conf.set("additive_lods",    _additiveLODs);
+            conf.set("settings",         _settings);
+            conf.set("create_index",     _createIndex);
+            conf.set("priority_offset",  _priorityOffset);
+            conf.set("priority_scale",   _priorityScale);
+            conf.set("enable_cancelation", _enableCancelation);
             return conf;
         }
 
@@ -117,15 +117,15 @@ namespace osgEarth { namespace Buildings
     private:
         void fromConfig(const Config& conf)
         {
-            conf.getObjIfSet("features",         _featureSource);
-            conf.getIfSet   ("building_catalog", _buildingCatalogURI);
-            conf.getObjIfSet("styles",           _styles);
-            conf.getIfSet   ("additive_lods",    _additiveLODs);
-            conf.getObjIfSet("settings",         _settings);
-            conf.getIfSet   ("create_index",     _createIndex);
-            conf.getIfSet   ("priority_offset",  _priorityOffset);
-            conf.getIfSet   ("priority_scale",   _priorityScale);
-            conf.getIfSet   ("enable_cancelation", _enableCancelation);
+            conf.get("features",         _featureSource);
+            conf.get("building_catalog", _buildingCatalogURI);
+            conf.get("styles",           _styles);
+            conf.get("additive_lods",    _additiveLODs);
+            conf.get("settings",         _settings);
+            conf.get("create_index",     _createIndex);
+            conf.get("priority_offset",  _priorityOffset);
+            conf.get("priority_scale",   _priorityScale);
+            conf.get("enable_cancelation", _enableCancelation);
         }
 
         optional<FeatureSourceOptions> _featureSource;

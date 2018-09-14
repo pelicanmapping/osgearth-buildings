@@ -95,4 +95,6 @@ namespace osgEarth { namespace Buildings
 
 } } // namespace
 
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::Buildings::CompilerSettings);
+
 #endif // OSGEARTH_BUILDINGS_COMPILER_SETTINGS_H

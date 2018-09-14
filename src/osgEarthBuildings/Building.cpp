@@ -121,13 +121,13 @@ Building::getConfig() const
 {
     //TODO: incomplete.
     Config conf("building");
-    conf.addObjIfSet("external_model_uri", _externalModelURI);
+    conf.set("external_model_uri", _externalModelURI);
     if ( !getElevations().empty() )
     {
         Config evec("elevations");
         for(ElevationVector::const_iterator e = getElevations().begin(); e != getElevations().end(); ++e)
             evec.add("elevation", e->get()->getConfig());
-        conf.add(evec);
+        conf.set(evec);
     }
     return conf;
 }

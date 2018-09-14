@@ -47,22 +47,22 @@ BuildingSymbol::getConfig() const
 {
     Config conf = Symbol::getConfig();
     conf.key() = "building";
-    conf.addIfSet   ( "floor_height", _floorHeight );
-    conf.addObjIfSet( "height",       _heightExpr );
-    conf.addObjIfSet( "tags",         _tagsExpr );
-    conf.addObjIfSet( "model",        _modelURIExpr );
-    conf.addObjIfSet( "library_name", _libraryName );
+    conf.set( "floor_height", _floorHeight );
+    conf.set( "height",       _heightExpr );
+    conf.set( "tags",         _tagsExpr );
+    conf.set( "model",        _modelURIExpr );
+    conf.set( "library_name", _libraryName );
     return conf;
 }
 
 void 
 BuildingSymbol::mergeConfig( const Config& conf )
 {
-    conf.getIfSet   ( "floor_height", _floorHeight );
-    conf.getObjIfSet( "height",       _heightExpr );
-    conf.getObjIfSet( "tags",         _tagsExpr );
-    conf.getObjIfSet( "model",        _modelURIExpr );
-    conf.getObjIfSet( "library_name", _libraryName );
+    conf.get( "floor_height", _floorHeight );
+    conf.get( "height",       _heightExpr );
+    conf.get( "tags",         _tagsExpr );
+    conf.get( "model",        _modelURIExpr );
+    conf.get( "library_name", _libraryName );
 }
 
 void

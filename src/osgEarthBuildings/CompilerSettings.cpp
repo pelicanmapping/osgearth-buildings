@@ -84,9 +84,9 @@ _rangeFactor( 6.0f )
             bin.minLodScale = b->value("min_lod_scale", 0.0f);
         }
     }
-    conf.getIfSet("range_factor", _rangeFactor);
-    conf.getIfSet("clustering", _useClustering);
-    conf.getIfSet("max_verts_per_cluster", _maxVertsPerCluster);
+    conf.get("range_factor", _rangeFactor);
+    conf.get("clustering", _useClustering);
+    conf.get("max_verts_per_cluster", _maxVertsPerCluster);
 }
 
 Config
@@ -96,7 +96,7 @@ CompilerSettings::getConfig() const
     if (!_lodBins.empty())
     {
         Config bins("bins");
-        conf.add(bins);
+        conf.set(bins);
 
         for(LODBins::const_iterator b = _lodBins.begin(); b != _lodBins.end(); ++b)
         {
@@ -110,9 +110,9 @@ CompilerSettings::getConfig() const
         }
     }
     
-    conf.addIfSet("range_factor", _rangeFactor);
-    conf.addIfSet("clustering", _useClustering);
-    conf.addIfSet("max_verts_per_cluster", _maxVertsPerCluster);
+    conf.set("range_factor", _rangeFactor);
+    conf.set("clustering", _useClustering);
+    conf.set("max_verts_per_cluster", _maxVertsPerCluster);
 
     return conf;
 }
